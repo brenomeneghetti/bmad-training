@@ -1,0 +1,1119 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>URL Piece Management — Brainstorm Keepsake</title>
+  <style>
+    :root {
+      --ink: #10212b;
+      --paper: #f4f0e5;
+      --cream: #fffaf0;
+      --cyan: #36d9d0;
+      --blue: #2474ff;
+      --coral: #ff6b5e;
+      --yellow: #ffd84b;
+      --violet: #8c6bff;
+      --green: #82db76;
+      --muted: #687780;
+      --line: rgba(16, 33, 43, .18);
+      --shadow: 0 22px 55px rgba(16, 33, 43, .14);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 10% 5%, rgba(54, 217, 208, .2), transparent 24rem),
+        radial-gradient(circle at 90% 14%, rgba(255, 107, 94, .15), transparent 22rem),
+        var(--paper);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      overflow-x: hidden;
+    }
+
+    button, input { font: inherit; }
+    button { color: inherit; }
+    a { color: inherit; }
+
+    .progress {
+      position: fixed;
+      z-index: 30;
+      inset: 0 auto auto 0;
+      width: 0;
+      height: 5px;
+      background: linear-gradient(90deg, var(--cyan), var(--blue), var(--violet), var(--coral));
+      box-shadow: 0 0 14px rgba(36, 116, 255, .5);
+    }
+
+    .rail {
+      position: fixed;
+      z-index: 20;
+      right: 18px;
+      top: 50%;
+      display: grid;
+      gap: 9px;
+      transform: translateY(-50%);
+    }
+
+    .rail a {
+      width: 11px;
+      height: 11px;
+      border: 2px solid var(--ink);
+      border-radius: 50%;
+      background: var(--cream);
+      transition: .2s ease;
+    }
+
+    .rail a:hover { transform: scale(1.45); background: var(--yellow); }
+
+    .hero {
+      position: relative;
+      min-height: 100vh;
+      display: grid;
+      align-content: center;
+      padding: 8vw;
+      isolation: isolate;
+    }
+
+    .hero::before {
+      content: "";
+      position: absolute;
+      inset: 5% 4%;
+      z-index: -1;
+      border: 2px solid var(--ink);
+      border-radius: 50% 42% 47% 53% / 44% 55% 45% 56%;
+      transform: rotate(-2deg);
+      background:
+        repeating-linear-gradient(90deg, transparent 0 59px, rgba(16, 33, 43, .05) 60px),
+        repeating-linear-gradient(0deg, transparent 0 59px, rgba(16, 33, 43, .05) 60px),
+        rgba(255, 250, 240, .76);
+      box-shadow: var(--shadow);
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      width: fit-content;
+      align-items: center;
+      gap: .65rem;
+      margin-bottom: 1.5rem;
+      padding: .55rem .8rem;
+      border: 1px solid var(--ink);
+      border-radius: 999px;
+      background: var(--yellow);
+      font-size: .75rem;
+      font-weight: 800;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      transform: rotate(-1deg);
+    }
+
+    .eyebrow::before {
+      content: "";
+      width: .65rem;
+      height: .65rem;
+      border-radius: 50%;
+      background: var(--coral);
+      box-shadow: 0 0 0 3px rgba(255, 107, 94, .2);
+    }
+
+    h1 {
+      max-width: 980px;
+      margin: 0;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(4rem, 11vw, 10rem);
+      font-weight: 900;
+      line-height: .79;
+      letter-spacing: -.075em;
+    }
+
+    h1 span {
+      display: block;
+      color: var(--blue);
+      font-style: italic;
+      transform: translateX(8vw);
+      text-shadow: 4px 4px 0 var(--yellow);
+    }
+
+    .hero-copy {
+      max-width: 720px;
+      margin: 3rem 0 0 auto;
+      padding: 1.2rem 1.4rem;
+      border-left: 8px solid var(--coral);
+      background: var(--cream);
+      font-size: clamp(1rem, 1.8vw, 1.3rem);
+      line-height: 1.65;
+      box-shadow: 9px 9px 0 var(--ink);
+    }
+
+    .route-strip {
+      display: flex;
+      gap: 8px;
+      margin-top: 4rem;
+      overflow: hidden;
+      white-space: nowrap;
+      font-size: clamp(.7rem, 1.4vw, 1rem);
+    }
+
+    .route-strip span {
+      padding: .65rem .8rem;
+      border: 1px solid var(--ink);
+      border-radius: 7px;
+      background: var(--cream);
+    }
+
+    .route-strip .domain { background: var(--cyan); }
+    .route-strip .path { background: var(--yellow); }
+    .route-strip .query { background: #ffc3bd; }
+
+    main { display: block; }
+    section {
+      position: relative;
+      min-height: 100vh;
+      padding: clamp(5rem, 9vw, 10rem) clamp(1.25rem, 7vw, 8rem);
+    }
+
+    .section-label {
+      display: flex;
+      align-items: baseline;
+      gap: 1rem;
+      margin-bottom: 4rem;
+    }
+
+    .section-label b {
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(4rem, 9vw, 8rem);
+      line-height: .7;
+      color: transparent;
+      -webkit-text-stroke: 2px var(--ink);
+    }
+
+    .section-label div {
+      font-size: .78rem;
+      font-weight: 800;
+      letter-spacing: .13em;
+      text-transform: uppercase;
+    }
+
+    .section-label h2 {
+      margin: .25rem 0 0;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(2rem, 5vw, 4.7rem);
+      letter-spacing: -.04em;
+    }
+
+    /* Movement 01 — the job as a pinned field note */
+    .job { background: var(--ink); color: var(--cream); }
+    .job .section-label b { -webkit-text-stroke-color: var(--cyan); }
+    .job-board {
+      display: grid;
+      grid-template-columns: minmax(0, 1.25fr) minmax(250px, .75fr);
+      gap: clamp(2rem, 5vw, 5rem);
+      max-width: 1200px;
+      margin: auto;
+    }
+
+    .job-statement {
+      position: relative;
+      padding: clamp(2rem, 5vw, 5rem);
+      color: var(--ink);
+      background: var(--cream);
+      box-shadow: 17px 17px 0 var(--cyan);
+      transform: rotate(-1.1deg);
+    }
+
+    .job-statement::before {
+      content: "THE JOB";
+      position: absolute;
+      top: -1.25rem;
+      left: 2rem;
+      padding: .7rem 1rem;
+      background: var(--coral);
+      border: 2px solid var(--ink);
+      font-weight: 900;
+      letter-spacing: .12em;
+    }
+
+    .job-statement p {
+      margin: 0;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(1.8rem, 4vw, 3.8rem);
+      font-weight: 700;
+      line-height: 1.14;
+    }
+
+    .job-statement mark {
+      color: inherit;
+      background: linear-gradient(transparent 58%, var(--yellow) 58%);
+    }
+
+    .friction {
+      display: grid;
+      gap: 1rem;
+      align-content: center;
+    }
+
+    .friction-card {
+      padding: 1.2rem;
+      border: 1px solid rgba(255, 250, 240, .35);
+      border-radius: 12px;
+      background: rgba(255, 250, 240, .07);
+      line-height: 1.5;
+    }
+
+    .friction-card strong {
+      display: block;
+      margin-bottom: .45rem;
+      color: var(--cyan);
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+
+    .job-tools {
+      grid-column: 1 / -1;
+      display: flex;
+      flex-wrap: wrap;
+      gap: .7rem;
+      margin-top: 1rem;
+    }
+
+    .job-tools span {
+      padding: .7rem 1rem;
+      border: 1px solid var(--cream);
+      border-radius: 999px;
+    }
+
+    .job-tools span:nth-child(odd) { color: var(--ink); background: var(--yellow); }
+    .job-tools span:nth-child(even) { background: var(--blue); }
+
+    .scope-note {
+      grid-column: 1 / -1;
+      margin: 1.8rem 0 0 auto;
+      padding: .9rem 1.2rem;
+      border: 1px dashed var(--coral);
+      color: #ffb7b0;
+      font-size: .85rem;
+    }
+
+    /* Movement 02 — URL anatomy */
+    .principles {
+      background:
+        linear-gradient(rgba(36, 116, 255, .08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(36, 116, 255, .08) 1px, transparent 1px),
+        #eaf5f5;
+      background-size: 32px 32px;
+    }
+
+    .anatomy {
+      max-width: 1250px;
+      margin: auto;
+    }
+
+    .specimen {
+      position: relative;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: .5rem;
+      padding: clamp(2rem, 5vw, 4rem);
+      border: 2px solid var(--ink);
+      border-radius: 24px;
+      background: rgba(255, 250, 240, .88);
+      box-shadow: var(--shadow);
+      font-size: clamp(.85rem, 1.7vw, 1.25rem);
+    }
+
+    .specimen::after {
+      content: "LIVE SPECIMEN";
+      position: absolute;
+      right: 1.2rem;
+      top: -1rem;
+      padding: .5rem .75rem;
+      border: 2px solid var(--ink);
+      background: var(--yellow);
+      font-size: .7rem;
+      font-weight: 900;
+      letter-spacing: .1em;
+      transform: rotate(2deg);
+    }
+
+    .piece {
+      position: relative;
+      display: inline-flex;
+      min-height: 3.25rem;
+      align-items: center;
+      padding: .75rem .9rem;
+      border: 2px solid var(--ink);
+      border-radius: 8px;
+      transition: transform .2s, box-shadow .2s;
+      cursor: default;
+    }
+
+    .piece:hover {
+      z-index: 2;
+      transform: translateY(-7px) rotate(-1deg);
+      box-shadow: 6px 7px 0 var(--ink);
+    }
+
+    .piece::before {
+      position: absolute;
+      top: calc(100% + .7rem);
+      left: 50%;
+      padding: .35rem .55rem;
+      border-radius: 4px;
+      color: var(--cream);
+      background: var(--ink);
+      font-size: .62rem;
+      font-weight: 800;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      white-space: nowrap;
+      opacity: 0;
+      transform: translate(-50%, -5px);
+      transition: .2s;
+      pointer-events: none;
+    }
+
+    .piece:hover::before { opacity: 1; transform: translate(-50%, 0); }
+    .protocol { opacity: .4; background: #d9e0df; text-decoration: line-through; }
+    .protocol::before { content: "not exposed"; }
+    .domain-piece { background: var(--cyan); }
+    .domain-piece::before { content: "minimal validation"; }
+    .path-piece { background: var(--yellow); }
+    .path-piece::before { content: "independent segment"; }
+    .query-piece { background: #ffc3bd; }
+    .query-piece::before { content: "edit · remove · reorder"; }
+
+    .principle-ledger {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      margin-top: 5rem;
+    }
+
+    .principle-ledger article {
+      min-height: 230px;
+      padding: 1.5rem;
+      border: 2px solid var(--ink);
+      background: var(--cream);
+    }
+
+    .principle-ledger article:nth-child(2) { transform: translateY(1.5rem); background: var(--yellow); }
+    .principle-ledger article:nth-child(3) { background: var(--cyan); }
+    .principle-ledger .icon {
+      display: grid;
+      width: 3rem;
+      height: 3rem;
+      place-items: center;
+      margin-bottom: 1rem;
+      border: 2px solid var(--ink);
+      border-radius: 50%;
+      background: var(--cream);
+      font-weight: 900;
+    }
+
+    .principle-ledger h3 { margin: 0 0 .7rem; font-size: 1.2rem; }
+    .principle-ledger p { margin: 0; line-height: 1.55; }
+
+    .instant-reflection {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      margin-top: 5rem;
+      font-weight: 900;
+      text-align: center;
+    }
+
+    .instant-reflection span {
+      padding: 1rem;
+      border: 2px solid var(--ink);
+      background: var(--cream);
+    }
+
+    .instant-reflection i {
+      color: var(--blue);
+      font-size: 2rem;
+      font-style: normal;
+      animation: breathe 1.6s ease-in-out infinite;
+    }
+
+    @keyframes breathe { 50% { transform: scaleX(1.4); } }
+
+    /* Movement 03 — a combinatorial workbench */
+    .morphology {
+      overflow: hidden;
+      background: #f5dffc;
+    }
+
+    .matrix-wrap {
+      max-width: 1300px;
+      margin: auto;
+      overflow-x: auto;
+      padding: 0 0 2rem;
+    }
+
+    .matrix {
+      display: grid;
+      min-width: 900px;
+      grid-template-columns: 160px repeat(4, 1fr);
+      border-top: 2px solid var(--ink);
+      border-left: 2px solid var(--ink);
+      box-shadow: 14px 14px 0 var(--ink);
+    }
+
+    .cell {
+      min-height: 100px;
+      padding: 1rem;
+      border-right: 2px solid var(--ink);
+      border-bottom: 2px solid var(--ink);
+      background: var(--cream);
+      line-height: 1.4;
+      transition: background .2s, transform .2s;
+    }
+
+    .cell:not(.axis):hover { z-index: 2; background: var(--yellow); transform: scale(1.04) rotate(-.5deg); }
+    .axis {
+      display: grid;
+      place-items: center;
+      background: var(--ink);
+      color: var(--cream);
+      font-weight: 900;
+      letter-spacing: .08em;
+      text-align: center;
+      text-transform: uppercase;
+    }
+
+    .cell small {
+      display: block;
+      margin-bottom: .4rem;
+      color: var(--muted);
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .versions {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+      max-width: 1200px;
+      margin: 6rem auto 0;
+    }
+
+    .version {
+      position: relative;
+      min-height: 360px;
+      padding: 1.3rem;
+      border: 2px solid var(--ink);
+      background: var(--cream);
+      box-shadow: 8px 8px 0 rgba(16, 33, 43, .16);
+    }
+
+    .version:nth-child(2) { transform: rotate(1.3deg); }
+    .version:nth-child(3) { transform: rotate(-1deg); }
+    .version h3 {
+      display: grid;
+      width: 3rem;
+      height: 3rem;
+      place-items: center;
+      margin: -2.2rem auto 1.3rem;
+      border: 2px solid var(--ink);
+      border-radius: 50%;
+      background: var(--coral);
+      font-size: 1.3rem;
+    }
+
+    .wire-url {
+      height: 35px;
+      margin-bottom: 1rem;
+      border: 2px solid var(--ink);
+      background: linear-gradient(90deg, var(--cyan) 28%, var(--yellow) 28% 65%, #ffc3bd 65%);
+    }
+
+    .wire-stack { display: grid; gap: .6rem; }
+    .wire-stack i {
+      display: block;
+      height: 38px;
+      border: 2px solid var(--ink);
+      background: #e9e4d9;
+    }
+
+    .wire-row { display: flex; gap: .5rem; }
+    .wire-row i { flex: 1; height: 55px; border: 2px solid var(--ink); background: #e9e4d9; }
+    .wire-split { display: grid; grid-template-columns: 1fr 1.5fr; gap: .7rem; }
+    .wire-split > i { min-height: 190px; border: 2px solid var(--ink); background: #e9e4d9; }
+    .version p { margin: 1rem 0 0; font-size: .82rem; line-height: 1.5; }
+
+    .binding-ribbon {
+      max-width: 900px;
+      margin: 5rem auto 0;
+      padding: 1.2rem;
+      border: 2px solid var(--ink);
+      background: var(--blue);
+      color: white;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(1.3rem, 3vw, 2.4rem);
+      font-weight: 700;
+      text-align: center;
+      transform: rotate(-1deg);
+      box-shadow: 10px 10px 0 var(--yellow);
+    }
+
+    /* Movement 04 — failure gallery */
+    .reverse {
+      background:
+        repeating-linear-gradient(-45deg, #171d20 0 18px, #202a2f 18px 36px);
+      color: var(--cream);
+    }
+
+    .reverse .section-label b { -webkit-text-stroke-color: var(--coral); }
+    .hazard {
+      max-width: 1250px;
+      margin: auto;
+    }
+
+    .failure-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+    }
+
+    .failure {
+      position: relative;
+      min-height: 220px;
+      padding: 1.3rem;
+      overflow: hidden;
+      border: 1px solid rgba(255, 250, 240, .6);
+      background: rgba(12, 17, 19, .82);
+      transition: .25s;
+    }
+
+    .failure:hover {
+      border-color: var(--coral);
+      transform: translateY(-5px);
+      box-shadow: 0 0 30px rgba(255, 107, 94, .22);
+    }
+
+    .failure::before {
+      content: "FAILURE MODE";
+      display: block;
+      width: fit-content;
+      margin-bottom: 2rem;
+      padding: .35rem .5rem;
+      color: var(--ink);
+      background: var(--coral);
+      font-size: .65rem;
+      font-weight: 900;
+      letter-spacing: .08em;
+    }
+
+    .failure b {
+      display: block;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 1.35rem;
+      line-height: 1.15;
+    }
+
+    .failure span {
+      position: absolute;
+      right: -1rem;
+      bottom: -2.2rem;
+      color: rgba(255, 107, 94, .11);
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 8rem;
+      font-weight: 900;
+    }
+
+    .defenses {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: .8rem;
+      margin-top: 4rem;
+    }
+
+    .defenses div {
+      padding: .85rem 1rem;
+      border: 2px solid var(--ink);
+      color: var(--ink);
+      background: var(--green);
+      font-weight: 900;
+      box-shadow: 5px 5px 0 var(--cream);
+      transform: rotate(var(--tilt, 0deg));
+    }
+
+    /* Finale — the safety loop */
+    .synthesis {
+      min-height: 120vh;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at center, rgba(54, 217, 208, .34), transparent 28%),
+        radial-gradient(circle at center, var(--cream) 0 42%, var(--yellow) 42% 43%, var(--blue) 43% 44%, var(--ink) 44% 100%);
+      color: var(--cream);
+    }
+
+    .finale {
+      position: relative;
+      width: min(92vw, 1050px);
+      aspect-ratio: 1.25;
+      display: grid;
+      place-items: center;
+    }
+
+    .finale-title {
+      position: relative;
+      z-index: 4;
+      width: 42%;
+      aspect-ratio: 1;
+      display: grid;
+      place-content: center;
+      padding: 2rem;
+      border: 3px solid var(--ink);
+      border-radius: 50%;
+      color: var(--ink);
+      background: var(--cream);
+      text-align: center;
+      box-shadow: 0 0 0 12px var(--cyan), 0 0 80px rgba(54, 217, 208, .7);
+    }
+
+    .finale-title small {
+      font-size: .7rem;
+      font-weight: 900;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+    }
+
+    .finale-title h2 {
+      margin: .65rem 0;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(2.3rem, 6vw, 5.3rem);
+      line-height: .78;
+      letter-spacing: -.06em;
+    }
+
+    .finale-title p { margin: .6rem 0 0; font-size: clamp(.68rem, 1.3vw, .9rem); line-height: 1.5; }
+
+    .orbit {
+      position: absolute;
+      inset: 6%;
+      border: 2px dashed rgba(255, 250, 240, .4);
+      border-radius: 50%;
+      animation: rotate 32s linear infinite;
+    }
+
+    @keyframes rotate { to { transform: rotate(360deg); } }
+
+    .loop-node {
+      position: absolute;
+      z-index: 5;
+      width: clamp(150px, 21vw, 230px);
+      padding: 1.2rem;
+      border: 2px solid var(--ink);
+      color: var(--ink);
+      background: var(--cream);
+      box-shadow: 8px 8px 0 var(--ink);
+      text-align: center;
+    }
+
+    .loop-node b {
+      display: block;
+      margin-bottom: .35rem;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(1.15rem, 2.5vw, 1.8rem);
+    }
+
+    .loop-node span { font-size: .72rem; line-height: 1.35; }
+    .bind { left: 2%; top: 10%; background: var(--cyan); transform: rotate(-3deg); }
+    .confirm { right: 2%; top: 10%; background: var(--yellow); transform: rotate(3deg); }
+    .undo { right: 2%; bottom: 8%; background: #c7baff; transform: rotate(-2deg); }
+    .copy { left: 2%; bottom: 8%; background: #ffc3bd; transform: rotate(2deg); }
+
+    .loop-arrow {
+      position: absolute;
+      z-index: 2;
+      color: var(--yellow);
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(2rem, 5vw, 5rem);
+      font-weight: 900;
+    }
+
+    .arrow-a { top: 2%; left: 49%; transform: rotate(30deg); }
+    .arrow-b { right: 3%; top: 48%; transform: rotate(120deg); }
+    .arrow-c { bottom: 1%; left: 48%; transform: rotate(210deg); }
+    .arrow-d { left: 3%; top: 48%; transform: rotate(300deg); }
+
+    .scale-answer {
+      position: absolute;
+      z-index: 6;
+      bottom: -7rem;
+      max-width: 850px;
+      padding: 1rem 1.3rem;
+      border: 1px solid rgba(255, 250, 240, .55);
+      background: rgba(16, 33, 43, .82);
+      text-align: center;
+      line-height: 1.55;
+    }
+
+    .scale-answer strong { color: var(--cyan); }
+
+    .closing {
+      padding: 7rem 1.25rem 4rem;
+      border-top: 2px solid var(--ink);
+      background: var(--cream);
+      text-align: center;
+    }
+
+    .closing p {
+      max-width: 920px;
+      margin: auto;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(1.5rem, 3vw, 2.7rem);
+      font-weight: 700;
+      line-height: 1.25;
+    }
+
+    .closing footer {
+      margin-top: 4rem;
+      color: var(--muted);
+      font-size: .72rem;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(28px);
+      transition: opacity .65s ease, transform .65s ease;
+    }
+
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+
+    @media (max-width: 850px) {
+      .rail { display: none; }
+      .job-board { grid-template-columns: 1fr; }
+      .principle-ledger, .versions { grid-template-columns: 1fr; }
+      .principle-ledger article:nth-child(2) { transform: none; }
+      .failure-grid { grid-template-columns: repeat(2, 1fr); }
+      .finale { aspect-ratio: .82; margin-bottom: 8rem; }
+      .finale-title { width: 56%; }
+      .loop-node { width: 42%; }
+      .bind, .confirm { top: 4%; }
+      .undo, .copy { bottom: 2%; }
+      .scale-answer { bottom: -9rem; }
+    }
+
+    @media (max-width: 560px) {
+      h1 { font-size: 20vw; }
+      h1 span { transform: none; }
+      .hero { padding: 5rem 1.25rem; }
+      .section-label { align-items: flex-start; }
+      .section-label b { font-size: 4rem; }
+      .failure-grid { grid-template-columns: 1fr; }
+      .specimen { margin-bottom: 2rem; }
+      .piece::before { display: none; }
+      .instant-reflection { flex-direction: column; }
+      .instant-reflection i { transform: rotate(90deg); }
+      .finale { width: 100%; min-height: 760px; }
+      .finale-title { width: 64%; }
+      .loop-node { width: 47%; padding: .8rem; }
+      .loop-node span { display: none; }
+      .scale-answer { bottom: -4rem; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
+      .reveal { opacity: 1; transform: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="progress" aria-hidden="true"></div>
+  <nav class="rail" aria-label="Session movements">
+    <a href="#opening" title="Opening"></a>
+    <a href="#job" title="Job to Be Done"></a>
+    <a href="#principles" title="First Principles"></a>
+    <a href="#morphology" title="Morphological Analysis"></a>
+    <a href="#reverse" title="Reverse Brainstorming"></a>
+    <a href="#synthesis" title="Synthesis"></a>
+  </nav>
+
+  <header class="hero" id="opening">
+    <div class="eyebrow">Facilitator-chosen expedition · 22 Sep 2026</div>
+    <h1>Make the URL <span>manageable.</span></h1>
+    <p class="hero-copy">
+      A brainstorming keepsake for a page that divides any pasted URL into pieces,
+      lets developers find and safely change exactly what they intend, and keeps
+      the assembled result trustworthy from first edit to final copy.
+    </p>
+    <div class="route-strip" aria-label="A URL divided into visual pieces">
+      <span>https://</span>
+      <span class="domain">app.example.com</span>
+      <span class="path">/projects</span>
+      <span class="path">/42</span>
+      <span class="query">?view=board</span>
+      <span class="query">&amp;filter=open</span>
+    </div>
+  </header>
+
+  <main>
+    <section class="job" id="job">
+      <div class="section-label reveal">
+        <b>01</b>
+        <div>Technique
+          <h2>Job to Be Done</h2>
+        </div>
+      </div>
+
+      <div class="job-board">
+        <article class="job-statement reveal">
+          <p>
+            When a developer needs to validate a URL-driven scenario,
+            help them <mark>inspect current values</mark> and
+            <mark>alter only the intended piece</mark> so they can test
+            behavior with control and confidence.
+          </p>
+        </article>
+
+        <aside class="friction reveal">
+          <div class="friction-card">
+            <strong>The friction</strong>
+            Unguided editing can change more than intended.
+          </div>
+          <div class="friction-card">
+            <strong>The hunt</strong>
+            The exact domain, path segment, or query parameter can be hard to locate.
+          </div>
+          <div class="friction-card">
+            <strong>The unlock</strong>
+            A guided interface is itself a source of control and confidence.
+          </div>
+        </aside>
+
+        <div class="job-tools reveal" aria-label="Capabilities emerging from the job">
+          <span>Accept any pasted URL</span>
+          <span>Show every piece</span>
+          <span>Search quickly</span>
+          <span>Edit securely</span>
+          <span>Add parameters</span>
+          <span>Remove parameters</span>
+          <span>Undo with Ctrl+Z</span>
+        </div>
+
+        <p class="scope-note reveal">
+          FOCUS LOCKED: URL changing is the core job. Postman and Insomnia preparation stays outside the required scope.
+        </p>
+      </div>
+    </section>
+
+    <section class="principles" id="principles">
+      <div class="section-label reveal">
+        <b>02</b>
+        <div>Technique
+          <h2>First Principles Thinking</h2>
+        </div>
+      </div>
+
+      <div class="anatomy">
+        <div class="specimen reveal" aria-label="Anatomy of a manageable URL">
+          <span class="piece protocol">https://</span>
+          <span class="piece domain-piece">shop.example.com</span>
+          <span class="piece path-piece">/catalog</span>
+          <span class="piece path-piece">/shoes</span>
+          <span class="piece path-piece">/7</span>
+          <span class="piece query-piece">?color=blue</span>
+          <span class="piece query-piece">&amp;size=42</span>
+        </div>
+
+        <div class="principle-ledger">
+          <article class="reveal">
+            <div class="icon">D</div>
+            <h3>Domain: useful, uncommon</h3>
+            <p>Expose it for management, but keep validation minimal. Protocol does not earn a management surface.</p>
+          </article>
+          <article class="reveal">
+            <div class="icon">/</div>
+            <h3>Path: every segment counts</h3>
+            <p>Everything after the domain ending becomes path content. Every slash-delimited segment is independently manageable, with no minimum size.</p>
+          </article>
+          <article class="reveal">
+            <div class="icon">?</div>
+            <h3>Query: a complete toolkit</h3>
+            <p>Edit, remove, add, and potentially reorder query parameters while preserving a clear view of the resulting URL.</p>
+          </article>
+        </div>
+
+        <div class="instant-reflection reveal" aria-label="Immediate synchronization principle">
+          <span>Change one piece</span>
+          <i>⇄</i>
+          <span>See the original URL update immediately</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="morphology" id="morphology">
+      <div class="section-label reveal">
+        <b>03</b>
+        <div>Technique
+          <h2>Morphological Analysis</h2>
+        </div>
+      </div>
+
+      <div class="matrix-wrap reveal">
+        <div class="matrix" aria-label="URL management possibility matrix">
+          <div class="cell axis">Dimension</div>
+          <div class="cell axis">Find</div>
+          <div class="cell axis">Change</div>
+          <div class="cell axis">Understand</div>
+          <div class="cell axis">Recover</div>
+
+          <div class="cell axis">Pieces</div>
+          <div class="cell"><small>Group</small>Organize pieces by type while preserving order.</div>
+          <div class="cell"><small>Direct</small>Click an input and edit its value in place.</div>
+          <div class="cell"><small>Color</small>Distinguish URL piece types at a glance.</div>
+          <div class="cell"><small>Remove</small>Use a dedicated, explicit action.</div>
+
+          <div class="cell axis">Whole URL</div>
+          <div class="cell"><small>Search</small>Locate the intended piece without losing context.</div>
+          <div class="cell"><small>Reparse</small>Editing the whole URL updates every parsed element.</div>
+          <div class="cell"><small>Reflect</small>Show where the change originated and its counterpart.</div>
+          <div class="cell"><small>History</small>Undo step by step to the initial pasted state.</div>
+
+          <div class="cell axis">Queries</div>
+          <div class="cell"><small>Place</small>Keep query parameters together at the bottom.</div>
+          <div class="cell"><small>Arrange</small>Add, remove, edit, and move parameters.</div>
+          <div class="cell"><small>Confirm</small>Use a non-blocking message after every change.</div>
+          <div class="cell"><small>Trust</small>Copy only the latest synchronized URL.</div>
+        </div>
+      </div>
+
+      <div class="versions" aria-label="Three interface arrangements">
+        <article class="version reveal">
+          <h3>A</h3>
+          <div class="wire-url"></div>
+          <div class="wire-stack"><i></i><i></i><i></i><i></i></div>
+          <p>Full URL above, a vertical piece list below, inline editing, and a bottom-right confirmation with an undo action.</p>
+        </article>
+        <article class="version reveal">
+          <h3>B</h3>
+          <div class="wire-url"></div>
+          <div class="wire-row"><i></i><i></i><i></i><i></i></div>
+          <p>Full URL above, pieces flowing left to right, click-to-edit boxes, bottom-right confirmation, and Ctrl+Z-only undo.</p>
+        </article>
+        <article class="version reveal">
+          <h3>C</h3>
+          <div class="wire-split"><i></i><i></i></div>
+          <p>Full URL on the left, a vertical piece list on the right, click-to-edit, confirmation at the top, and Ctrl+Z undo.</p>
+        </article>
+      </div>
+
+      <div class="binding-ribbon reveal">
+        Two-way binding is the invariant: edit either representation and the other becomes true.
+      </div>
+    </section>
+
+    <section class="reverse" id="reverse">
+      <div class="section-label reveal">
+        <b>04</b>
+        <div>Technique
+          <h2>Reverse Brainstorming</h2>
+        </div>
+      </div>
+
+      <div class="hazard">
+        <div class="failure-grid">
+          <article class="failure reveal"><b>Parsed pieces drift away from the full URL.</b><span>×</span></article>
+          <article class="failure reveal"><b>A mistaken change cannot be undone.</b><span>×</span></article>
+          <article class="failure reveal"><b>An edit happens with no visible confirmation.</b><span>×</span></article>
+          <article class="failure reveal"><b>A large URL leaves some pieces unrendered.</b><span>×</span></article>
+          <article class="failure reveal"><b>A long piece list freezes the page.</b><span>×</span></article>
+          <article class="failure reveal"><b>URL pieces overflow the available layout.</b><span>×</span></article>
+          <article class="failure reveal"><b>Copy returns an outdated URL.</b><span>×</span></article>
+          <article class="failure reveal"><b>The finished URL is difficult to copy.</b><span>×</span></article>
+        </div>
+
+        <div class="defenses reveal" aria-label="Decisions made in response to failure modes">
+          <div style="--tilt:-2deg">Validate editable inputs</div>
+          <div style="--tilt:1deg">Undo every change</div>
+          <div style="--tilt:-1deg">Return to initial state</div>
+          <div style="--tilt:2deg">Copy latest value</div>
+          <div style="--tilt:-1deg">Render resiliently at scale</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="synthesis" id="synthesis">
+      <div class="finale">
+        <div class="orbit" aria-hidden="true"></div>
+        <span class="loop-arrow arrow-a" aria-hidden="true">↻</span>
+        <span class="loop-arrow arrow-b" aria-hidden="true">↻</span>
+        <span class="loop-arrow arrow-c" aria-hidden="true">↻</span>
+        <span class="loop-arrow arrow-d" aria-hidden="true">↻</span>
+
+        <article class="loop-node bind reveal">
+          <b>Bind</b>
+          <span>Keep the full URL and every parsed piece consistent.</span>
+        </article>
+        <article class="loop-node confirm reveal">
+          <b>Confirm</b>
+          <span>Make each edit, removal, and rearrangement legible.</span>
+        </article>
+        <article class="loop-node undo reveal">
+          <b>Undo</b>
+          <span>Reverse every step all the way to the initially pasted URL.</span>
+        </article>
+        <article class="loop-node copy reveal">
+          <b>Copy</b>
+          <span>Deliver the latest synchronized result, every time.</span>
+        </article>
+
+        <div class="finale-title reveal">
+          <small>Synthesis</small>
+          <h2>The Safety Loop</h2>
+          <p>Consistent. Legible. Reversible. Trustworthy.</p>
+        </div>
+
+        <p class="scale-answer reveal">
+          <strong>The companion system:</strong> search, grouping, color coding, and resilient rendering
+          solve one shared scale problem—finding and editing the intended piece without losing context.
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <div class="closing">
+    <p>
+      The page is not merely a URL editor. It is a controlled workspace where every piece can move
+      without the whole becoming uncertain.
+    </p>
+    <footer>URL slice management page · Facilitated brainstorm · Complete</footer>
+  </div>
+
+  <script>
+    const progress = document.querySelector(".progress");
+    const reveals = document.querySelectorAll(".reveal");
+
+    const updateProgress = () => {
+      const scrollable = document.documentElement.scrollHeight - innerHeight;
+      const ratio = scrollable > 0 ? scrollY / scrollable : 0;
+      progress.style.width = `${Math.min(100, Math.max(0, ratio * 100))}%`;
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("visible");
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.12 });
+
+    reveals.forEach((element) => observer.observe(element));
+    addEventListener("scroll", updateProgress, { passive: true });
+    updateProgress();
+  </script>
+</body>
+</html>
