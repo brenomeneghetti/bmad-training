@@ -204,13 +204,21 @@ Patterns, and Story 2.7.
 
 > one versioned evidence manifest and evaluator act as the sole
 > implementation-entry and release oracle
+>
+> any required gate fixture mismatch blocks implementation entry or release as
+> mapped by the manifest
 
 **New**
 
 > one versioned evidence manifest and evaluator act as the sole
 > story-completion and release oracle
+>
+> any required gate fixture mismatch blocks completion of the mapped story or
+> release as mapped by the manifest; implementation may begin to produce that
+> evidence
 
-**Rationale:** Matches the progressive evidence model.
+**Rationale:** Matches the progressive evidence model and removes the remaining
+entry-gate wording.
 
 ## 5. Implementation Handoff
 
@@ -254,10 +262,15 @@ not alter MVP scope, epic order, technology, or implementation behavior.
 - **Change trigger:** Readiness blockers caused by the circular AG evidence rule
   and contradictory Story 2.6 invalid-Draft criterion.
 - **Approval:** Approved without conditions by Breno on 2026-09-29.
+- **Incremental review:** All five detailed edit proposals reconfirmed by Breno
+  on 2026-09-29.
+- **Final approval:** Reconfirmed without conditions by Breno on 2026-09-29.
 - **Scope:** Moderate.
 - **Artifacts authorized for modification:** `ARCHITECTURE-SPINE.md`,
   `EXPERIENCE.md`, and `epics.md`.
 - **Handoff:** Solution Architect owns AD-14 validation; Product Owner /
   Developer owns UX and backlog edits; Sprint Planning owner reruns readiness
   and generates tracking only after PASS.
+- **Handoff status:** Complete; the approved source-artifact edits remain
+  pending implementation.
 - **Sprint status:** No existing `sprint-status.yaml`; no migration required.
