@@ -2,7 +2,7 @@
 title: "PRD: URL Piece Management"
 status: final
 created: 2026-09-24
-updated: 2026-09-24
+updated: 2026-09-29
 ---
 
 # PRD: URL Piece Management
@@ -19,9 +19,10 @@ updated: 2026-09-24
   250 Query Parameters.
 - **Release evidence:** At least 90% unassisted completion by 5–8 representative
   developers and zero critical synchronization, Undo, or stale-Copy failures.
-- **Decision required:** Define whether Structured View mutations are disabled
-  during an invalid Draft URL or discard that draft and restore the Last Valid
-  URL. The user explicitly accepted this unresolved release risk.
+- **Invalid Draft policy:** Structured View remains editable against Last Valid
+  while preserving invalid Draft text. Close the Full URL edit before the first
+  structured mutation, record any baseline-to-last-valid transition, and then
+  append structured mutations chronologically.
 
 ## 0. Document Purpose
 
@@ -501,8 +502,12 @@ interrupting the editing flow.
   URL content. Mitigate by treating URL payloads as prohibited telemetry and
   verifying outbound requests.
 
-## 9. Decision Required
+## 9. Invalid Draft Decision
 
-1. While the Draft URL is invalid, are Structured View mutations disabled, or
-   does starting a Structured View mutation discard the invalid draft and
-   restore the Last Valid URL?
+While the Draft URL is invalid, Structured View mutations remain enabled and
+operate against Last Valid URL without changing the Draft text. Before the first
+such mutation, close the Full URL edit and record its baseline-to-last-valid
+transition when those snapshots differ. Append each structured mutation
+chronologically against Last Valid. When the Full URL is later corrected, use
+the latest Last Valid snapshot as its baseline rather than the stale focus-entry
+snapshot.

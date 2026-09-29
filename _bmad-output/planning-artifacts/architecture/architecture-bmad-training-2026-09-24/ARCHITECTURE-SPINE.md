@@ -7,7 +7,7 @@ paradigm: Functional Core / Imperative Shell with unidirectional state transitio
 scope: URL Piece Management V1 browser application
 status: final
 created: 2026-09-24
-updated: 2026-09-24
+updated: 2026-09-29
 binds: [UJ-1, FR-1..FR-16, NFR-1..NFR-17]
 sources:
   - ../../prds/prd-bmad-training-2026-09-24/prd.md
@@ -69,13 +69,24 @@ flowchart LR
 - **Prevents:** Double encoding, encoded delimiters becoming structure, and
   different editors applying incompatible percent rules.
 - **Rule:** All non-domain Managed Piece fields display and edit **raw URL
-  component text**, not decoded text. One component-aware codec recognizes
-  existing valid percent triplets and preserves them byte-for-byte, including
-  hex casing; it percent-encodes newly entered literal structural delimiters
-  and Unicode exactly once with uppercase hex. A Managed Piece commit cannot
-  introduce a malformed percent triplet. A malformed sequence already accepted
-  in a Full URL remains visible as raw text with a field error until corrected;
-  unrelated mutations and Copy preserve it exactly.
+  component text**, not decoded text. Each edit command carries the prior token
+  revision, DOM-compatible UTF-16 `selectionStart`/`selectionEnd`, and
+  `insertedText`. The reducer rejects a stale revision or a range that splits an
+  existing percent triplet; it never rebases ranges. Only `insertedText` passes
+  through the codec; untouched prefix and suffix ranges retain exact bytes.
+  Replacing raw Unicode with the same visible Unicode is therefore an edit and
+  encodes the inserted span. One codec tokenizes inserted text left-to-right:
+  complete `%[0-9A-Fa-f]{2}` triplets are opaque and retain their bytes and hex
+  casing; a bare or partial `%` rejects the commit. Literal `+` remains `+`;
+  Unicode is never normalized and new Unicode is UTF-8 percent-encoded with
+  uppercase hex. New path text percent-encodes the WHATWG path set plus `/` and
+  `\`; query keys encode the special-query set plus `&` and `=`; query values
+  encode the special-query set plus `&`. These exhaustive profiles include C0
+  controls, space, `"`, `#`, `<`, and `>`; the path profile additionally
+  includes `?`, `^`, `` ` ``, `{`, and `}`, and the special-query profile
+  includes `'`. A malformed sequence already accepted in a Full URL remains
+  visible with a field error until corrected; every untouched substring remains
+  byte-identical through unrelated mutations and Copy.
 
 ### AD-4 — Deterministic dual IDN conversion [ADOPTED]
 
@@ -104,9 +115,11 @@ flowchart LR
   focus intents by ID; the shell mounts the target before applying focus.
   Search and local invalid field drafts are not History. Full URL reparsing
   preserves the Domain ID, then reconciles path and query IDs independently by
-  an exact-token longest common subsequence with ties resolved by earliest old
-  position then earliest new position; every unmatched new token receives a
-  fresh ID. Undo restores the IDs held by its snapshot.
+  an exact-token longest common subsequence. A path token key is `rawSegment`;
+  a query token key is `{rawKey, equalsPresent, rawValue}` and excludes
+  `separatorBefore`. Ties resolve by earliest old position then earliest new
+  position; every unmatched new token receives a fresh ID. Undo restores the
+  IDs held by its snapshot.
 
 ### AD-6 — Close-and-rebase is a state transition [ADOPTED]
 
@@ -115,14 +128,20 @@ flowchart LR
   stale history branch.
 - **Rule:** A Full URL focus session captures one committed baseline and updates
   its last accepted valid snapshot without appending per-keystroke History.
-  Blur, Enter, or another product mutation closes at most one baseline-to-valid
-  entry. Structured changes during an invalid Draft append against the latest
-  Last Valid snapshot while preserving Draft text. A later valid Full URL
-  commit replaces that latest snapshot as one new entry; it does not merge
-  token-by-token with the invalid Draft. The controller dispatches
+  Blur or Enter closes at most one baseline-to-last-valid entry. Before any
+  other product mutation, the same reducer transaction first closes the Full
+  URL edit and appends that entry when the two snapshots differ; it then applies
+  the product mutation against Last Valid and appends a separate chronological
+  entry. Invalid Draft text remains unchanged. A later valid Full URL input
+  starts from the latest Last Valid snapshot and, when closed, appends one
+  latest-last-valid-to-corrected entry; it never replaces or merges prior
+  structured entries. Therefore the first Undo always reverses the most recent
+  committed product intent. The controller dispatches
   `beginFullUrlEdit`, `inputFullUrl`, and `closeFullUrlEdit(reason)` explicitly;
-  every non-Full-URL product command first dispatches `closeFullUrlEdit` in the
-  same reducer transaction, so DOM event ordering cannot change History.
+  blur, Enter, and every non-Full-URL command that can commit a URL mutation
+  first dispatch `closeFullUrlEdit` in the same reducer transaction, so DOM
+  event ordering cannot change History. Search, focus, selection, scrolling,
+  and non-mutating validation neither close the edit nor create History.
 
 ### AD-7 — Full DOM is the V1 accessibility representation [ADOPTED]
 
@@ -141,9 +160,13 @@ flowchart LR
   models and duplicating parser behavior.
 - **Rule:** Parsing and serialization execute synchronously in the pure core and
   publish through one reducer transition. Scheduled Full URL parses carry an
-  input snapshot and monotonic generation; stale generations are discarded.
-  `core/session` alone owns generation, busy, validation, and publication state;
-  the UI cannot publish parser results or partial rows.
+  input snapshot, monotonic generation, session epoch, and originating committed
+  revision. Publication requires all four to match current reducer state.
+  Every accepted product mutation advances the session epoch and invalidates
+  every pending parse in the same transaction; stale completions acknowledge
+  without publishing state. `core/session` alone owns epoch, generation, busy,
+  validation, and publication state; the UI cannot publish parser results or
+  partial rows.
   Add a Web Worker adapter only if reference-hardware profiling exceeds 50 ms
   p95; the worker must call the same core and return complete results only.
 
@@ -205,28 +228,77 @@ flowchart LR
   failed Copy appearing successful, or feedback channels overwriting each other.
 - **Rule:** Each transition may append an `EffectIntent` carrying monotonic
   `effectId`, originating `stateRevision`, kind, and typed payload. The shell
-  executes intents after commit in ID order and acknowledges each once; stale
-  revisions cannot mutate state. Focus execution resolves the immutable Piece
-  ID after render and applies the UX fallback table. Clipboard completion
-  dispatches success/failure back to the reducer; failure creates the exact
-  selected safe-copy value and focus intent. `core/session` owns separate
-  validation, polite FIFO/coalescing, and actionable-alert queues with the UX
-  timing and repeat rules; components only render them.
+  executes strictly serially after commit: it starts `effectId n+1` only after
+  `n` reaches exactly one reducer acknowledgement. Async adapters have typed,
+  bounded timeout outcomes. Non-clipboard stale outcomes acknowledge without
+  committed-state changes or new effects. Immediately before invoking any
+  non-clipboard adapter, the executor dispatches a reducer-owned `claimEffect`
+  transition; a mismatched revision or typed target precondition acknowledges
+  the intent without invoking the adapter or touching the DOM. No
+  operation-specific focus intent survives a revision change.
+
+  A Copy intent captures `attemptedSerialized`. Before invoking the Clipboard
+  API, the executor cancels it if that value is no longer the current Copy
+  source, acknowledges it as superseded, and emits non-success feedback. Once
+  invoked, a user-visible timeout does not mark the underlying non-cancellable
+  write settled; that first timeout immediately creates safe-copy recovery from
+  the attempt's captured serialization while retaining the unresolved-write
+  fence. While that write remains unresolved, a later Copy attempt becomes the
+  new `latestCopyAttemptId`, replaces recovery with its own captured
+  serialization, and does not invoke the Clipboard API. Every eventual success,
+  failure, or timeout is reported truthfully, but an outcome older than
+  `latestCopyAttemptId` cannot create, focus, or retain recovery. Current
+  failure recovery creates `safe-copy-readonly` from the exact attempted value,
+  preserves Draft and History, focuses and selects it, exposes persistent
+  actionable guidance for native keyboard, touch, VoiceOver, and TalkBack Copy,
+  and keeps it until the next Copy attempt or URL mutation.
+
+  Focus intents are typed by operation and implement the complete UX
+  operation/Undo transition tables, including same/opposite-subcontrol, Clear
+  Search, after-list Add, Structured View heading, Full URL, and filtered-item
+  announcements. A nearest-row tie searches next then previous in
+  post-transition source order.
+
+  `core/session` owns separate validation, polite FIFO/coalescing, and
+  actionable-alert queues and implements every UX timing, precedence,
+  coalescing, repeat-node, IME-suppression, and persistence rule. When a
+  committed outcome would start after six seconds, every committed outcome
+  participating in that overflow—including the currently exposed, pending,
+  and incoming outcomes—is copied exactly once into persistent operation
+  history. Pending committed outcomes leave the FIFO; the current message
+  completes its minimum exposure; one summary is enqueued with the count of all
+  promoted outcomes. Components only render these reducer-owned states.
 
 ### AD-14 — Release evidence is an architecture gate [ADOPTED]
 
 - **Binds:** UJ-1, SM-1..SM-4, NFR-8..NFR-17, AG-1..AG-3
 - **Prevents:** A semantically correct unit suite from shipping an inaccessible,
   browser-specific, slow, or privacy-leaking integration.
-- **Rule:** Release is blocked until the shared corpus passes: exact semantic
+- **Rule:** An implementation story touching AG-1, AG-2, or AG-3 is blocked
+  until that gate's prototype or fixture exit evidence passes. Release is
+  blocked until the shared corpus passes: exact semantic
   and History goldens; 1-second initial parse and 100 ms interaction targets on
   4-core/8-GB reference hardware; latest-two-major Chrome, Firefox, Edge, and
   Safari; the named desktop/mobile browser-AT matrix; keyboard, IME, focus,
   320px/400% reflow, forced-colors, text-spacing, network/storage, clipboard
   fallback, and WCAG 2.2 AA checks; plus 5–8 representative developers with at
   least 90% unassisted completion and zero critical synchronization, Undo, or
-  stale-Copy failures. Exact tested versions and artifact digest attach to the
-  release record.
+  stale-Copy failures. AG-1 through AG-3 are **design closed; implementation
+  evidence pending** until a versioned matrix maps every bound FR, NFR, UX case,
+  and gate fixture to an automated or manual result with no required cell
+  missing. One versioned, machine-validated evidence manifest and evaluator is
+  the sole implementation-entry and release oracle. The schema fixes required
+  cell IDs, story-to-gate mapping, evidence owner/sign-off, and terminal states;
+  a mandatory cell passes only as `pass`, never `waived`, `skipped`, or merely
+  present. Representative-user success is whole-journey participants completing
+  unassisted divided by all participants, without rounding, and must be at least
+  0.90. A critical synchronization failure is any settled view or Copy source
+  differing from its committed snapshot; a critical Undo failure is any
+  mismatch in the prior exact serialization, identity, or required focus; a
+  critical stale-Copy failure is any write/recovery not equal to its attempt's
+  captured serialization or any older attempt overwriting a newer one. Any such
+  failure blocks the gate. Exact tested versions, artifact digest, matrix
+  version, evaluator version, and evidence links attach to the release record.
 
 ## Consistency Conventions
 
@@ -247,9 +319,9 @@ flowchart LR
 
 | Gate | Closure | Required evidence |
 | --- | --- | --- |
-| AG-1 — Parser/serializer | Closed by AD-2, AD-3, AD-5, AD-6, and AD-11 | Cross-browser goldens cover Draft/Current/Last Valid, untouched casing and delimiters, malformed percent text, Fragment, exact History, restored serialization, and Copy. |
-| AG-2 — IDN | Closed by AD-4 and AD-11 | Bidirectional fixtures include `faß.de`, combining-mark equivalents, Arabic/Hebrew labels, uppercase Punycode, deviation characters, invalid Punycode, and mixed-script confusables. |
-| AG-3 — Accessible virtualization | Closed for V1 by AD-7 | Full-DOM 250+ fixture exposes every row exactly once in browse/focus modes; no virtualization equivalence claim is needed. |
+| AG-1 — Parser/serializer | Design closed by AD-2, AD-3, AD-5, AD-6, and AD-11; evidence pending | Cross-browser goldens cover Draft/Current/Last Valid, untouched casing and delimiters, malformed percent text, Fragment, exact History, restored serialization, and Copy. |
+| AG-2 — IDN | Design closed by AD-4 and AD-11; evidence pending | Bidirectional fixtures include `faß.de`, combining-mark equivalents, Arabic/Hebrew labels, uppercase Punycode, deviation characters, invalid Punycode, and mixed-script confusables. |
+| AG-3 — Accessible virtualization | Design closed for V1 by AD-7; evidence pending | Full-DOM 250+ fixture exposes every row exactly once in browse/focus modes; no virtualization equivalence claim is needed. |
 
 ## Stack
 

@@ -1,7 +1,7 @@
 # Architecture Reviewer Gate — Good-Spine Rubric Walk
 
-**Artifact:** `ARCHITECTURE-SPINE.md`  
-**Review date:** 2026-09-24  
+**Artifact:** `ARCHITECTURE-SPINE.md`
+**Review date:** 2026-09-24
 **Mode:** Validate only; the spine was not edited.
 
 ## Gate verdict

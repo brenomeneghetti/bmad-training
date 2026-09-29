@@ -121,4 +121,3 @@ Adversarial Reviewer Gate: construct independently valid implementations one lev
 - **Trigger condition:** Core golden tests read raw input and expected serialization, component tests derive expected piece rows themselves, and Playwright tests derive history expectations from UI actions. All consume one versioned fixture corpus, but independent runners can interpret missing fields, IDs, history boundaries, and expected effects differently.
 - **Guard snippet:** Define a versioned fixture schema with a single normative oracle per step: initial state, command, exact resulting state projection, piece IDs, history entries, effects, adapter outcomes, and serialization; validate every runner against the same schema before executing cases.
 - **Potential consequence:** The “shared” corpus can certify mutually incompatible implementations and fail to catch the seams above.
-

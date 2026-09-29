@@ -1,8 +1,8 @@
 # UX-to-Architecture Reconciliation Review
 
-**Reviewed:** 2026-09-24  
-**UX inputs:** `DESIGN.md`, `EXPERIENCE.md`  
-**Architecture input:** `ARCHITECTURE-SPINE.md`  
+**Reviewed:** 2026-09-24
+**UX inputs:** `DESIGN.md`, `EXPERIENCE.md`
+**Architecture input:** `ARCHITECTURE-SPINE.md`
 **Verdict:** **Not reconciled for implementation handoff.** The architecture preserves the principal URL, history, identity, privacy, and full-DOM decisions, but it does not close the UX architecture gates with traceable evidence and leaves several behavior/accessibility contracts without an architectural owner or executable release gate.
 
 ## What landed
