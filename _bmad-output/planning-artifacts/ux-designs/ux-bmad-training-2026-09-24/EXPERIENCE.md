@@ -36,7 +36,12 @@ Within Structured View, Managed Pieces remain in source order: Domain, ordered P
 
 ## Architecture Gates
 
-This UX package is ready for architecture handoff while its lifecycle status remains draft. Implementation stories are blocked until **every** gate below passes its prototype or fixture exit criteria:
+This UX package is ready for implementation handoff. AG-1 through AG-3 use
+progressive evidence: implementation may begin to produce mapped fixtures and
+results, but a story cannot be marked complete until every mandatory gate cell
+mapped to that story passes. Evidence mapped only to later capabilities does
+not block earlier stories. Release remains blocked until every gate below and
+every mandatory release cell passes its exit criteria:
 
 1. **AG-1 — Parser/serializer contract:** decide WHATWG acceptance, percent-octet normalization/casing, encoded `/`, `?`, `&`, `=`, and `#`, invalid percent sequences, Fragment preservation, and exact snapshot/Copy serialization. Exit: fixtures assert exact Draft, Current, Last Valid, Structured View, History, restored serialization, and copied strings across supported browsers, including empty/absent values and untouched content.
 2. **AG-2 — IDN mapping and serialization:** decide mapping profile, canonical stored form, normalization, accepted/rejected labels, display reconstruction, conversion failure, mixed-direction isolation, and exact Copy form. The mapping must cover both editable directions. Exit: round-trip fixtures pass for `faß.de`, combining-mark equivalents, Arabic/Hebrew labels, uppercase Punycode, deviation characters, and confusable mixed-script hosts.

@@ -109,7 +109,7 @@ NFR17: All required V1 data and actions must remain available without page-level
 - Execute revisioned effect intents serially with exactly one acknowledgement each, typed preconditions, stale-effect cancellation, bounded adapter outcomes, render-ready focus, and Copy attempt fencing that prevents an older result from replacing newer safe-copy recovery.
 - Implement reducer-owned, separate inline-validation, polite FIFO/coalescing, actionable-alert, and persistent operation-history channels with the UX timing, precedence, repetition, and overflow rules.
 - Create one versioned shared fixture corpus for core goldens, component interactions, and browser acceptance, covering exact URL semantics, malformed percent text, IDN/RTL, close-and-rebase History, immutable identity, privacy, Copy recovery, 20,000 characters, and 250+ entries.
-- Treat AG-1 parser/serializer, AG-2 IDN, and AG-3 full-DOM accessibility evidence as implementation gates. A machine-validated evidence manifest must map every mandatory FR, NFR, UX case, fixture, story, owner, result, tested version, artifact digest, and sign-off; mandatory cells pass only as `pass`.
+- Treat AG-1 parser/serializer, AG-2 IDN, and AG-3 full-DOM accessibility evidence as progressive story-completion gates and final release gates. Implementation may begin to produce mapped evidence; each story completes only when its mandatory mapped cells pass. Evidence mapped to later capabilities does not block earlier stories. A machine-validated evidence manifest must map every mandatory FR, NFR, UX case, fixture, story, owner, result, tested version, artifact digest, and sign-off; mandatory cells pass only as `pass`.
 - Release must additionally pass exact semantic/History goldens, performance targets, latest-two-major browser coverage, the named browser/AT matrix, keyboard/IME/focus/reflow/forced-colors/text-spacing/network-storage/clipboard checks, and 5–8 representative developers with at least 90% unassisted completion and zero critical synchronization, Undo, or stale-Copy failures.
 
 ### UX Design Requirements
@@ -791,8 +791,8 @@ So that I can make broad changes without receiving one mutation entry per keystr
 
 **Given** Full URL briefly becomes invalid during this story
 **When** validation settles
-**Then** the text remains visible as a Draft and Structured View continues to show Last Valid without presenting synchronization success
-**And** structured mutation controls are explicitly inactive with an explanation in this state rather than risking a stale branch.
+**Then** the text remains visible as an exact Draft and Structured View continues to show Last Valid without presenting synchronization success
+**And** structured mutation controls remain enabled against Last Valid; before the first such mutation, the reducer closes the Full URL edit and records any baseline-to-last-valid transition, then applies the structured mutation chronologically while preserving the Draft exactly, as specified in Story 2.7.
 
 **Given** exact continuous-edit and identity fixtures run across core, component, and supported browsers
 **When** tests cover many valid keystrokes, paste/replace, blur, Enter, pre-mutation close, IME, parse races, duplicates, LCS ties, and 20,000-character/250+ URLs
@@ -1111,13 +1111,13 @@ So that an artifact cannot be promoted unless its semantics, privacy, performanc
 
 **Given** a candidate artifact is built
 **When** release evaluation begins
-**Then** one versioned evidence manifest and evaluator act as the sole implementation-entry and release oracle, mapping stable required cells to FRs, NFRs, UX cases, architecture gates, fixtures, stories, owner/sign-off, terminal result, evidence link, tested version, matrix/evaluator version, and artifact digest
+**Then** one versioned evidence manifest and evaluator act as the sole story-completion and release oracle, mapping stable required cells to FRs, NFRs, UX cases, architecture gates, fixtures, stories, owner/sign-off, terminal result, evidence link, tested version, matrix/evaluator version, and artifact digest
 **And** a mandatory cell passes only as `pass`; `waived`, `skipped`, missing, duplicate, stale-digest, malformed, or unsupported terminal states fail evaluation.
 
 **Given** AG-1, AG-2, and AG-3 implementation evidence is evaluated
 **When** the shared corpus runs through core goldens, component interactions, and browser acceptance
 **Then** exact URL/Draft/Current/Last Valid semantics, History/Undo serialization and identity, IDN directions, Full-DOM 250+ exposure, focus, validation, Search, Add/Remove/Reorder, Copy, privacy, and capacity assertions agree across layers
-**And** any required gate fixture mismatch blocks implementation entry or release as mapped by the manifest.
+**And** any required gate fixture mismatch blocks completion of the mapped story or release as mapped by the manifest; implementation may begin to produce that evidence.
 
 **Given** performance evidence runs on hardware with at least four logical CPU cores and 8 GB RAM
 **When** the 20,000-character and 250+ entry fixtures exercise initial parse, Search, every edit/mutation, Undo, and Copy

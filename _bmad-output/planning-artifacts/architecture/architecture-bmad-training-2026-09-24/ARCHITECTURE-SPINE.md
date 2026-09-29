@@ -274,9 +274,13 @@ flowchart LR
 - **Binds:** UJ-1, SM-1..SM-4, NFR-8..NFR-17, AG-1..AG-3
 - **Prevents:** A semantically correct unit suite from shipping an inaccessible,
   browser-specific, slow, or privacy-leaking integration.
-- **Rule:** An implementation story touching AG-1, AG-2, or AG-3 is blocked
-  until that gate's prototype or fixture exit evidence passes. Release is
-  blocked until the shared corpus passes: exact semantic
+- **Rule:** AG-1 through AG-3 use progressive evidence. Implementation may
+  begin to produce a story's mapped fixtures and results. A story mapped to
+  mandatory gate cells cannot be marked complete until those cells pass for
+  that story's delivered behavior. Evidence from later capabilities is not a
+  prerequisite for starting or completing earlier stories unless the manifest
+  explicitly maps that cell to the earlier story. Release remains blocked until
+  the complete shared corpus and every mandatory release cell pass: exact semantic
   and History goldens; 1-second initial parse and 100 ms interaction targets on
   4-core/8-GB reference hardware; latest-two-major Chrome, Firefox, Edge, and
   Safari; the named desktop/mobile browser-AT matrix; keyboard, IME, focus,
@@ -287,7 +291,7 @@ flowchart LR
   evidence pending** until a versioned matrix maps every bound FR, NFR, UX case,
   and gate fixture to an automated or manual result with no required cell
   missing. One versioned, machine-validated evidence manifest and evaluator is
-  the sole implementation-entry and release oracle. The schema fixes required
+  the sole story-completion and release oracle. The schema fixes required
   cell IDs, story-to-gate mapping, evidence owner/sign-off, and terminal states;
   a mandatory cell passes only as `pass`, never `waived`, `skipped`, or merely
   present. Representative-user success is whole-journey participants completing
