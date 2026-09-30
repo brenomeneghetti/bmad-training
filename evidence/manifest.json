@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "epic": 1,
+  "artifact": "dist",
+  "cells": [
+    {
+      "id": "story-1-1-static-foundation",
+      "story": "1.1",
+      "status": "pass",
+      "owner": "automated",
+      "evidence": ["pnpm typecheck", "pnpm lint", "pnpm build"]
+    },
+    {
+      "id": "story-1-2-supported-intake",
+      "story": "1.2",
+      "status": "pass",
+      "owner": "automated",
+      "evidence": ["src/core/session/session.test.ts", "tests/workbench.spec.ts"]
+    },
+    {
+      "id": "story-1-3-lossless-pieces",
+      "story": "1.3",
+      "status": "pass",
+      "owner": "automated",
+      "evidence": ["src/core/url/parser.test.ts", "tests/workbench.spec.ts"]
+    },
+    {
+      "id": "story-1-4-idn-forms",
+      "story": "1.4",
+      "status": "pass",
+      "owner": "automated",
+      "evidence": ["src/core/idn/index.test.ts", "tests/workbench.spec.ts"]
+    },
+    {
+      "id": "story-1-5-complete-structured-view",
+      "story": "1.5",
+      "status": "pass",
+      "owner": "automated",
+      "evidence": ["src/app/workbench/Workbench.test.tsx", "tests/workbench.spec.ts"]
+    }
+  ]
+}
