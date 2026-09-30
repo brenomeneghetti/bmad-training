@@ -1,7 +1,12 @@
 import { createIdAllocator, type UrlProblem } from "../contracts";
 import { parseLosslessUrl, type LosslessUrl } from "../url";
 
-export type SessionPhase = "no-session" | "parsing" | "active" | "invalid-intake";
+export type SessionPhase =
+  | "no-session"
+  | "editing"
+  | "parsing"
+  | "active"
+  | "invalid-intake";
 
 export interface SessionState {
   readonly phase: SessionPhase;
@@ -45,7 +50,14 @@ export const sessionReducer = (
 ): SessionState => {
   switch (action.type) {
     case "inputChanged":
-      return { ...state, input: action.value, problem: null };
+      return {
+        ...state,
+        phase: state.snapshot ? "editing" : "no-session",
+        input: action.value,
+        generation: state.generation + 1,
+        pendingInput: null,
+        problem: null,
+      };
     case "parseStarted":
       return {
         ...state,

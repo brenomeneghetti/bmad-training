@@ -42,6 +42,28 @@ describe("session authority", () => {
     expect(settled.snapshot?.serialized).toBe("https://second.example/");
   });
 
+  it("invalidates a pending parse as soon as the editor changes", () => {
+    const entered = sessionReducer(initialSessionState, {
+      type: "inputChanged",
+      value: "https://first.example/",
+    });
+    const first = prepareParse(entered);
+    const parsing = sessionReducer(entered, first.start);
+    const edited = sessionReducer(parsing, {
+      type: "inputChanged",
+      value: "https://second.example/",
+    });
+    expect(sessionReducer(edited, first.complete())).toBe(edited);
+    expect(edited.snapshot).toBeNull();
+  });
+
+  it("preserves the trusted snapshot when IDN validation rejects replacement", () => {
+    const active = apply(initialSessionState, "https://example.com/");
+    const rejected = apply(active, "https://a..b/");
+    expect(rejected.problem?.code).toBe("invalid-domain");
+    expect(rejected.snapshot).toBe(active.snapshot);
+  });
+
   it("never recycles piece identities after a valid replacement", () => {
     const first = apply(initialSessionState, "https://example.com/a?x=1");
     const firstIds = new Set([

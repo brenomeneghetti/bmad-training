@@ -41,6 +41,15 @@ describe("URL Workbench", () => {
     );
   });
 
+  it("shows specific safety guidance for pasted line breaks", async () => {
+    const user = userEvent.setup();
+    render(<Workbench />);
+    const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
+    await user.type(editor, "https://example.com/a{enter}b");
+    await user.click(screen.getByRole("button", { name: "Apply URL" }));
+    expect(await screen.findByText(/Remove line breaks/)).toBeVisible();
+  });
+
   it("has the required landmark and heading structure", () => {
     render(<Workbench />);
     const main = screen.getByRole("main");

@@ -72,16 +72,24 @@ const scanPath = (raw: string, ids: IdAllocator): readonly PathPiece[] => {
 
 const scanQuery = (raw: string, ids: IdAllocator): readonly QueryPiece[] => {
   if (raw === "") return [];
-  return raw.split("&").map((entry, index) => {
+  const pieces: QueryPiece[] = [];
+  let start = 0;
+  let separatorBefore: QueryPiece["separatorBefore"] = "";
+  for (let index = 0; index <= raw.length; index += 1) {
+    if (index < raw.length && raw[index] !== "&") continue;
+    const entry = raw.slice(start, index);
     const equals = entry.indexOf("=");
-    return {
+    pieces.push({
       id: ids.next(),
-      separatorBefore: index === 0 ? "" : "&",
+      separatorBefore,
       rawKey: equals < 0 ? entry : entry.slice(0, equals),
       equalsPresent: equals >= 0,
       rawValue: equals < 0 ? "" : entry.slice(equals + 1),
-    };
-  });
+    });
+    separatorBefore = "&";
+    start = index + 1;
+  }
+  return pieces;
 };
 
 export const parseLosslessUrl = (
@@ -95,7 +103,7 @@ export const parseLosslessUrl = (
   if (
     [...input].some((character) => {
       const code = character.codePointAt(0) ?? 0;
-      return code <= 0x1f || code === 0x7f;
+      return code <= 0x1f || (code >= 0x7f && code <= 0x9f);
     })
   ) {
     return err(
@@ -126,9 +134,11 @@ export const parseLosslessUrl = (
   }
   if (!oracle.hostname) return err(intakeProblem("missing-host"));
 
-  const schemeEnd = input.indexOf("://");
-  if (schemeEnd < 0) return err(intakeProblem("invalid-url"));
-  const authorityStart = schemeEnd + 3;
+  const schemeEnd = input.indexOf(":");
+  let authorityStart = schemeEnd + 1;
+  while (input[authorityStart] === "/" || input[authorityStart] === "\\") {
+    authorityStart += 1;
+  }
   const authorityEndCandidate = input.slice(authorityStart).search(/[/?#\\]/);
   const authorityEnd =
     authorityEndCandidate < 0 ? input.length : authorityStart + authorityEndCandidate;
@@ -152,7 +162,9 @@ export const parseLosslessUrl = (
 
   const malformed: string[] = [];
   for (const match of input.matchAll(/%(?![0-9A-Fa-f]{2})/g)) {
-    malformed.push(`Malformed percent text at character ${(match.index ?? 0) + 1}.`);
+    const offset = match.index ?? 0;
+    const position = Array.from(input.slice(0, offset)).length + 1;
+    malformed.push(`Malformed percent text at character ${position}.`);
   }
 
   return ok({

@@ -51,10 +51,38 @@ describe("lossless URL parser", () => {
     expect(new Set(result.value.query.map((piece) => piece.id)).size).toBe(8);
   });
 
-  it.each(unsupportedFixtures)("rejects unsupported intake without throwing: %s", (input) => {
+  it.each(unsupportedFixtures)("rejects unsupported intake without throwing: $input", ({
+    input,
+    code,
+    message,
+  }) => {
     const result = parseLosslessUrl(input);
     expect(result.ok).toBe(false);
-    if (!result.ok) expect(result.error.field).toBe("full-url");
+    if (!result.ok) {
+      expect(result.error.field).toBe("full-url");
+      expect(result.error.code).toBe(code);
+      expect(result.error.message).toContain(message);
+    }
+  });
+
+  it.each([
+    "https:example.com",
+    "https:////example.com/a",
+    "https:\\\\example.com\\a",
+  ])("preserves every supported WHATWG special URL form: %s", (input) => {
+    const result = parseLosslessUrl(input);
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.value.serialized).toBe(input);
+  });
+
+  it("reports malformed percent positions by Unicode code point", () => {
+    const result = parseLosslessUrl("https://example.com/😀%zz");
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.problems).toContain(
+        "Malformed percent text at character 22.",
+      );
+    }
   });
 
   it("parses the 20,000 character 250+ parameter fixture completely", () => {

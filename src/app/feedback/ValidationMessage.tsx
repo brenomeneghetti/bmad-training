@@ -5,8 +5,9 @@ interface ValidationMessageProps {
 
 export function ValidationMessage({ id, children }: ValidationMessageProps) {
   return (
-    <p className="validation" id={id}>
+    <p className={styles.validation} id={id}>
       {children}
     </p>
   );
 }
+import styles from "../../styles/workbench.module.css";

@@ -70,7 +70,8 @@ context:
 ## Implementation Notes
 
 - Implemented a static React/Vite workbench with browser-local reducer state, exact accepted serialization, lossless path/query scanning, TR46 domain forms, stale-publication guards, full-DOM rendering, and no persistence or application network sink.
-- Verification passed with 25 Vitest tests, 4 Chromium Playwright journeys including axe, keyboard, text-spacing, forced-colors, reduced-motion, privacy, and 320px/capacity checks, the production build, and all 5 mandatory evidence cells.
+- Review hardening added full WHATWG special-URL acceptance, immediate stale-publication invalidation, C1 rejection, Unicode code-point diagnostics, linear query labels, CSS Modules, response-header CSP delivery, shared browser fixtures, complete JSON Schema evaluation, and recursive path-aware artifact hashing.
+- Verification passed with 33 Vitest tests, 4 Chromium Playwright journeys including post-mode axe/keyboard checks, exact capacity order, privacy, and 320px checks, the production build, preview CSP header inspection, and all 5 mandatory evidence cells.
 
 ## Spec Change Log
 
@@ -83,10 +84,32 @@ context:
 | medium | The evidence validator initially trusted hard-coded `pass` cells without inspecting referenced evidence or the built artifact. It now verifies evidence paths, required CSP directives, built assets, and reports an artifact digest. |
 | low | Concrete clipboard and focus adapters crossed the architecture-only Epic 1 platform boundary, and Copy became enabled without behavior. Platform modules now expose ports only and all later-epic controls remain explicitly disabled. |
 | medium | Browser privacy/accessibility evidence initially checked only an encoded URL substring and omitted console, IndexedDB, keyboard, text-spacing, forced-colors, and reduced-motion cases. The browser suite now covers those facilities and states. |
+| high | Editing while a parse was pending left the completion publishable. `inputChanged` now advances the generation and clears pending input; reducer and component regressions cover it. |
+| medium | Dirty editor text retained the active success phase. Input changes now enter an editing/no-session phase, preventing a stale “URL parsed” announcement. |
+| medium | A zero-delay synchronous parse made the delayed busy indicator ineffective. The unused delayed indicator was removed; parsing remains synchronous and atomic as required. |
+| medium | The scanner required literal `://`, rejecting WHATWG-accepted special URL forms. Authority discovery now supports accepted slash/backslash variants and has golden coverage. |
+| medium | C1 control characters were not rejected. Intake now rejects U+007F–U+009F and fixtures include a C1 case. |
+| medium | Query occurrence labels used repeated filtering and slicing. Labels are now precomputed in linear time. |
+| medium | Malformed-percent positions counted UTF-16 code units. Positions now count Unicode code points and an astral-character regression covers the result. |
+| low | The Structured View skip target was absent before a session. The link now renders only when its target exists. |
+| medium | Browser tests duplicated the semantic and capacity fixtures. They now import the shared corpus used by core and component tests. |
+| medium | `frame-ancestors` existed only in meta CSP. Vite preview and provider-neutral deployment metadata now deliver the full policy as an HTTP response header. |
+| medium | The declared Node floor admitted versions below locked jsdom support. The engine floor is now `>=24.15.0`. |
+| medium | Evidence validation skipped command strings and only checked source-file existence. Command strings were removed as evidence, fixed cells are enforced, and evidence must reference durable paths. |
+| medium | Evidence validation did not evaluate the declared schema. Draft 2020-12 validation now runs through Ajv with formats and strict manifest metadata. |
+| medium | The artifact digest omitted relative paths and deployment metadata. It now recursively hashes paths plus contents and the delivery contract. |
+| medium | CSP evidence checked only a subset of directives. Validation now checks the complete required policy in delivery metadata. |
+| medium | Capacity evidence checked only row count and the final key. It now asserts every query key in exact source order. |
+| medium | Forced-colors, reduced-motion, and text-spacing checks lacked post-activation operability/accessibility assertions. The browser suite now reruns axe and verifies focusable operation after activation. |
+| medium | Specific intake branches were tested only as generic rejection. Parameterized tests now assert code and guidance, with a component-level line-break case. |
+| medium | TR46 rejection was tested only inside the converter. A session test now proves invalid-domain replacement preserves the trusted snapshot. |
+| false | A bare `?` was reported as an omitted empty query row. The model deliberately records `queryPresent` separately; no query parameter token exists after a bare delimiter. |
+| false | Fragment omission from Managed Pieces was reported as a defect. Fragment is explicitly unmanaged and remains exactly visible in Full URL. |
+| false | Path separator and raw host omission from separate row controls was reported as semantic loss. Both remain in the exact Full URL and lossless model; Managed Pieces are path segment text and the required validated dual domain forms. |
 
 ## Design Notes
 
-The canonical SPEC and companions supersede historical readiness-report conflicts. Use synchronous pure parsing first; scheduled publication carries input snapshot, generation, epoch, and revision guards. A 150 ms delayed parsing indicator is the implementation default.
+The canonical SPEC and companions supersede historical readiness-report conflicts. Use synchronous pure parsing first; publication carries input snapshot, generation, epoch, and revision guards. Add a delayed parsing indicator only if parsing moves to asynchronous worker-backed execution and can actually paint while work continues.
 
 ## Verification
 

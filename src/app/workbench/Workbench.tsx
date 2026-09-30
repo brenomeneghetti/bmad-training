@@ -1,4 +1,4 @@
-import { useEffect, useReducer, useRef, useState } from "react";
+import { useReducer } from "react";
 import {
   initialSessionState,
   prepareParse,
@@ -6,45 +6,26 @@ import {
 } from "../../core/session";
 import { ValidationMessage } from "../feedback/ValidationMessage";
 import { StructuredView } from "../pieces/StructuredView";
+import styles from "../../styles/workbench.module.css";
 
 export function Workbench() {
   const [state, dispatch] = useReducer(sessionReducer, initialSessionState);
-  const [showParsing, setShowParsing] = useState(false);
-  const completionRef = useRef<ReturnType<typeof prepareParse>["complete"] | null>(
-    null,
-  );
-
-  useEffect(() => {
-    if (state.phase !== "parsing") {
-      setShowParsing(false);
-      return;
-    }
-    const indicator = window.setTimeout(() => setShowParsing(true), 150);
-    const publication = window.setTimeout(() => {
-      const complete = completionRef.current;
-      if (complete) dispatch(complete());
-    }, 0);
-    return () => {
-      window.clearTimeout(indicator);
-      window.clearTimeout(publication);
-    };
-  }, [state.phase, state.generation]);
 
   const apply = () => {
     const parse = prepareParse(state);
-    completionRef.current = parse.complete;
     dispatch(parse.start);
+    dispatch(parse.complete());
   };
 
   return (
-    <main className="workbench">
+    <main className={styles.workbench}>
       <h1>URL Workbench</h1>
-      <p className="privacy-notice">
+      <p className={styles.privacyNotice}>
         Your URL stays in this browser and is cleared when you reload or close
         this page.
       </p>
 
-      <section aria-labelledby="full-url-heading" className="panel">
+      <section aria-labelledby="full-url-heading" className={styles.panel}>
         <h2 id="full-url-heading">Full URL</h2>
         <form
           onSubmit={(event) => {
@@ -76,7 +57,10 @@ export function Workbench() {
         ) : null}
       </section>
 
-      <section aria-labelledby="actions-heading" className="panel action-bar">
+      <section
+        aria-labelledby="actions-heading"
+        className={`${styles.panel} ${styles.actionBar}`}
+      >
         <h2 id="actions-heading">Actions</h2>
         <button type="button" disabled>
           Undo
@@ -92,7 +76,6 @@ export function Workbench() {
           version.
         </p>
         <div role="status" aria-live="polite" aria-atomic="true">
-          {showParsing ? "Parsing URL…" : ""}
           {state.phase === "active"
             ? `URL parsed. ${
                 1 +
