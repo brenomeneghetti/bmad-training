@@ -1,6 +1,15 @@
 export const semanticFixture =
   "https://user:pass@faß.de:8443/a%2Fb//tail/?dup=1&dup=2&key&key=&=empty&&encoded=a%26b%3Dc&bad=%zz#frag%23ment";
 
+export const idnFixtures = [
+  ["faß.de", "xn--fa-hia.de", "faß.de"],
+  ["XN--FA-HIA.DE", "xn--fa-hia.de", "faß.de"],
+  ["مثال.إختبار", "xn--mgbh0fb.xn--kgbechtv", "مثال.إختبار"],
+  ["עברית.example", "xn--5dbqzzl.example", "עברית.example"],
+] as const;
+
+export const invalidIdnFixtures = ["xn--", "a..b", "\u0301example.com"] as const;
+
 export const unsupportedFixtures = [
   { input: "", code: "empty", message: "Enter a complete HTTP or HTTPS" },
   { input: "example.com/path", code: "invalid-url", message: "Enter a complete HTTP or HTTPS" },
@@ -16,8 +25,11 @@ export const unsupportedFixtures = [
 export const createCapacityFixture = () => {
   const entries = Array.from(
     { length: 260 },
-    (_, index) => `parameter-${index}=${"x".repeat(64)}-${index}`,
+    (_, index) => `parameter-${index}=${"x".repeat(58)}-${index}`,
   );
-  const base = `https://example.com/deep/path?${entries.join("&")}#capacity`;
-  return base + "x".repeat(Math.max(0, 20_000 - base.length));
+  const prefix = "https://example.com/deep/path?";
+  const fragment = "#capacity";
+  const unpadded = `${prefix}${entries.join("&")}${fragment}`;
+  entries[entries.length - 1] += "x".repeat(20_000 - unpadded.length);
+  return `${prefix}${entries.join("&")}${fragment}`;
 };

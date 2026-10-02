@@ -116,6 +116,7 @@ h2 {
   color: #18181b;
   font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
   font-size: 0.875rem;
+  unicode-bidi: isolate;
 }
 
 :global(textarea) {

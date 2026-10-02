@@ -13,6 +13,7 @@ export default defineConfig({
       configurePreviewServer(server) {
         server.middlewares.use((_request, response, next) => {
           response.setHeader("Content-Security-Policy", contentSecurityPolicy);
+          response.setHeader("Referrer-Policy", "no-referrer");
           next();
         });
       },

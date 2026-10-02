@@ -24,6 +24,11 @@ export function Workbench() {
         Your URL stays in this browser and is cleared when you reload or close
         this page.
       </p>
+      {state.snapshot ? (
+        <a className={styles.skipLink} href="#managed-pieces">
+          Skip to Structured View results
+        </a>
+      ) : null}
 
       <section aria-labelledby="full-url-heading" className={styles.panel}>
         <h2 id="full-url-heading">Full URL</h2>
@@ -46,6 +51,7 @@ export function Workbench() {
             aria-describedby="full-url-help"
             aria-invalid={state.problem ? true : undefined}
             aria-errormessage={state.problem ? "error-full-url" : undefined}
+            maxLength={20_000}
             dir="ltr"
           />
           <button type="submit">Apply URL</button>

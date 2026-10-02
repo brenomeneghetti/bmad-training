@@ -59,6 +59,12 @@ export const sessionReducer = (
         problem: null,
       };
     case "parseStarted":
+      if (
+        action.generation <= state.generation ||
+        action.input !== state.input
+      ) {
+        return state;
+      }
       return {
         ...state,
         phase: "parsing",

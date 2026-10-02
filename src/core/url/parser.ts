@@ -97,11 +97,20 @@ export const parseLosslessUrl = (
   ids: IdAllocator = createIdAllocator(),
 ): Result<LosslessUrl, UrlProblem> => {
   if (input.length === 0) return err(intakeProblem("empty"));
+  const characters = Array.from(input);
+  if (characters.length > 20_000) {
+    return err(
+      intakeProblem(
+        "invalid-url",
+        "Enter a URL containing no more than 20,000 characters.",
+      ),
+    );
+  }
   if (/[\r\n]/.test(input)) {
     return err(intakeProblem("line-break", "Remove line breaks and enter one complete URL."));
   }
   if (
-    [...input].some((character) => {
+    characters.some((character) => {
       const code = character.codePointAt(0) ?? 0;
       return code <= 0x1f || (code >= 0x7f && code <= 0x9f);
     })
@@ -122,18 +131,6 @@ export const parseLosslessUrl = (
     );
   }
 
-  let oracle: URL;
-  try {
-    oracle = new URL(input);
-  } catch {
-    return err(intakeProblem("invalid-url"));
-  }
-
-  if (oracle.protocol !== "http:" && oracle.protocol !== "https:") {
-    return err(intakeProblem("unsupported-scheme"));
-  }
-  if (!oracle.hostname) return err(intakeProblem("missing-host"));
-
   const schemeEnd = input.indexOf(":");
   let authorityStart = schemeEnd + 1;
   while (input[authorityStart] === "/" || input[authorityStart] === "\\") {
@@ -144,6 +141,29 @@ export const parseLosslessUrl = (
     authorityEndCandidate < 0 ? input.length : authorityStart + authorityEndCandidate;
   const authority = input.slice(authorityStart, authorityEnd);
   const parts = authorityParts(authority);
+
+  let oracle: URL;
+  try {
+    oracle = new URL(input);
+  } catch {
+    const rawScheme = input.slice(0, schemeEnd).toLowerCase();
+    if (
+      (rawScheme === "http" || rawScheme === "https") &&
+      parts?.host
+        .split(".")
+        .some((label) => label.toLowerCase().startsWith("xn--"))
+    ) {
+      const invalidDomain = convertDomain(parts.host);
+      if (!invalidDomain.ok) return invalidDomain;
+    }
+    return err(intakeProblem("invalid-url"));
+  }
+
+  if (oracle.protocol !== "http:" && oracle.protocol !== "https:") {
+    return err(intakeProblem("unsupported-scheme"));
+  }
+  if (!oracle.hostname) return err(intakeProblem("missing-host"));
+
   if (!parts?.host) return err(intakeProblem("missing-host"));
 
   const queryIndex = input.indexOf("?", authorityEnd);
@@ -160,11 +180,21 @@ export const parseLosslessUrl = (
   const domain = convertDomain(oracle.hostname);
   if (!domain.ok) return domain;
 
-  const malformed: string[] = [];
-  for (const match of input.matchAll(/%(?![0-9A-Fa-f]{2})/g)) {
-    const offset = match.index ?? 0;
-    const position = Array.from(input.slice(0, offset)).length + 1;
-    malformed.push(`Malformed percent text at character ${position}.`);
+  const malformed: UrlProblem[] = [];
+  let sourcePosition = 1;
+  for (let index = 0; index < input.length; sourcePosition += 1) {
+    const codePoint = input.codePointAt(index) ?? 0;
+    if (
+      input[index] === "%" &&
+      !/^[0-9A-Fa-f]{2}$/.test(input.slice(index + 1, index + 3))
+    ) {
+      malformed.push({
+        code: "malformed-percent",
+        field: "component",
+        message: `Malformed percent text at character ${sourcePosition}.`,
+      });
+    }
+    index += codePoint > 0xffff ? 2 : 1;
   }
 
   return ok({

@@ -5,22 +5,94 @@ import {
   createCapacityFixture,
   semanticFixture,
 } from "../src/test/fixtures/semantic";
+import delivery from "../deployment/static-delivery.json" with { type: "json" };
+
+interface PrivacyProbe {
+  storageWrites: string[];
+  indexedDbCalls: string[];
+  cacheCalls: string[];
+  serviceWorkerCalls: string[];
+  beaconCalls: string[];
+  fetchCalls: string[];
+}
+
+declare global {
+  interface Window {
+    readonly __privacyProbe: PrivacyProbe;
+  }
+}
 
 test("intake preserves lossless semantics and rejects replacement", async ({ page }) => {
-  await page.goto("/");
+  await page.addInitScript(() => {
+    const probe = {
+      storageWrites: [] as string[],
+      indexedDbCalls: [] as string[],
+      cacheCalls: [] as string[],
+      serviceWorkerCalls: [] as string[],
+      beaconCalls: [] as string[],
+      fetchCalls: [] as string[],
+    };
+    Object.defineProperty(window, "__privacyProbe", { value: probe });
+
+    const storageSetItem = Storage.prototype.setItem;
+    Storage.prototype.setItem = function (key, value) {
+      probe.storageWrites.push(`${key}:${value}`);
+      storageSetItem.call(this, key, value);
+    };
+
+    const indexedDbOpen = IDBFactory.prototype.open;
+    IDBFactory.prototype.open = function (name, version) {
+      probe.indexedDbCalls.push(String(name));
+      return indexedDbOpen.call(this, name, version);
+    };
+
+    const cacheOpen = CacheStorage.prototype.open;
+    CacheStorage.prototype.open = function (name) {
+      probe.cacheCalls.push(name);
+      return cacheOpen.call(this, name);
+    };
+
+    if ("serviceWorker" in navigator) {
+      const serviceWorkerPrototype = Object.getPrototypeOf(navigator.serviceWorker);
+      const register = serviceWorkerPrototype.register;
+      serviceWorkerPrototype.register = function (scriptURL: string | URL) {
+        probe.serviceWorkerCalls.push(String(scriptURL));
+        return register.apply(this, arguments);
+      };
+    }
+
+    const sendBeacon = Navigator.prototype.sendBeacon;
+    Navigator.prototype.sendBeacon = function (url, data) {
+      probe.beaconCalls.push(`${String(url)}:${String(data ?? "")}`);
+      return sendBeacon.call(this, url, data);
+    };
+
+    const originalFetch = window.fetch;
+    window.fetch = function (input, init) {
+      const url =
+        typeof input === "string"
+          ? input
+          : input instanceof URL
+            ? input.href
+            : input.url;
+      probe.fetchCalls.push(
+        `${url}:${String(init?.body ?? "")}`,
+      );
+      return originalFetch.call(this, input, init);
+    };
+  });
+  const response = await page.goto("/");
+  expect(response?.headers()["content-security-policy"]).toBe(
+    delivery.headers["Content-Security-Policy"],
+  );
+  expect(response?.headers()["referrer-policy"]).toBe(
+    delivery.headers["Referrer-Policy"],
+  );
   const requestsAfterLoad: string[] = [];
-  const unsafeDiagnostics: string[] = [];
+  const diagnostics: string[] = [];
   page.on("request", (request) => requestsAfterLoad.push(request.url()));
-  page.on("console", (message) => {
-    if (/faß\.de|dup=1|frag%23ment/.test(message.text())) {
-      unsafeDiagnostics.push(message.text());
-    }
-  });
-  page.on("pageerror", (error) => {
-    if (/faß\.de|dup=1|frag%23ment/.test(error.message)) {
-      unsafeDiagnostics.push(error.message);
-    }
-  });
+  page.on("console", (message) => diagnostics.push(message.text()));
+  page.on("pageerror", (error) => diagnostics.push(error.message));
   await page.getByLabel("Complete HTTP or HTTPS Absolute URL").fill(semanticFixture);
   await page.getByRole("button", { name: "Apply URL" }).click();
 
@@ -38,7 +110,17 @@ test("intake preserves lossless semantics and rejects replacement", async ({ pag
   await expect(page.getByText(/complete HTTP or HTTPS/)).toBeVisible();
   await expect(page.locator("#managed-pieces > li")).toHaveCount(13);
   expect(requestsAfterLoad).toEqual([]);
-  expect(unsafeDiagnostics).toEqual([]);
+  expect(diagnostics).toEqual([]);
+  expect(
+    await page.evaluate(() => window.__privacyProbe),
+  ).toEqual({
+    storageWrites: [],
+    indexedDbCalls: [],
+    cacheCalls: [],
+    serviceWorkerCalls: [],
+    beaconCalls: [],
+    fetchCalls: [],
+  });
   expect(
     await page.evaluate(async () => ({
       local: localStorage.length,
@@ -104,6 +186,38 @@ test("initial and populated workbench pass automated accessibility checks", asyn
   await expect(page.getByRole("button", { name: "Apply URL" })).toBeEnabled();
   await page.getByRole("button", { name: "Apply URL" }).focus();
   await expect(page.getByRole("button", { name: "Apply URL" })).toBeFocused();
+  await expect(page.locator("#full-url-help")).toBeVisible();
+  await expect(page.locator("#actions-note")).toBeVisible();
+  await expect(page.locator("#piece-summary")).toBeVisible();
+  await expect(page.locator("#managed-pieces > li").first()).toBeVisible();
+  await expect(page.locator("#managed-pieces > li").last()).toBeVisible();
+  expect(
+    await page
+      .locator(
+        "#full-url-help, #actions-note, [role='status'], #piece-summary, #managed-pieces > li",
+      )
+      .evaluateAll((elements) =>
+        elements
+          .filter(
+            (element) =>
+              element.scrollHeight > element.clientHeight ||
+              element.scrollWidth > element.clientWidth,
+          )
+          .map((element) => element.id || element.tagName),
+      ),
+  ).toEqual([]);
+
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send("Emulation.setDeviceMetricsOverride", {
+    width: 320,
+    height: 800,
+    deviceScaleFactor: 4,
+    mobile: false,
+  });
+  expect(await page.evaluate(() => window.devicePixelRatio)).toBe(4);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+    320,
+  );
 });
 
 test("reload clears URL content and returns to no session", async ({ page }) => {

@@ -48,6 +48,7 @@ describe("lossless URL parser", () => {
     ]);
     expect(result.value.rawFragment).toBe("frag%23ment");
     expect(result.value.problems).toHaveLength(1);
+    expect(result.value.problems[0]?.code).toBe("malformed-percent");
     expect(new Set(result.value.query.map((piece) => piece.id)).size).toBe(8);
   });
 
@@ -79,10 +80,32 @@ describe("lossless URL parser", () => {
     const result = parseLosslessUrl("https://example.com/😀%zz");
     expect(result.ok).toBe(true);
     if (result.ok) {
-      expect(result.value.problems).toContain(
+      expect(result.value.problems.map((problem) => problem.message)).toContain(
         "Malformed percent text at character 22.",
       );
     }
+  });
+
+  it("rejects input beyond the supported 20,000-character boundary", () => {
+    const result = parseLosslessUrl(`https://example.com/${"x".repeat(20_000)}`);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error.message).toContain("20,000");
+  });
+
+  it("reports invalid Punycode as a domain conversion problem", () => {
+    const result = parseLosslessUrl("https://xn--/");
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error.code).toBe("invalid-domain");
+  });
+
+  it("scans many malformed percent signs within the parse target", () => {
+    const input = `https://example.com/?bad=${"%".repeat(5_000)}`;
+    const start = performance.now();
+    const result = parseLosslessUrl(input);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.problems).toHaveLength(5_000);
+    expect(performance.now() - start).toBeLessThan(1_000);
   });
 
   it("parses the 20,000 character 250+ parameter fixture completely", () => {
@@ -90,7 +113,7 @@ describe("lossless URL parser", () => {
     const start = performance.now();
     const result = parseLosslessUrl(fixture);
     const duration = performance.now() - start;
-    expect(fixture.length).toBeGreaterThanOrEqual(20_000);
+    expect(Array.from(fixture)).toHaveLength(20_000);
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.value.query).toHaveLength(260);

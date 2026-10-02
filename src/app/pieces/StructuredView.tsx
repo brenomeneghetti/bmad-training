@@ -35,11 +35,6 @@ export function StructuredView({ snapshot, busy }: StructuredViewProps) {
       <h2 id="structured-heading" tabIndex={-1}>
         Structured View
       </h2>
-      {snapshot ? (
-        <a className={styles.skipLink} href="#managed-pieces">
-          Skip to Structured View results
-        </a>
-      ) : null}
       <p id="piece-summary" aria-live="polite" className={styles.position}>
         {managedCount} Managed {managedCount === 1 ? "Piece" : "Pieces"}
       </p>
@@ -116,8 +111,8 @@ export function StructuredView({ snapshot, busy }: StructuredViewProps) {
         )}
       </div>
       {snapshot?.problems.map((problem) => (
-        <p className={styles.validation} key={problem}>
-          {problem}
+        <p className={styles.validation} key={`${problem.code}-${problem.message}`}>
+          {problem.message}
         </p>
       ))}
     </section>

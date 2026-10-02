@@ -1,4 +1,4 @@
-import type { PieceId } from "../contracts";
+import type { PieceId, UrlProblem } from "../contracts";
 import type { DomainForms } from "../idn";
 
 export interface PathPiece {
@@ -30,5 +30,5 @@ export interface LosslessUrl {
   readonly rawFragment: string;
   readonly domainId: PieceId;
   readonly domain: DomainForms;
-  readonly problems: readonly string[];
+  readonly problems: readonly UrlProblem[];
 }

@@ -57,6 +57,17 @@ describe("session authority", () => {
     expect(edited.snapshot).toBeNull();
   });
 
+  it("ignores duplicate parse starts after publication", () => {
+    const entered = sessionReducer(initialSessionState, {
+      type: "inputChanged",
+      value: "https://example.com/",
+    });
+    const parse = prepareParse(entered);
+    const parsing = sessionReducer(entered, parse.start);
+    const settled = sessionReducer(parsing, parse.complete());
+    expect(sessionReducer(settled, parse.start)).toBe(settled);
+  });
+
   it("preserves the trusted snapshot when IDN validation rejects replacement", () => {
     const active = apply(initialSessionState, "https://example.com/");
     const rejected = apply(active, "https://a..b/");

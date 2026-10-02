@@ -5,11 +5,11 @@
   "evaluatorVersion": "1.0.0",
   "artifact": {
     "path": "dist",
-    "digest": "3084776cd4abd67ef3d1d591a99458342e3cd6650461bb2e8e94897713f449de",
+    "digest": "b11ef98ea4bf911beea91ac99a0801d7f6afc07ad11844da5b441b4211c89429",
     "delivery": "deployment/static-delivery.json"
   },
   "toolVersions": {
-    "node": "24.15.0",
+    "node": "24.13.1",
     "pnpm": "12.5.1",
     "vitest": "5.0.1",
     "playwright": "1.63.0"
