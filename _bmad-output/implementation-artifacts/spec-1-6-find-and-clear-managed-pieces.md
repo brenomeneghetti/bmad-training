@@ -2,7 +2,7 @@
 title: 'Story 1.6: Find and Clear Managed Pieces'
 type: 'feature'
 created: '2026-10-02'
-status: 'done'
+status: 'in-progress'
 route: 'dispatch'
 review_loop_iteration: 0
 baseline_commit: 'b8aa57625da7da6dcff11cba24479406e06d5fa5'
@@ -67,7 +67,7 @@ context:
 ## Implementation Notes
 
 - Search derives a canonical display sequence from the committed snapshot and applies Unicode full case folding only to comparison strings. The reducer-owned session model is unchanged.
-- The result summary updates synchronously; the separate polite live region settles after 75 ms, replaces repeated messages, remains exposed for two seconds, and never receives focus.
+- The result summary updates synchronously; the separate polite live region settles after 300 ms, replaces repeated messages, remains exposed for two seconds, and never receives focus.
 - Native Search Escape clearing is explicitly suppressed so only click/up, keyboard activation, or assistive-technology activation of Clear Search can clear the filter.
 
 ## Spec Change Log

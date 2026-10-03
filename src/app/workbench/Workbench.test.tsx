@@ -199,8 +199,21 @@ describe("URL Workbench", () => {
       target: { value: "x" },
     });
 
-    act(() => vi.advanceTimersByTime(75));
+    act(() => vi.advanceTimersByTime(250));
+    expect(document.querySelector("#search-status span")).not.toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("Search Managed Pieces"), {
+      target: { value: "not-present" },
+    });
+    act(() => vi.advanceTimersByTime(299));
+    expect(document.querySelector("#search-status span")).not.toBeInTheDocument();
+    act(() => vi.advanceTimersByTime(1));
+    expect(screen.getByText("0 of 3 Managed Pieces shown.")).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("Search Managed Pieces"), {
+      target: { value: "x" },
+    });
+    act(() => vi.advanceTimersByTime(300));
     expect(document.querySelector("#search-status span")).toBeInTheDocument();
+    expect(screen.getByText("2 of 3 Managed Pieces shown.")).toBeInTheDocument();
     act(() => vi.advanceTimersByTime(1_999));
     expect(document.querySelector("#search-status span")).toBeInTheDocument();
     act(() => vi.advanceTimersByTime(1));

@@ -42,7 +42,7 @@ export function Workbench() {
     if (searchTerm === "") return;
     setSearchTerm("");
     searchInputRef.current?.focus();
-    announce(`${allPieces.length} Managed Pieces shown.`);
+    announce(`${allPieces.length} of ${allPieces.length} Managed Pieces shown.`);
   };
 
   useEffect(() => {
@@ -51,7 +51,7 @@ export function Workbench() {
       announce(
         `${visiblePieces.length} of ${allPieces.length} Managed Pieces shown.`,
       );
-    }, 75);
+    }, 300);
     return () => window.clearTimeout(timer);
   }, [allPieces.length, searchTerm, state.snapshot, visiblePieces.length]);
 
