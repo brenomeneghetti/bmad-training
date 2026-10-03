@@ -10,6 +10,7 @@ const requiredCells = new Map([
   ["story-1-3-lossless-pieces", "1.3"],
   ["story-1-4-idn-forms", "1.4"],
   ["story-1-5-complete-structured-view", "1.5"],
+  ["story-1-6-find-and-clear-managed-pieces", "1.6"],
 ]);
 
 const requiredCsp = new Map([

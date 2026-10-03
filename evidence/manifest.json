@@ -5,7 +5,7 @@
   "evaluatorVersion": "1.0.0",
   "artifact": {
     "path": "dist",
-    "digest": "b11ef98ea4bf911beea91ac99a0801d7f6afc07ad11844da5b441b4211c89429",
+    "digest": "e7e3f181aff26eb0119568ef31a7bc15340a2f704eefc399f8cbcd0cac8ffbb0",
     "delivery": "deployment/static-delivery.json"
   },
   "toolVersions": {
@@ -66,6 +66,17 @@
       "status": "pass",
       "owner": "automated",
       "evidence": [
+        "src/app/workbench/Workbench.test.tsx",
+        "tests/workbench.spec.ts"
+      ]
+    },
+    {
+      "id": "story-1-6-find-and-clear-managed-pieces",
+      "story": "1.6",
+      "status": "pass",
+      "owner": "automated",
+      "evidence": [
+        "src/app/pieces/search.ts",
         "src/app/workbench/Workbench.test.tsx",
         "tests/workbench.spec.ts"
       ]

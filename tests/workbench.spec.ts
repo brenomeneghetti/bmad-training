@@ -96,12 +96,20 @@ test("intake preserves lossless semantics and rejects replacement", async ({ pag
   await page.getByLabel("Complete HTTP or HTTPS Absolute URL").fill(semanticFixture);
   await page.getByRole("button", { name: "Apply URL" }).click();
 
-  await expect(page.getByText("13 Managed Pieces", { exact: true })).toBeVisible();
+  await expect(
+    page.getByText("13 of 13 Managed Pieces shown", { exact: true }),
+  ).toBeVisible();
   await expect(page.locator("#managed-pieces > li")).toHaveCount(13);
   await expect(page.getByLabel("Unicode Domain")).toHaveValue("faß.de");
   await expect(page.getByLabel("ASCII/Punycode Domain")).toHaveValue(
     "xn--fa-hia.de",
   );
+  await page.getByLabel("Search Managed Pieces").fill("DUP");
+  await expect(page.locator("#managed-pieces > li")).toHaveCount(2);
+  await expect(page.getByText("2 of 13 Managed Pieces shown")).toBeVisible();
+  await page.getByRole("button", { name: "Clear Search" }).click();
+  await expect(page.getByLabel("Search Managed Pieces")).toBeFocused();
+  await expect(page.locator("#managed-pieces > li")).toHaveCount(13);
   await expect(page.getByLabel("Path Segment 1 of 4")).toHaveValue("a%2Fb");
   await expect(page.getByText("Malformed percent text")).toBeVisible();
 
@@ -149,6 +157,67 @@ test("capacity view renders every row and stays usable at 320px", async ({ page 
     ),
   ).toEqual(Array.from({ length: 260 }, (_, index) => `parameter-${index}`));
   expect(Date.now() - start).toBeLessThan(1_000);
+  const searchMeasurements = await page.evaluate(async () => {
+    const input = document.querySelector<HTMLInputElement>(
+      "#managed-piece-search",
+    );
+    if (!input) throw new Error("Search input missing");
+    const setter = Object.getOwnPropertyDescriptor(
+      HTMLInputElement.prototype,
+      "value",
+    )?.set;
+    const originalIds = Array.from(
+      document.querySelectorAll<HTMLElement>("#managed-pieces > li"),
+      (row) => row.dataset.pieceId,
+    );
+    const applySearch = (term: string, expectedCount: number) =>
+      new Promise<number>((resolve) => {
+        const started = performance.now();
+        const observer = new MutationObserver(() => {
+          if (
+            document.querySelectorAll("#managed-pieces > li").length ===
+            expectedCount
+          ) {
+            observer.disconnect();
+            resolve(performance.now() - started);
+          }
+        });
+        observer.observe(document.body, { childList: true, subtree: true });
+        setter?.call(input, term);
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+      });
+    const durations = {
+      domain: await applySearch("example.com", 1),
+      path: await applySearch("deep", 1),
+      key: await applySearch("parameter-259", 1),
+      value: await applySearch("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", 260),
+      none: await applySearch("not-present-anywhere", 0),
+    };
+    const clear = document.querySelector<HTMLButtonElement>(
+      "#managed-piece-search + button",
+    );
+    if (!clear) throw new Error("Clear Search button missing");
+    const clearStarted = performance.now();
+    const clearDuration = await new Promise<number>((resolve) => {
+      const observer = new MutationObserver(() => {
+        if (document.querySelectorAll("#managed-pieces > li").length === 263) {
+          observer.disconnect();
+          resolve(performance.now() - clearStarted);
+        }
+      });
+      observer.observe(document.body, { childList: true, subtree: true });
+      clear.click();
+    });
+    const restoredIds = Array.from(
+      document.querySelectorAll<HTMLElement>("#managed-pieces > li"),
+      (row) => row.dataset.pieceId,
+    );
+    return { durations: { ...durations, clear: clearDuration }, originalIds, restoredIds };
+  });
+  expect(Object.values(searchMeasurements.durations).every((value) => value < 100))
+    .toBe(true);
+  expect(searchMeasurements.restoredIds).toEqual(searchMeasurements.originalIds);
+  await expect(page.locator("#managed-pieces > li")).toHaveCount(263);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
     320,
   );
@@ -189,6 +258,7 @@ test("initial and populated workbench pass automated accessibility checks", asyn
   await expect(page.locator("#full-url-help")).toBeVisible();
   await expect(page.locator("#actions-note")).toBeVisible();
   await expect(page.locator("#piece-summary")).toBeVisible();
+  await expect(page.getByLabel("Search Managed Pieces")).toBeVisible();
   await expect(page.locator("#managed-pieces > li").first()).toBeVisible();
   await expect(page.locator("#managed-pieces > li").last()).toBeVisible();
   expect(
@@ -226,8 +296,40 @@ test("reload clears URL content and returns to no session", async ({ page }) => 
     .getByLabel("Complete HTTP or HTTPS Absolute URL")
     .fill("https://example.com/private?token=secret");
   await page.getByRole("button", { name: "Apply URL" }).click();
-  await expect(page.getByText("3 Managed Pieces", { exact: true })).toBeVisible();
+  await expect(
+    page.getByText("3 of 3 Managed Pieces shown", { exact: true }),
+  ).toBeVisible();
   await page.reload();
   await expect(page.getByLabel("Complete HTTP or HTTPS Absolute URL")).toHaveValue("");
   await expect(page.getByText(/No session/)).toBeVisible();
+});
+
+test("search no-results and clear remain keyboard and activation safe", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page
+    .getByLabel("Complete HTTP or HTTPS Absolute URL")
+    .fill("https://example.com/a?x=1");
+  await page.getByRole("button", { name: "Apply URL" }).click();
+  const search = page.getByLabel("Search Managed Pieces");
+  await search.fill("unmatched");
+  await expect(
+    page.getByText(
+      "0 of 3 Managed Pieces shown. No Managed Piece matches ‘unmatched’.",
+    ),
+  ).toBeVisible();
+  await search.press("Escape");
+  await expect(search).toHaveValue("unmatched");
+  const noResultClear = page
+    .getByText(/No Managed Piece matches/)
+    .locator("..")
+    .getByRole("button", { name: "Clear Search" });
+  await noResultClear.dispatchEvent("pointerdown");
+  await noResultClear.dispatchEvent("pointercancel");
+  await expect(search).toHaveValue("unmatched");
+  await noResultClear.focus();
+  await noResultClear.press("Enter");
+  await expect(search).toBeFocused();
+  await expect(page.locator("#managed-pieces > li")).toHaveCount(3);
 });

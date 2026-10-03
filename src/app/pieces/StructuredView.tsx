@@ -1,113 +1,177 @@
-import type { LosslessUrl, QueryPiece } from "../../core/url";
+import type { LosslessUrl } from "../../core/url";
+import type { RefObject } from "react";
+import type { ManagedPiece } from "./search";
 import styles from "../../styles/workbench.module.css";
 
 interface StructuredViewProps {
   readonly snapshot: LosslessUrl | null;
   readonly busy: boolean;
+  readonly pieces: readonly ManagedPiece[];
+  readonly searchTerm: string;
+  readonly onSearchChange: (value: string) => void;
+  readonly onClearSearch: () => void;
+  readonly searchInputRef: RefObject<HTMLInputElement | null>;
 }
 
-function buildQueryLabels(pieces: readonly QueryPiece[]) {
-  const totals = new Map<string, number>();
-  const seen = new Map<string, number>();
-  for (const piece of pieces) {
-    totals.set(piece.rawKey, (totals.get(piece.rawKey) ?? 0) + 1);
-  }
-  return pieces.map((piece, index) => {
-    const occurrenceIndex = (seen.get(piece.rawKey) ?? 0) + 1;
-    seen.set(piece.rawKey, occurrenceIndex);
-    const duplicateCount = totals.get(piece.rawKey) ?? 1;
-    const occurrence =
-      duplicateCount > 1
-        ? `, occurrence ${occurrenceIndex} of ${duplicateCount}`
-        : "";
-    return `Query Parameter ${index + 1} of ${pieces.length}${occurrence}`;
-  });
-}
-
-export function StructuredView({ snapshot, busy }: StructuredViewProps) {
-  const managedCount = snapshot
-    ? 1 + snapshot.path.length + snapshot.query.length
-    : 0;
-  const queryLabels = snapshot ? buildQueryLabels(snapshot.query) : [];
+export function StructuredView({
+  snapshot,
+  busy,
+  pieces,
+  searchTerm,
+  onSearchChange,
+  onClearSearch,
+  searchInputRef,
+}: StructuredViewProps) {
+  const managedCount = snapshot ? 1 + snapshot.path.length + snapshot.query.length : 0;
+  const visibleCount = pieces.length;
+  const activeSearch = searchTerm !== "";
+  const summary = `${visibleCount} of ${managedCount} Managed Pieces shown`;
 
   return (
     <section aria-labelledby="structured-heading" className={styles.panel}>
       <h2 id="structured-heading" tabIndex={-1}>
         Structured View
       </h2>
-      <p id="piece-summary" aria-live="polite" className={styles.position}>
-        {managedCount} Managed {managedCount === 1 ? "Piece" : "Pieces"}
+      <div className={styles.searchControls}>
+        <label htmlFor="managed-piece-search">Search Managed Pieces</label>
+        <input
+          id="managed-piece-search"
+          ref={searchInputRef}
+          type="text"
+          value={searchTerm}
+          onChange={(event) => onSearchChange(event.currentTarget.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Escape") event.preventDefault();
+          }}
+          disabled={!snapshot}
+          autoComplete="off"
+        />
+        <button type="button" onClick={onClearSearch} disabled={!activeSearch}>
+          Clear Search
+        </button>
+      </div>
+      <p id="piece-summary" className={styles.position}>
+        {summary}
       </p>
       <div aria-busy={busy} aria-describedby="piece-summary">
         {!snapshot ? (
           <p>No session. Enter a supported URL to inspect its pieces.</p>
         ) : (
-          <ol id="managed-pieces" className={styles.pieceList}>
-            <li className={styles.pieceRow} data-piece-id={snapshot.domainId}>
-              <span className={styles.typeLabel}>Domain</span>
-              <p className={styles.position}>Domain, 1 of 1</p>
-              <label htmlFor={`unicode-${snapshot.domainId}`}>Unicode Domain</label>
-              <input
-                id={`unicode-${snapshot.domainId}`}
-                className={styles.urlValue}
-                dir="ltr"
-                value={snapshot.domain.unicode}
-                readOnly
-              />
-              <label htmlFor={`ascii-${snapshot.domainId}`}>
-                ASCII/Punycode Domain
-              </label>
-              <input
-                id={`ascii-${snapshot.domainId}`}
-                className={styles.urlValue}
-                dir="ltr"
-                value={snapshot.domain.ascii}
-                readOnly
-              />
-              <p className={styles.conversionStatus}>Validated domain forms</p>
-            </li>
-            {snapshot.path.map((piece, index) => (
-              <li className={styles.pieceRow} data-piece-id={piece.id} key={piece.id}>
-                <span className={styles.typeLabel}>Path Segment</span>
-                <label htmlFor={`path-${piece.id}`}>
-                  Path Segment {index + 1} of {snapshot.path.length}
-                </label>
-                <input
-                  id={`path-${piece.id}`}
-                  className={styles.urlValue}
-                  dir="ltr"
-                  value={piece.rawSegment}
-                  readOnly
-                />
-              </li>
-            ))}
-            {snapshot.query.map((piece, index) => (
-              <li className={styles.pieceRow} data-piece-id={piece.id} key={piece.id}>
-                <span className={styles.typeLabel}>Query Parameter</span>
-                <p className={styles.position}>
-                  {queryLabels[index]}
+          <>
+            {visibleCount === 0 ? (
+              <div className={styles.noResults}>
+                <p>
+                  {summary}. No Managed Piece matches <bdi>‘{searchTerm}’</bdi>.
                 </p>
-                <label htmlFor={`query-key-${piece.id}`}>Key</label>
-                <input
-                  id={`query-key-${piece.id}`}
-                  className={styles.urlValue}
-                  dir="ltr"
-                  value={piece.rawKey}
-                  readOnly
-                />
-                <label htmlFor={`query-value-${piece.id}`}>
-                  {piece.equalsPresent ? "Value" : "Value absent"}
-                </label>
-                <input
-                  id={`query-value-${piece.id}`}
-                  className={styles.urlValue}
-                  dir="ltr"
-                  value={piece.rawValue}
-                  readOnly
-                />
-              </li>
-            ))}
-          </ol>
+                <button type="button" onClick={onClearSearch}>
+                  Clear Search
+                </button>
+              </div>
+            ) : null}
+            <ol id="managed-pieces" className={styles.pieceList}>
+              {pieces.map((managedPiece, index) => {
+              const filteredPosition = `Filtered position ${index + 1} of ${visibleCount}`;
+              if (managedPiece.kind === "domain") {
+                return (
+                  <li
+                    className={styles.pieceRow}
+                    data-piece-id={managedPiece.id}
+                    key={managedPiece.id}
+                    aria-posinset={index + 1}
+                    aria-setsize={visibleCount}
+                  >
+                    <span className={styles.typeLabel}>Domain</span>
+                    <p className={styles.position}>Domain, 1 of 1</p>
+                    <p className={styles.position}>{filteredPosition}</p>
+                    <label htmlFor={`unicode-${managedPiece.id}`}>Unicode Domain</label>
+                    <input
+                      id={`unicode-${managedPiece.id}`}
+                      className={styles.urlValue}
+                      dir="ltr"
+                      value={managedPiece.unicode}
+                      readOnly
+                    />
+                    <label htmlFor={`ascii-${managedPiece.id}`}>
+                      ASCII/Punycode Domain
+                    </label>
+                    <input
+                      id={`ascii-${managedPiece.id}`}
+                      className={styles.urlValue}
+                      dir="ltr"
+                      value={managedPiece.ascii}
+                      readOnly
+                    />
+                    <p className={styles.conversionStatus}>Validated domain forms</p>
+                  </li>
+                );
+              }
+              if (managedPiece.kind === "path") {
+                return (
+                  <li
+                    className={styles.pieceRow}
+                    data-piece-id={managedPiece.id}
+                    key={managedPiece.id}
+                    aria-posinset={index + 1}
+                    aria-setsize={visibleCount}
+                  >
+                    <span className={styles.typeLabel}>Path Segment</span>
+                    <p className={styles.position}>{filteredPosition}</p>
+                    <label htmlFor={`path-${managedPiece.id}`}>
+                      Path Segment {managedPiece.sourcePosition} of{" "}
+                      {managedPiece.sourceTotal}
+                    </label>
+                    <input
+                      id={`path-${managedPiece.id}`}
+                      className={styles.urlValue}
+                      dir="ltr"
+                      value={managedPiece.piece.rawSegment}
+                      readOnly
+                    />
+                  </li>
+                );
+              }
+              const occurrence =
+                managedPiece.duplicateTotal > 1
+                  ? `, occurrence ${managedPiece.duplicatePosition} of ${managedPiece.duplicateTotal}`
+                  : "";
+              return (
+                <li
+                  className={styles.pieceRow}
+                  data-piece-id={managedPiece.id}
+                  key={managedPiece.id}
+                  aria-posinset={index + 1}
+                  aria-setsize={visibleCount}
+                >
+                  <span className={styles.typeLabel}>Query Parameter</span>
+                  <p className={styles.position}>
+                    Query Parameter {managedPiece.sourcePosition} of{" "}
+                    {managedPiece.sourceTotal}
+                    {occurrence}
+                  </p>
+                  <p className={styles.position}>{filteredPosition}</p>
+                  <label htmlFor={`query-key-${managedPiece.id}`}>Key</label>
+                  <input
+                    id={`query-key-${managedPiece.id}`}
+                    className={styles.urlValue}
+                    dir="ltr"
+                    value={managedPiece.piece.rawKey}
+                    readOnly
+                  />
+                  <label htmlFor={`query-value-${managedPiece.id}`}>
+                    {managedPiece.piece.equalsPresent ? "Value" : "Value absent"}
+                  </label>
+                  <input
+                    id={`query-value-${managedPiece.id}`}
+                    className={styles.urlValue}
+                    dir="ltr"
+                    value={managedPiece.piece.rawValue}
+                    readOnly
+                  />
+                </li>
+              );
+              })}
+            </ol>
+          </>
         )}
       </div>
       {snapshot?.problems.map((problem) => (

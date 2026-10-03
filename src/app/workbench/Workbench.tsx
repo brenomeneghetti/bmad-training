@@ -1,4 +1,4 @@
-import { useReducer } from "react";
+import { useEffect, useMemo, useReducer, useRef, useState } from "react";
 import {
   initialSessionState,
   prepareParse,
@@ -6,16 +6,60 @@ import {
 } from "../../core/session";
 import { ValidationMessage } from "../feedback/ValidationMessage";
 import { StructuredView } from "../pieces/StructuredView";
+import { buildManagedPieces, filterManagedPieces } from "../pieces/search";
 import styles from "../../styles/workbench.module.css";
 
 export function Workbench() {
   const [state, dispatch] = useReducer(sessionReducer, initialSessionState);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searchStatus, setSearchStatus] = useState<{
+    readonly id: number;
+    readonly message: string;
+  } | null>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const announcementId = useRef(0);
+  const allPieces = useMemo(
+    () => (state.snapshot ? buildManagedPieces(state.snapshot) : []),
+    [state.snapshot],
+  );
+  const visiblePieces = useMemo(
+    () => filterManagedPieces(allPieces, searchTerm),
+    [allPieces, searchTerm],
+  );
 
   const apply = () => {
     const parse = prepareParse(state);
     dispatch(parse.start);
     dispatch(parse.complete());
   };
+
+  const announce = (message: string) => {
+    announcementId.current += 1;
+    setSearchStatus({ id: announcementId.current, message });
+  };
+
+  const clearSearch = () => {
+    if (searchTerm === "") return;
+    setSearchTerm("");
+    searchInputRef.current?.focus();
+    announce(`${allPieces.length} Managed Pieces shown.`);
+  };
+
+  useEffect(() => {
+    if (!state.snapshot || searchTerm === "") return;
+    const timer = window.setTimeout(() => {
+      announce(
+        `${visiblePieces.length} of ${allPieces.length} Managed Pieces shown.`,
+      );
+    }, 75);
+    return () => window.clearTimeout(timer);
+  }, [allPieces.length, searchTerm, state.snapshot, visiblePieces.length]);
+
+  useEffect(() => {
+    if (!searchStatus) return;
+    const timer = window.setTimeout(() => setSearchStatus(null), 2_000);
+    return () => window.clearTimeout(timer);
+  }, [searchStatus]);
 
   return (
     <main className={styles.workbench}>
@@ -92,7 +136,26 @@ export function Workbench() {
         </div>
       </section>
 
-      <StructuredView snapshot={state.snapshot} busy={state.phase === "parsing"} />
+      <StructuredView
+        snapshot={state.snapshot}
+        busy={state.phase === "parsing"}
+        pieces={visiblePieces}
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        onClearSearch={clearSearch}
+        searchInputRef={searchInputRef}
+      />
+      <div
+        id="search-status"
+        className={styles.visuallyHidden}
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+      >
+        {searchStatus ? (
+          <span key={searchStatus.id}>{searchStatus.message}</span>
+        ) : null}
+      </div>
     </main>
   );
 }

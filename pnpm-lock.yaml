@@ -175,6 +175,9 @@ importers:
       tr46:
         specifier: 6.0.0
         version: 6.0.0
+      unicode-case-folding:
+        specifier: 1.1.2
+        version: 1.1.2
     devDependencies:
       '@axe-core/playwright':
         specifier: 4.13.0
@@ -1012,6 +1015,9 @@ packages:
     resolution: {integrity: sha512-dkrQXeHSaoamnItlYbmzG0wFYrM0ZwDxCIg0A7aKjTyyhh9svRzCNFEzV+Vm05/yehjCzjDZ31KXfGEjYSztDQ==}
     engines: {node: '>=20.18.1'}
 
+  unicode-case-folding@1.1.2:
+    resolution: {integrity: sha512-03vMM1kVkJbiSIPDW1D0hu42prq3Pe000yC5PaNMjhBJQxDuhAfh+R1V4TXXL21adjBqj7fUtBjZuWCRmiOQQQ==}
+
   vite@8.3.1:
     resolution: {integrity: sha512-/bvH9E9tmCXRGp2uXY3WbOldqpTwFkbha/8ANaEQ6VkxhH60KyqLwgZq6lG2y+4uT55x9+9eUHMpQ7uGnOCKjA==}
     engines: {node: ^20.19.0 || >=22.12.0}
@@ -1705,6 +1711,8 @@ snapshots:
   undici-types@7.16.0: {}
 
   undici@7.30.0: {}
+
+  unicode-case-folding@1.1.2: {}
 
   vite@8.3.1(@types/node@24.10.1):
     dependencies:
