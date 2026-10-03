@@ -59,7 +59,7 @@ export function Workbench() {
           statuses.filter((status) => status.id !== id),
         );
         announcementTimers.current.delete(id);
-      }, 2_000),
+      }, 2_100),
     );
   }, [state.snapshot]);
 

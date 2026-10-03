@@ -2,7 +2,7 @@
 title: 'Story 1.6: Find and Clear Managed Pieces'
 type: 'feature'
 created: '2026-10-02'
-status: 'in-progress'
+status: 'in-review'
 route: 'dispatch'
 review_loop_iteration: 1
 baseline_commit: 'b8aa57625da7da6dcff11cba24479406e06d5fa5'
@@ -98,6 +98,23 @@ context:
 - `medium` / VG-1 — Clear Search's restored-count announcement is implemented but untested; removing the call would leave all existing clear/focus assertions passing.
 - `medium` / VG-2 — The no-normalization contract is untested; normalizing both operands would make canonically equivalent raw strings match without failing the current suite.
 - `medium` / VG-3 — Only the first filtered row's position metadata is asserted, so later rows could all expose position one without a test failure.
+- `false` / R2-BH-1 — Carried BH-11: the machine-specific `node_modules` metadata remains unstaged, uncommitted, and outside the Story 1.6 commits.
+- `low` / R2-BH-2 — Carried BH-10/EC-5: sprint tracking remains `in-progress` during the workflow's `in-review` phase.
+- `false` / R2-BH-3 — Carried BH-1/EC-2: the 300 ms interval defines settlement, and insertion occurs immediately when that interval completes, within the separate post-settlement bound.
+- `medium` / R2-BH-4 — A long unbroken Search term is rendered in no-result feedback without an overflow-wrap rule, so it can force horizontal overflow at narrow widths.
+- `false` / R2-BH-5 — The live region is intentionally a result-count status; the exact no-result term and explanation remain visible and reachable without a focus move, as the approved matrix requires.
+- `low` / R2-BH-6 — Announcement expiry is scheduled before React commits the status node, making actual DOM exposure marginally shorter than two seconds under commit delay.
+- `low` / R2-BH-7 — Carried BH-7: capacity observers rely on Playwright's global timeout, reducing failure clarity but not product correctness.
+- `medium` / R2-BH-8 — Capacity Search checks only result counts, so an incorrect piece with the same count could satisfy the performance journey.
+- `false` / R2-BH-9 — Dispatching `pointercancel` after `pointerdown` directly exercises the specified cancelled activation; native button semantics prevent a click without a completed release.
+- `false` / R2-BH-10 — Carried BH-6: Search has no reducer dispatch or mutation path, while stable objects, IDs, source order, and exact editor serialization are asserted.
+- `false` / R2-BH-11 — Carried BH-9: executable tests plus the artifact digest trace the evidence cell to the built Workbench and Structured View behavior.
+- `false` / R2-BH-12 — Review rows already contain their verdicts and evidence, and workflow routing—not links inside the log—determines whether each remains actionable.
+- `false` / R2-BH-13 — Carried EC-4: full-DOM completeness describes the retained complete model and unfiltered capacity list; filtered rendering intentionally shows only matches without virtualization.
+- `low` / R2-EC-1 — Carried BH-10/EC-5: sprint tracking is `in-progress` while formal review is active.
+- `medium` / R2-VG-1 — No-results tests do not assert that the empty `#managed-pieces` target remains mounted and still resolves from the skip link.
+- `medium` / R2-VG-2 — The second duplicate's source-position and occurrence label are untested even though its filtered position and ARIA metadata are covered.
+- `medium` / R2-VG-3 — Search tests do not prove percent-encoded path/query text matches literally while decoded equivalents remain unmatched.
 
 ## Design Notes
 

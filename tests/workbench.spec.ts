@@ -170,8 +170,22 @@ test("capacity view renders every row and stays usable at 320px", async ({ page 
       document.querySelectorAll<HTMLElement>("#managed-pieces > li"),
       (row) => row.dataset.pieceId,
     );
+    const visibleRows = () =>
+      Array.from(
+        document.querySelectorAll<HTMLElement>("#managed-pieces > li"),
+        (row) => ({
+          id: row.dataset.pieceId,
+          values: Array.from(
+            row.querySelectorAll<HTMLInputElement>("input"),
+            (field) => field.value,
+          ),
+        }),
+      );
     const applySearch = (term: string, expectedCount: number) =>
-      new Promise<number>((resolve) => {
+      new Promise<{
+        duration: number;
+        rows: ReturnType<typeof visibleRows>;
+      }>((resolve) => {
         const started = performance.now();
         const observer = new MutationObserver(() => {
           if (
@@ -179,14 +193,17 @@ test("capacity view renders every row and stays usable at 320px", async ({ page 
             expectedCount
           ) {
             observer.disconnect();
-            resolve(performance.now() - started);
+            resolve({
+              duration: performance.now() - started,
+              rows: visibleRows(),
+            });
           }
         });
         observer.observe(document.body, { childList: true, subtree: true });
         setter?.call(input, term);
         input.dispatchEvent(new Event("input", { bubbles: true }));
       });
-    const durations = {
+    const matches = {
       domain: await applySearch("example.com", 1),
       path: await applySearch("deep", 1),
       key: await applySearch("parameter-259", 1),
@@ -212,10 +229,41 @@ test("capacity view renders every row and stays usable at 320px", async ({ page 
       document.querySelectorAll<HTMLElement>("#managed-pieces > li"),
       (row) => row.dataset.pieceId,
     );
-    return { durations: { ...durations, clear: clearDuration }, originalIds, restoredIds };
+    return {
+      durations: {
+        domain: matches.domain.duration,
+        path: matches.path.duration,
+        key: matches.key.duration,
+        value: matches.value.duration,
+        none: matches.none.duration,
+        clear: clearDuration,
+      },
+      rows: {
+        domain: matches.domain.rows,
+        path: matches.path.rows,
+        key: matches.key.rows,
+        value: matches.value.rows,
+        none: matches.none.rows,
+      },
+      originalIds,
+      restoredIds,
+    };
   });
   expect(Object.values(searchMeasurements.durations).every((value) => value < 100))
     .toBe(true);
+  expect(searchMeasurements.rows.domain[0]?.values).toEqual([
+    "example.com",
+    "example.com",
+  ]);
+  expect(searchMeasurements.rows.path[0]?.values).toEqual(["deep"]);
+  expect(searchMeasurements.rows.key[0]?.values[0]).toBe("parameter-259");
+  expect(searchMeasurements.rows.value).toHaveLength(260);
+  expect(
+    searchMeasurements.rows.value.every((row) =>
+      row.values[1]?.includes("x".repeat(40)),
+    ),
+  ).toBe(true);
+  expect(searchMeasurements.rows.none).toEqual([]);
   expect(searchMeasurements.restoredIds).toEqual(searchMeasurements.originalIds);
   await expect(page.locator("#managed-pieces > li")).toHaveCount(263);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(

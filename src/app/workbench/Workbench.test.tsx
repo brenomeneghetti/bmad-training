@@ -126,6 +126,16 @@ describe("URL Workbench", () => {
       ).toBeVisible();
     });
     expect(screen.getByText("Query Parameter 1 of 8, occurrence 1 of 2")).toBeVisible();
+    expect(screen.getByText("Query Parameter 2 of 8, occurrence 2 of 2")).toBeVisible();
+
+    fireEvent.change(search, { target: { value: "a%2Fb" } });
+    expect(screen.getByLabelText("Path Segment 1 of 4")).toHaveValue("a%2Fb");
+    fireEvent.change(search, { target: { value: "a/b" } });
+    expect(screen.queryAllByRole("listitem")).toHaveLength(0);
+    fireEvent.change(search, { target: { value: "a%26b%3Dc" } });
+    expect(screen.getByLabelText("Value")).toHaveValue("a%26b%3Dc");
+    fireEvent.change(search, { target: { value: "a&b=c" } });
+    expect(screen.queryAllByRole("listitem")).toHaveLength(0);
 
     await user.click(screen.getByRole("button", { name: "Clear Search" }));
     expect(search).toHaveFocus();
@@ -154,6 +164,10 @@ describe("URL Workbench", () => {
     expect(screen.getByText(/No Managed Piece matches/)).toHaveTextContent(
       "0 of 3 Managed Pieces shown. No Managed Piece matches ‘unmatched’.",
     );
+    expect(document.querySelector("#managed-pieces")).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "Skip to Structured View results" }),
+    ).toHaveAttribute("href", "#managed-pieces");
     const clearButton = screen.getByRole("button", { name: "Clear Search" });
 
     fireEvent.pointerDown(clearButton);
@@ -285,7 +299,7 @@ describe("URL Workbench", () => {
     act(() => vi.advanceTimersByTime(300));
     expect(document.querySelector("#search-status span")).toBeInTheDocument();
     expect(screen.getByText("2 of 3 Managed Pieces shown.")).toBeInTheDocument();
-    act(() => vi.advanceTimersByTime(1_999));
+    act(() => vi.advanceTimersByTime(2_099));
     expect(document.querySelector("#search-status span")).toBeInTheDocument();
     act(() => vi.advanceTimersByTime(1));
     expect(document.querySelector("#search-status span")).not.toBeInTheDocument();

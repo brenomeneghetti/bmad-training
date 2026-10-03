@@ -144,6 +144,7 @@ h2 {
 
 .noResults :global(p) {
   margin-block-start: 0;
+  overflow-wrap: anywhere;
 }
 
 .visuallyHidden {
