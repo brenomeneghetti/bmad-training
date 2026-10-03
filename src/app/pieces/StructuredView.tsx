@@ -63,9 +63,6 @@ export function StructuredView({
                 <p>
                   {summary}. No Managed Piece matches <bdi>‘{searchTerm}’</bdi>.
                 </p>
-                <button type="button" onClick={onClearSearch}>
-                  Clear Search
-                </button>
               </div>
             ) : null}
             <ol id="managed-pieces" className={styles.pieceList}>

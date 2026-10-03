@@ -321,15 +321,13 @@ test("search no-results and clear remain keyboard and activation safe", async ({
   ).toBeVisible();
   await search.press("Escape");
   await expect(search).toHaveValue("unmatched");
-  const noResultClear = page
-    .getByText(/No Managed Piece matches/)
-    .locator("..")
-    .getByRole("button", { name: "Clear Search" });
-  await noResultClear.dispatchEvent("pointerdown");
-  await noResultClear.dispatchEvent("pointercancel");
+  const clearSearch = page.getByRole("button", { name: "Clear Search" });
+  await expect(clearSearch).toHaveCount(1);
+  await clearSearch.dispatchEvent("pointerdown");
+  await clearSearch.dispatchEvent("pointercancel");
   await expect(search).toHaveValue("unmatched");
-  await noResultClear.focus();
-  await noResultClear.press("Enter");
+  await clearSearch.focus();
+  await clearSearch.press("Enter");
   await expect(search).toBeFocused();
   await expect(page.locator("#managed-pieces > li")).toHaveCount(3);
 });

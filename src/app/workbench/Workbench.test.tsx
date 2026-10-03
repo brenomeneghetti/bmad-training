@@ -118,14 +118,23 @@ describe("URL Workbench", () => {
     expect(filteredRows.map((row) => row.dataset.pieceId)).toEqual(
       originalIds.slice(5, 7),
     );
-    expect(filteredRows[0]).toHaveAttribute("aria-posinset", "1");
-    expect(filteredRows[0]).toHaveAttribute("aria-setsize", "2");
-    expect(screen.getByText("Filtered position 1 of 2")).toBeVisible();
+    filteredRows.forEach((row, index) => {
+      expect(row).toHaveAttribute("aria-posinset", String(index + 1));
+      expect(row).toHaveAttribute("aria-setsize", "2");
+      expect(
+        within(row).getByText(`Filtered position ${index + 1} of 2`),
+      ).toBeVisible();
+    });
     expect(screen.getByText("Query Parameter 1 of 8, occurrence 1 of 2")).toBeVisible();
 
     await user.click(screen.getByRole("button", { name: "Clear Search" }));
     expect(search).toHaveFocus();
     expect(search).toHaveValue("");
+    expect(
+      within(document.querySelector("#search-status") as HTMLElement).getByText(
+        "13 of 13 Managed Pieces shown.",
+      ),
+    ).toBeInTheDocument();
     expect(screen.getAllByRole("listitem").map((row) => row.dataset.pieceId)).toEqual(
       originalIds,
     );
@@ -145,19 +154,35 @@ describe("URL Workbench", () => {
     expect(screen.getByText(/No Managed Piece matches/)).toHaveTextContent(
       "0 of 3 Managed Pieces shown. No Managed Piece matches ‘unmatched’.",
     );
-    const clearButtons = screen.getAllByRole("button", { name: "Clear Search" });
+    const clearButton = screen.getByRole("button", { name: "Clear Search" });
 
-    fireEvent.pointerDown(clearButtons[1]);
+    fireEvent.pointerDown(clearButton);
+    fireEvent.pointerCancel(clearButton);
     expect(search).toHaveValue("unmatched");
     fireEvent.keyDown(search, { key: "Escape" });
     expect(search).toHaveValue("unmatched");
 
-    await user.click(clearButtons[1]);
+    await user.click(clearButton);
     expect(search).toHaveFocus();
     expect(screen.getAllByRole("listitem")).toHaveLength(3);
   });
 
-  it("settles polite repeatable search announcements without moving focus", async () => {
+  it("does not normalize canonically equivalent raw search text", async () => {
+    const user = userEvent.setup();
+    render(<Workbench />);
+    await user.type(
+      screen.getByLabelText("Complete HTTP or HTTPS Absolute URL"),
+      "https://example.com/café",
+    );
+    await user.click(screen.getByRole("button", { name: "Apply URL" }));
+
+    fireEvent.change(screen.getByLabelText("Search Managed Pieces"), {
+      target: { value: "cafe\u0301" },
+    });
+    expect(screen.queryAllByRole("listitem")).toHaveLength(0);
+  });
+
+  it("settles repeatable announcements without replacing live entries or moving focus", async () => {
     render(<Workbench />);
     fireEvent.change(
       screen.getByLabelText("Complete HTTP or HTTPS Absolute URL"),
@@ -174,17 +199,63 @@ describe("URL Workbench", () => {
       expect(screen.getByText("3 of 4 Managed Pieces shown.")).toBeInTheDocument(),
     );
     const firstAnnouncement = document.querySelector("#search-status span");
+    expect(firstAnnouncement).toHaveAttribute("role", "status");
+    expect(firstAnnouncement).toHaveAttribute("aria-live", "polite");
+    expect(firstAnnouncement).toHaveAttribute("aria-atomic", "true");
     expect(search).toHaveFocus();
 
     fireEvent.change(search, { target: { value: "no" } });
     fireEvent.change(search, { target: { value: "x" } });
     await waitFor(() =>
-      expect(document.querySelector("#search-status span")).not.toBe(
-        firstAnnouncement,
-      ),
+      expect(
+        within(document.querySelector("#search-status") as HTMLElement).getAllByText(
+          "3 of 4 Managed Pieces shown.",
+        ),
+      ).toHaveLength(2),
     );
-    expect(screen.getByText("3 of 4 Managed Pieces shown.")).toBeInTheDocument();
+    expect(document.querySelector("#search-status span")).toBe(firstAnnouncement);
     expect(search).toHaveFocus();
+  });
+
+  it("announces restoration when the final search character is deleted", () => {
+    render(<Workbench />);
+    fireEvent.change(
+      screen.getByLabelText("Complete HTTP or HTTPS Absolute URL"),
+      { target: { value: "https://example.com/a?x=1" } },
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
+    const search = screen.getByLabelText("Search Managed Pieces");
+    fireEvent.change(search, { target: { value: "x" } });
+    fireEvent.change(search, { target: { value: "" } });
+
+    expect(
+      within(document.querySelector("#search-status") as HTMLElement).getByText(
+        "3 of 3 Managed Pieces shown.",
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("removes old-session announcements when the snapshot is replaced", () => {
+    vi.useFakeTimers();
+    render(<Workbench />);
+    const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
+    fireEvent.change(editor, {
+      target: { value: "https://first.example/a?x=1" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
+    fireEvent.change(screen.getByLabelText("Search Managed Pieces"), {
+      target: { value: "1" },
+    });
+    act(() => vi.advanceTimersByTime(300));
+    expect(screen.getByText("1 of 3 Managed Pieces shown.")).toBeInTheDocument();
+
+    fireEvent.change(editor, { target: { value: "https://second.example/b" } });
+    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
+    expect(
+      screen.queryByText("1 of 3 Managed Pieces shown."),
+    ).not.toBeInTheDocument();
+    act(() => vi.advanceTimersByTime(300));
+    expect(screen.getByText("0 of 2 Managed Pieces shown.")).toBeInTheDocument();
   });
 
   it("exposes a settled search announcement for at least two seconds", () => {

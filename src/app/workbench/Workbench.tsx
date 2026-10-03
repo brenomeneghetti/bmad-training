@@ -1,9 +1,17 @@
-import { useEffect, useMemo, useReducer, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useReducer,
+  useRef,
+  useState,
+} from "react";
 import {
   initialSessionState,
   prepareParse,
   sessionReducer,
 } from "../../core/session";
+import type { LosslessUrl } from "../../core/url";
 import { ValidationMessage } from "../feedback/ValidationMessage";
 import { StructuredView } from "../pieces/StructuredView";
 import { buildManagedPieces, filterManagedPieces } from "../pieces/search";
@@ -12,12 +20,16 @@ import styles from "../../styles/workbench.module.css";
 export function Workbench() {
   const [state, dispatch] = useReducer(sessionReducer, initialSessionState);
   const [searchTerm, setSearchTerm] = useState("");
-  const [searchStatus, setSearchStatus] = useState<{
+  const [searchStatuses, setSearchStatuses] = useState<readonly {
     readonly id: number;
     readonly message: string;
-  } | null>(null);
+    readonly snapshot: LosslessUrl | null;
+  }[]>([]);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const announcementId = useRef(0);
+  const announcementTimers = useRef(new Map<number, number>());
+  const explicitClear = useRef(false);
+  const previousSearchTerm = useRef("");
   const allPieces = useMemo(
     () => (state.snapshot ? buildManagedPieces(state.snapshot) : []),
     [state.snapshot],
@@ -33,33 +45,74 @@ export function Workbench() {
     dispatch(parse.complete());
   };
 
-  const announce = (message: string) => {
+  const announce = useCallback((message: string) => {
     announcementId.current += 1;
-    setSearchStatus({ id: announcementId.current, message });
-  };
+    const id = announcementId.current;
+    setSearchStatuses((statuses) => [
+      ...statuses,
+      { id, message, snapshot: state.snapshot },
+    ]);
+    announcementTimers.current.set(
+      id,
+      window.setTimeout(() => {
+        setSearchStatuses((statuses) =>
+          statuses.filter((status) => status.id !== id),
+        );
+        announcementTimers.current.delete(id);
+      }, 2_000),
+    );
+  }, [state.snapshot]);
 
   const clearSearch = () => {
     if (searchTerm === "") return;
+    explicitClear.current = true;
     setSearchTerm("");
     searchInputRef.current?.focus();
     announce(`${allPieces.length} of ${allPieces.length} Managed Pieces shown.`);
   };
 
   useEffect(() => {
-    if (!state.snapshot || searchTerm === "") return;
+    if (!state.snapshot) return;
+    if (searchTerm === "") {
+      if (explicitClear.current) {
+        explicitClear.current = false;
+      } else if (previousSearchTerm.current !== "") {
+        announce(`${allPieces.length} of ${allPieces.length} Managed Pieces shown.`);
+      }
+      previousSearchTerm.current = searchTerm;
+      return;
+    }
+    previousSearchTerm.current = searchTerm;
     const timer = window.setTimeout(() => {
       announce(
         `${visiblePieces.length} of ${allPieces.length} Managed Pieces shown.`,
       );
     }, 300);
     return () => window.clearTimeout(timer);
-  }, [allPieces.length, searchTerm, state.snapshot, visiblePieces.length]);
+  }, [
+    allPieces.length,
+    announce,
+    searchTerm,
+    state.snapshot,
+    visiblePieces.length,
+  ]);
 
   useEffect(() => {
-    if (!searchStatus) return;
-    const timer = window.setTimeout(() => setSearchStatus(null), 2_000);
-    return () => window.clearTimeout(timer);
-  }, [searchStatus]);
+    setSearchStatuses([]);
+    for (const timer of announcementTimers.current.values()) {
+      window.clearTimeout(timer);
+    }
+    announcementTimers.current.clear();
+  }, [state.snapshot]);
+
+  useEffect(
+    () => () => {
+      for (const timer of announcementTimers.current.values()) {
+        window.clearTimeout(timer);
+      }
+    },
+    [],
+  );
 
   return (
     <main className={styles.workbench}>
@@ -148,13 +201,19 @@ export function Workbench() {
       <div
         id="search-status"
         className={styles.visuallyHidden}
-        role="status"
-        aria-live="polite"
-        aria-atomic="true"
       >
-        {searchStatus ? (
-          <span key={searchStatus.id}>{searchStatus.message}</span>
-        ) : null}
+        {searchStatuses
+          .filter((status) => status.snapshot === state.snapshot)
+          .map((status) => (
+            <span
+              key={status.id}
+              role="status"
+              aria-live="polite"
+              aria-atomic="true"
+            >
+              {status.message}
+            </span>
+          ))}
       </div>
     </main>
   );
