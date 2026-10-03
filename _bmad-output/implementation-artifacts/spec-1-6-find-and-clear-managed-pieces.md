@@ -2,7 +2,7 @@
 title: 'Story 1.6: Find and Clear Managed Pieces'
 type: 'feature'
 created: '2026-10-02'
-status: 'done'
+status: 'in-progress'
 route: 'dispatch'
 review_loop_iteration: 1
 baseline_commit: 'b8aa57625da7da6dcff11cba24479406e06d5fa5'

@@ -41,7 +41,7 @@ development_status:
   1-3-inspect-every-url-piece-without-semantic-loss: done
   1-4-verify-internationalized-domain-representations: done
   1-5-navigate-a-complete-high-density-structured-view: done
-  1-6-find-and-clear-managed-pieces: review
+  1-6-find-and-clear-managed-pieces: in-progress
   epic-1-retrospective: optional
 
   epic-2: backlog
