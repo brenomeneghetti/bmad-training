@@ -134,6 +134,26 @@ describe("lossless URL parser", () => {
     expect(ipv6.ok && ipv6.value.domain.ascii).toBe("[::1]");
   });
 
+  it("replaces an IPv6 host without changing its port or surrounding bytes", () => {
+    const parsed = parseLosslessUrl("https://User@[::1]:8443/a%2fb?x=1#Frag");
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    const edited = replaceLosslessDomain(parsed.value, {
+      pieceId: parsed.value.domainId,
+      field: "domain-ascii",
+      value: "[2001:db8::1]",
+    });
+    expect(edited.ok).toBe(true);
+    if (!edited.ok) return;
+    expect(edited.value.serialized).toBe(
+      "https://User@[2001:db8::1]:8443/a%2fb?x=1#Frag",
+    );
+    expect(edited.value.authorityPrefix).toBe("User@");
+    expect(edited.value.authoritySuffix).toBe(":8443");
+    expect(edited.value.path).toBe(parsed.value.path);
+    expect(edited.value.query).toBe(parsed.value.query);
+  });
+
   it("replaces only the exact host while preserving every unrelated byte and ID", () => {
     const parsed = parseLosslessUrl(
       "https://User:Pass@Example.COM:044/a%2fb//?dup=1&dup=2#Frag%2f",

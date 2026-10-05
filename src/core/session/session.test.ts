@@ -156,6 +156,9 @@ describe("session authority", () => {
         field: "domain-unicode",
       });
       expect(edited.revision).toBe(active.revision + 1);
+      expect(edited.structuredSuccess).toContain(
+        "Unicode Domain, ASCII/Punycode Domain, and Full URL updated",
+      );
       expect(
         edited.tokenRevisions[`${active.snapshot.domainId}:domain-unicode`],
       ).toBe(1);
@@ -238,6 +241,14 @@ describe("session authority", () => {
         expect(result.history).toBe(active.history);
         expect(result.revision).toBe(active.revision);
         expect(result.structuredProblem?.code ?? null).toBe(code);
+        expect(result.structuredSuccess).toBeNull();
+        if (_name === "stale") {
+          expect(
+            result.structuredDrafts[
+              `${active.snapshot.domainId}:domain-unicode`
+            ]?.value,
+          ).toBe("faß.de");
+        }
         if (_name === "no-op") expect(result).toBe(active);
       },
   );
@@ -284,7 +295,37 @@ describe("session authority", () => {
       expect(tooLong.structuredProblem?.code).toBe("url-capacity-exceeded");
       expect(tooLong.snapshot).toBe(capacity.snapshot);
       expect(tooLong.history).toBe(capacity.history);
+      expect(
+        tooLong.structuredDrafts[
+          `${capacity.snapshot.domainId}:domain-unicode`
+        ]?.value,
+      ).toBe("longer.example");
   });
+
+  it.each([
+    ["cafe\u0301.example", "xn--caf-dma.example", "café.example"],
+    ["مثال.إختبار", "xn--mgbh0fb.xn--kgbechtv", "مثال.إختبار"],
+    ["עברית.example", "xn--5dbqzzl.example", "עברית.example"],
+    ["раypal.example", "xn--ypal-43d9g.example", "раypal.example"],
+  ] as const)(
+    "publishes combining, RTL, and standards-valid mixed-script Domain edits: %s",
+    (value, ascii, unicode) => {
+      const active = apply(initialSessionState, "https://example.com/a?x=1");
+      if (!active.snapshot) throw new Error("Missing active snapshot");
+      const edited = sessionReducer(active, {
+        type: "structuredEdit",
+        command: {
+          pieceId: active.snapshot.domainId,
+          field: "domain-unicode",
+          tokenRevision: 0,
+          value,
+        },
+      });
+      expect(edited.snapshot?.domain).toEqual({ ascii, unicode });
+      expect(edited.snapshot?.serialized).toBe(`https://${ascii}/a?x=1`);
+      expect(edited.history).toHaveLength(1);
+    },
+  );
 
   it("keeps invalid text as a correctable local draft", () => {
     const active = apply(initialSessionState, "https://example.com/a?x=1");

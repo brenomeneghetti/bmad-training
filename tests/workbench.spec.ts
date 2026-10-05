@@ -185,9 +185,18 @@ test("Domain editing is synchronized, correctable, IME-safe, and host-only", asy
     await expect(ascii).toHaveAttribute("aria-invalid", "true");
     const errorId = await ascii.getAttribute("aria-errormessage");
     if (!errorId) throw new Error("Missing associated Domain error");
+    const domainId = await ascii.locator("xpath=ancestor::li").getAttribute(
+      "data-piece-id",
+    );
+    expect(errorId).toBe(`error-${domainId}-domain-ascii`);
+    await expect(ascii).toHaveAttribute(
+      "aria-describedby",
+      `help-${domainId}-domain`,
+    );
     await expect(page.locator(`#${errorId}`)).toContainText(
       "valid ASCII or Punycode",
     );
+    await expect(page.getByText("Domain forms are synchronized.")).toHaveCount(0);
     await expect(unicode).toHaveValue("faß.de");
     await expect(fullUrl).toHaveValue(
       "https://User:Pass@xn--fa-hia.de:044/a%2fb//?dup=1&dup=2#Frag%2f",
@@ -197,6 +206,19 @@ test("Domain editing is synchronized, correctable, IME-safe, and host-only", asy
     await expect(ascii).toBeFocused();
     await expect(ascii).toHaveValue("example.com");
     await expect(unicode).toHaveValue("example.com");
+    await expect(page.getByText(/Domain synchronized at revision 3/)).toContainText(
+      "Unicode Domain, ASCII/Punycode Domain, and Full URL updated",
+    );
+    await ascii.evaluate((input) => {
+      const field = input as HTMLInputElement;
+      field.focus();
+      field.setSelectionRange(3, 4);
+    });
+    await page.keyboard.type("M");
+    await expect(ascii).toHaveValue("example.com");
+    expect(
+      await ascii.evaluate((input) => (input as HTMLInputElement).selectionStart),
+    ).toBe(4);
     await expect(fullUrl).toHaveValue(
       "https://User:Pass@example.com:044/a%2fb//?dup=1&dup=2#Frag%2f",
     );
@@ -228,10 +250,20 @@ test("Domain editing is synchronized, correctable, IME-safe, and host-only", asy
           data: "日本",
         }),
       );
+      input.dispatchEvent(
+        new InputEvent("input", {
+          bubbles: true,
+          data: "日本",
+          inputType: "insertFromComposition",
+          isComposing: false,
+        }),
+      );
     });
     await expect(fullUrl).toHaveValue(
       "https://User:Pass@xn--wgv71a.jp:044/a%2fb//?dup=1&dup=2#Frag%2f",
     );
+    await expect(page.getByText(/Domain synchronized at revision 4/)).toBeVisible();
+    await expect(unicode).not.toHaveAttribute("aria-invalid");
     await expect(unicode).toHaveCSS("unicode-bidi", "isolate");
 
     await fullUrl.fill("/invalid");

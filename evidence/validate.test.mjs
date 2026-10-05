@@ -70,10 +70,10 @@ const createFixture = async (context) => {
       ["story-2-1-privacy", "2.1"],
       ["story-2-1-performance", "2.1"],
       ["story-2-2-domain-conversion", "2.2"],
-      ["story-2-2-host-only-mutation", "2.2"],
-      ["story-2-2-accessibility", "2.2"],
+      ["story-2-2-host-only-exactness", "2.2"],
+      ["story-2-2-accessibility-status", "2.2"],
       ["story-2-2-privacy", "2.2"],
-      ["story-2-2-performance", "2.2"],
+      ["story-2-2-capacity", "2.2"],
     ].map(([id, story]) => ({
       id,
       story,

@@ -51,4 +51,12 @@ describe("TR46 domain conversion", () => {
     "rejects malformed, joiner, bidi, and non-ASCII ASCII-form edits: %s",
     (input) => expect(convertDomainEdit(input, "ascii").ok).toBe(false),
   );
+
+  it("rejects otherwise-valid Unicode text in the ASCII/Punycode form", () => {
+    expect(convertDomainEdit("faß.de", "unicode").ok).toBe(true);
+    expect(convertDomainEdit("faß.de", "ascii")).toMatchObject({
+      ok: false,
+      error: { code: "invalid-domain" },
+    });
+  });
 });

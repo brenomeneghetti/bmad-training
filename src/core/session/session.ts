@@ -48,6 +48,7 @@ export interface SessionState {
   readonly lastValidSnapshot: LosslessUrl | null;
   readonly problem: UrlProblem | null;
   readonly structuredProblem: UrlProblem | null;
+  readonly structuredSuccess: string | null;
   readonly structuredDrafts: Readonly<Record<string, StructuredDraft>>;
   readonly tokenRevisions: Readonly<Record<string, number>>;
   readonly history: readonly MutationEntry[];
@@ -78,6 +79,7 @@ export const initialSessionState: SessionState = {
   lastValidSnapshot: null,
   problem: null,
   structuredProblem: null,
+  structuredSuccess: null,
   structuredDrafts: {},
   tokenRevisions: {},
   history: [],
@@ -226,6 +228,7 @@ export const sessionReducer = (
         pendingInput: null,
         problem: null,
         structuredProblem: null,
+        structuredSuccess: null,
       };
     case "parseStarted":
       if (
@@ -241,6 +244,7 @@ export const sessionReducer = (
         pendingInput: action.input,
         problem: null,
         structuredProblem: null,
+        structuredSuccess: null,
       };
     case "parseCompleted": {
       if (
@@ -257,6 +261,7 @@ export const sessionReducer = (
           phase: "invalid-intake",
           pendingInput: null,
           problem: action.result.error,
+          structuredSuccess: null,
         };
       }
       return {
@@ -267,6 +272,7 @@ export const sessionReducer = (
         pendingInput: null,
         problem: null,
         structuredProblem: null,
+        structuredSuccess: null,
         structuredDrafts: {},
         tokenRevisions: revisionsFor(action.result.value),
         history: [],
@@ -322,6 +328,7 @@ export const sessionReducer = (
               message:
                 "This Domain is no longer available. Review the current URL and try again.",
             },
+            structuredSuccess: null,
           };
         }
         if (
@@ -337,13 +344,11 @@ export const sessionReducer = (
           return {
             ...state,
             structuredProblem,
+            structuredSuccess: null,
             structuredDrafts: {
               ...domainDrafts,
               [key]: {
-                value:
-                  action.command.field === "domain-unicode"
-                    ? state.snapshot.domain.unicode
-                    : state.snapshot.domain.ascii,
+                value: action.command.value,
                 problem: structuredProblem,
               },
             },
@@ -357,7 +362,18 @@ export const sessionReducer = (
               field: "domain",
               message: "This edit would exceed the 20,000-character URL limit.",
             },
-            structuredDrafts: domainDrafts,
+            structuredSuccess: null,
+            structuredDrafts: {
+              ...domainDrafts,
+              [key]: {
+                value: action.command.value,
+                problem: {
+                  code: "url-capacity-exceeded",
+                  field: "domain",
+                  message: "This edit would exceed the 20,000-character URL limit.",
+                },
+              },
+            },
           };
         }
         const result = replaceLosslessDomain(state.snapshot, action.command);
@@ -365,6 +381,7 @@ export const sessionReducer = (
           return {
             ...state,
             structuredProblem: result.error,
+            structuredSuccess: null,
             structuredDrafts: {
               ...domainDrafts,
               [key]: { value: action.command.value, problem: result.error },
@@ -390,6 +407,7 @@ export const sessionReducer = (
           return {
             ...state,
             structuredProblem: null,
+            structuredSuccess: null,
             structuredDrafts,
           };
         }
@@ -400,6 +418,9 @@ export const sessionReducer = (
           lastValidSnapshot: result.value,
           problem: null,
           structuredProblem: null,
+          structuredSuccess: `Domain synchronized at revision ${
+            state.revision + 1
+          }: Unicode Domain, ASCII/Punycode Domain, and Full URL updated.`,
           structuredDrafts,
           tokenRevisions: {
             ...state.tokenRevisions,
@@ -447,6 +468,7 @@ export const sessionReducer = (
         return {
           ...state,
           structuredProblem,
+          structuredSuccess: null,
           structuredDrafts: {
             ...state.structuredDrafts,
             [key]: {
@@ -480,6 +502,7 @@ export const sessionReducer = (
         return {
           ...state,
           structuredProblem: result.error,
+          structuredSuccess: null,
           structuredDrafts: {
             ...state.structuredDrafts,
             [key]: {
@@ -496,6 +519,7 @@ export const sessionReducer = (
         return {
           ...state,
           structuredProblem: null,
+          structuredSuccess: null,
           structuredDrafts,
         };
       }
@@ -507,6 +531,7 @@ export const sessionReducer = (
         lastValidSnapshot: result.value,
         problem: null,
         structuredProblem: null,
+        structuredSuccess: null,
         structuredDrafts,
         tokenRevisions: {
           ...state.tokenRevisions,

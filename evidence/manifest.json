@@ -5,7 +5,7 @@
   "evaluatorVersion": "1.0.0",
   "artifact": {
     "path": "dist",
-    "digest": "afc2b284e4d666defbf8fe0fe6ae6ef6ad419f00017b08fcbff47e07d4a42852",
+    "digest": "1ae633d626cba860e2eb0652a470606cc175250960e1d4968689df1b48c5d777",
     "delivery": "deployment/static-delivery.json"
   },
   "toolVersions": {
@@ -144,7 +144,7 @@
       ]
     },
     {
-      "id": "story-2-2-host-only-mutation",
+      "id": "story-2-2-host-only-exactness",
       "story": "2.2",
       "status": "pass",
       "owner": "automated",
@@ -155,7 +155,7 @@
       ]
     },
     {
-      "id": "story-2-2-accessibility",
+      "id": "story-2-2-accessibility-status",
       "story": "2.2",
       "status": "pass",
       "owner": "automated",
@@ -175,7 +175,7 @@
       ]
     },
     {
-      "id": "story-2-2-performance",
+      "id": "story-2-2-capacity",
       "story": "2.2",
       "status": "pass",
       "owner": "automated",

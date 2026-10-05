@@ -30,6 +30,7 @@ interface StructuredViewProps {
   readonly tokenRevisions: Readonly<Record<string, number>>;
   readonly onStructuredEdit: (command: StructuredCommand) => void;
   readonly structuredProblem: UrlProblem | null;
+  readonly structuredSuccess: string | null;
   readonly editorsDisabled: boolean;
 }
 
@@ -58,18 +59,68 @@ function DomainEditor({
 }: DomainEditorProps) {
   const [compositionValue, setCompositionValue] = useState<string | null>(null);
   const composing = useRef(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const pendingSuffixLength = useRef<number | null>(null);
+  const caretFrame = useRef<number | null>(null);
+  const ignorePostCompositionValue = useRef<string | null>(null);
+  const ignorePostCompositionTimer = useRef<number | null>(null);
   const value = compositionValue ?? draft?.value ?? committedValue;
-  const errorId = `${id}-error`;
+  const errorId = `error-${pieceId}-${field}`;
+  const helpId = `help-${pieceId}-domain`;
+
+  useLayoutEffect(() => {
+    if (pendingSuffixLength.current === null || !inputRef.current) return;
+    const caret = Math.max(0, value.length - pendingSuffixLength.current);
+    inputRef.current.setSelectionRange(caret, caret);
+    pendingSuffixLength.current = null;
+    if (caretFrame.current !== null) {
+      window.cancelAnimationFrame(caretFrame.current);
+    }
+    caretFrame.current = window.requestAnimationFrame(() => {
+      inputRef.current?.setSelectionRange(caret, caret);
+      caretFrame.current = null;
+    });
+  }, [value]);
+
+  useEffect(
+    () => () => {
+      if (caretFrame.current !== null) window.cancelAnimationFrame(caretFrame.current);
+      if (ignorePostCompositionTimer.current !== null) {
+        window.clearTimeout(ignorePostCompositionTimer.current);
+      }
+    },
+    [],
+  );
+
+  const submit = (nextValue: string, selectionStart: number | null) => {
+    const suffixLength =
+      nextValue.length - (selectionStart ?? nextValue.length);
+    pendingSuffixLength.current = suffixLength;
+    onEdit({ pieceId, field, tokenRevision, value: nextValue });
+    if (caretFrame.current !== null) {
+      window.cancelAnimationFrame(caretFrame.current);
+    }
+    caretFrame.current = window.requestAnimationFrame(() => {
+      if (!inputRef.current) return;
+      const caret = Math.max(0, inputRef.current.value.length - suffixLength);
+      inputRef.current.setSelectionRange(caret, caret);
+      pendingSuffixLength.current = null;
+      caretFrame.current = null;
+    });
+  };
+
   return (
     <>
       <label htmlFor={id}>{label}</label>
       <input
         id={id}
+        ref={inputRef}
         className={styles.urlValue}
         dir="ltr"
         value={value}
         aria-invalid={draft ? true : undefined}
         aria-errormessage={draft ? errorId : undefined}
+        aria-describedby={helpId}
         disabled={disabled}
         onCompositionStart={(event) => {
           composing.current = true;
@@ -78,12 +129,15 @@ function DomainEditor({
         onCompositionEnd={(event) => {
           composing.current = false;
           setCompositionValue(null);
-          onEdit({
-            pieceId,
-            field,
-            tokenRevision,
-            value: event.currentTarget.value,
-          });
+          ignorePostCompositionValue.current = event.currentTarget.value;
+          if (ignorePostCompositionTimer.current !== null) {
+            window.clearTimeout(ignorePostCompositionTimer.current);
+          }
+          ignorePostCompositionTimer.current = window.setTimeout(() => {
+            ignorePostCompositionValue.current = null;
+            ignorePostCompositionTimer.current = null;
+          }, 0);
+          submit(event.currentTarget.value, event.currentTarget.selectionStart);
         }}
         onChange={(event) => {
           if (
@@ -93,12 +147,11 @@ function DomainEditor({
             setCompositionValue(event.currentTarget.value);
             return;
           }
-          onEdit({
-            pieceId,
-            field,
-            tokenRevision,
-            value: event.currentTarget.value,
-          });
+          if (ignorePostCompositionValue.current === event.currentTarget.value) {
+            ignorePostCompositionValue.current = null;
+            return;
+          }
+          submit(event.currentTarget.value, event.currentTarget.selectionStart);
         }}
         autoComplete="off"
         spellCheck={false}
@@ -480,6 +533,7 @@ export function StructuredView({
   tokenRevisions,
   onStructuredEdit,
   structuredProblem,
+  structuredSuccess,
   editorsDisabled,
 }: StructuredViewProps) {
   const managedCount = snapshot ? 1 + snapshot.path.length + snapshot.query.length : 0;
@@ -540,6 +594,10 @@ export function StructuredView({
                     <span className={styles.typeLabel}>Domain</span>
                     <p className={styles.position}>Domain, 1 of 1</p>
                     <p className={styles.position}>{filteredPosition}</p>
+                    <p id={`help-${managedPiece.id}-domain`}>
+                      Edit either form. Valid input synchronizes both Domain forms and
+                      the Full URL.
+                    </p>
                     <DomainEditor
                       id={`unicode-${managedPiece.id}`}
                       label="Unicode Domain"
@@ -578,7 +636,16 @@ export function StructuredView({
                       onEdit={onStructuredEdit}
                       disabled={editorsDisabled}
                     />
-                    <p className={styles.conversionStatus}>Validated domain forms</p>
+                    {!structuredDrafts[
+                      structuredFieldKey(managedPiece.id, "domain-unicode")
+                    ] &&
+                    !structuredDrafts[
+                      structuredFieldKey(managedPiece.id, "domain-ascii")
+                    ] ? (
+                      <p className={styles.conversionStatus}>
+                        Domain forms are synchronized.
+                      </p>
+                    ) : null}
                   </li>
                 );
               }
@@ -687,6 +754,11 @@ export function StructuredView({
       ) ? (
         <p className={styles.validation} role="status">
           {structuredProblem.message}
+        </p>
+      ) : null}
+      {structuredSuccess ? (
+        <p className={styles.conversionStatus} role="status" aria-live="polite">
+          {structuredSuccess}
         </p>
       ) : null}
     </section>

@@ -224,6 +224,7 @@ export function Workbench() {
           dispatch({ type: "structuredEdit", command });
         }}
         structuredProblem={state.structuredProblem}
+        structuredSuccess={state.structuredSuccess}
         editorsDisabled={
           state.phase !== "active" ||
           state.input !== state.snapshot?.serialized

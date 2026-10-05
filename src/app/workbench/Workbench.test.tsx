@@ -400,10 +400,22 @@ describe("URL Workbench", () => {
     fireEvent.change(editor, { target: { value: "https://example.com/a?x=1" } });
     fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
     const ascii = screen.getByLabelText("ASCII/Punycode Domain");
+    const domainId = ascii.closest("li")?.dataset.pieceId;
     fireEvent.change(ascii, { target: { value: "xn--" } });
     expect(ascii).toHaveValue("xn--");
     expect(ascii).toHaveAttribute("aria-invalid", "true");
-    expect(ascii).toHaveAttribute("aria-errormessage");
+    expect(ascii).toHaveAttribute(
+      "aria-errormessage",
+      `error-${domainId}-domain-ascii`,
+    );
+    expect(ascii).toHaveAttribute(
+      "aria-describedby",
+      `help-${domainId}-domain`,
+    );
+    expect(
+      document.getElementById(`help-${domainId}-domain`),
+    ).toHaveTextContent("synchronizes both Domain forms and the Full URL");
+    expect(screen.queryByText("Domain forms are synchronized.")).not.toBeInTheDocument();
     expect(screen.getByLabelText("Unicode Domain")).toHaveValue("example.com");
     expect(editor).toHaveValue("https://example.com/a?x=1");
 
@@ -412,6 +424,28 @@ describe("URL Workbench", () => {
     expect(ascii).toHaveValue("xn--fa-hia.de");
     expect(screen.getByLabelText("Unicode Domain")).toHaveValue("faß.de");
     expect(editor).toHaveValue("https://xn--fa-hia.de/a?x=1");
+    expect(screen.getByText(/Domain synchronized at revision/)).toHaveTextContent(
+      "Unicode Domain, ASCII/Punycode Domain, and Full URL updated",
+    );
+  });
+
+  it("clears active Search when a Domain edit starts and retains Domain focus", () => {
+    render(<Workbench />);
+    const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
+    fireEvent.change(editor, {
+      target: { value: "https://example.com/a?x=1" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
+    const search = screen.getByLabelText("Search Managed Pieces");
+    fireEvent.change(search, { target: { value: "example" } });
+    const unicode = screen.getByLabelText("Unicode Domain");
+    unicode.focus();
+    fireEvent.change(unicode, { target: { value: "faß.de" } });
+
+    expect(search).toHaveValue("");
+    expect(unicode).toHaveFocus();
+    expect(unicode).toHaveValue("faß.de");
+    expect(screen.getAllByRole("listitem")).toHaveLength(3);
   });
 
   it("suppresses Domain commits during IME composition", () => {
