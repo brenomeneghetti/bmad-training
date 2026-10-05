@@ -29,7 +29,6 @@ export function Workbench() {
   const announcementId = useRef(0);
   const announcementTimers = useRef(new Map<number, number>());
   const explicitClear = useRef(false);
-  const pendingStructuredRestore = useRef<string | null>(null);
   const previousSearchTerm = useRef("");
   const allPieces = useMemo(
     () => (state.snapshot ? buildManagedPieces(state.snapshot) : []),
@@ -41,17 +40,24 @@ export function Workbench() {
   );
 
   const apply = () => {
+    if (
+      state.phase === "active" &&
+      state.snapshot &&
+      state.input === state.snapshot.serialized
+    ) {
+      return;
+    }
     const parse = prepareParse(state);
     dispatch(parse.start);
     dispatch(parse.complete());
   };
 
-  const announce = useCallback((message: string) => {
+  const announce = useCallback((message: string, preserveAcrossSnapshot = false) => {
     announcementId.current += 1;
     const id = announcementId.current;
     setSearchStatuses((statuses) => [
       ...statuses,
-      { id, message, snapshot: state.snapshot },
+      { id, message, snapshot: preserveAcrossSnapshot ? null : state.snapshot },
     ]);
     announcementTimers.current.set(
       id,
@@ -97,18 +103,6 @@ export function Workbench() {
     state.snapshot,
     visiblePieces.length,
   ]);
-
-  useEffect(() => {
-    setSearchStatuses([]);
-    for (const timer of announcementTimers.current.values()) {
-      window.clearTimeout(timer);
-    }
-    announcementTimers.current.clear();
-    if (pendingStructuredRestore.current) {
-      announce(pendingStructuredRestore.current);
-      pendingStructuredRestore.current = null;
-    }
-  }, [announce, state.snapshot]);
 
   useEffect(
     () => () => {
@@ -207,9 +201,11 @@ export function Workbench() {
         onStructuredEdit={(command) => {
           if (searchTerm !== "") {
             explicitClear.current = true;
-            pendingStructuredRestore.current =
-              `${allPieces.length} of ${allPieces.length} Managed Pieces shown.`;
             setSearchTerm("");
+            announce(
+              `${allPieces.length} of ${allPieces.length} Managed Pieces shown.`,
+              true,
+            );
           }
           dispatch({ type: "structuredEdit", command });
         }}
@@ -224,7 +220,9 @@ export function Workbench() {
         className={styles.visuallyHidden}
       >
         {searchStatuses
-          .filter((status) => status.snapshot === state.snapshot)
+          .filter(
+            (status) => status.snapshot === null || status.snapshot === state.snapshot,
+          )
           .map((status) => (
             <span
               key={status.id}

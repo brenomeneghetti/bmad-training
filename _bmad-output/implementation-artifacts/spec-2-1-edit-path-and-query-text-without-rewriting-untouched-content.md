@@ -118,6 +118,22 @@ context:
 - `medium` → bad_spec (edge E5): structured mutation bypasses the intake capacity guard; this independently confirms V1.
 - `low` → patch (edge E6): advertised Epic 1 schema compatibility contradicts cumulative cell bounds; this independently confirms V7.
 - `medium` → patched: native Cut deleted the selected raw text but did not populate the clipboard; the editor now writes the atomically expanded selection to the cut event's clipboard data and browser coverage verifies it.
+- `low` → patch (verification-gap R2-V1): structured-edit tests covered conventional authority/path forms but did not prove supported special authority markers and backslash separators remain exact after mutation; add parameterized mutation round trips.
+- `medium` → defer (verification-gap R2-V2): Playwright remains configured for Chromium only, so cross-engine native input ordering is unverified; this is a repository-wide browser-matrix limitation predating Story 2.1 and needs installed Firefox/WebKit release infrastructure.
+- `medium` → defer (verification-gap R2-V3): evidence validation proves required cell names and source-file existence rather than binding cells to immutable passing run artifacts; this is inherited evidence infrastructure and requires an artifact contract beyond this story.
+- `medium` → patch (blind R2-B1): Search clears before dispatch but the restored-count announcement waits for a snapshot change, so rejected and no-op structured edits do not announce restoration and can leak the pending announcement into a later edit.
+- `medium` → patch (blind R2-B2): fallback deletion inside a percent triplet can expand the replaced range while retaining a remnant from the browser value, turning `%2F` into `F` instead of applying an atomic deletion.
+- `medium` → patch (blind R2-B3): unhandled `delete*` `beforeinput` types are prevented with a collapsed range; allow unknown native deletion types through to the atomic fallback rather than converting them to no-ops.
+- `medium` → patch (blind R2-B4): `Shift+Delete` is intercepted as plain Delete before the platform can emit Cut; preserve the native shortcut so the Cut handler can copy and remove the selected atom.
+- `medium` → patch (blind R2-B5): keydown suppression is reset only on keyup, so a focus change before keyup can cause the next input to be dropped; reset suppression on blur.
+- `medium` → patch (blind R2-B6): applying an unchanged Full URL reparses it, recycles Piece IDs, and clears structured History; treat an already-active identical Apply as a serialized no-op.
+- `medium` → defer (blind R2-B7): carried by R2-V2; Chromium-only configuration does not establish cross-engine behavior for the new event-sensitive editors.
+- `low` → defer (blind R2-B8): the existing accessibility scenario couples a 320 CSS-pixel viewport with DPR 4 rather than exercising browser zoom directly; a portable zoom-evidence strategy is pre-existing release infrastructure work.
+- `medium` → patch (blind R2-B9): the new IME browser test omits the post-`compositionend` input ordering used by some browsers, so it cannot detect a duplicate or stale completion.
+- `medium` → patch (blind R2-B10): browser accessibility coverage tabs only through Full URL Apply and does not prove keyboard editing or associated structured-field correction guidance.
+- `medium` → patch (blind R2-B11): the Search scenario covers only successful Cut, leaving rejected and serialized no-op edits unable to catch the restored-count announcement defect in R2-B1.
+- `medium` → defer (blind R2-B12): carried by R2-V3; source-file existence alone cannot prove that each evidence claim passed for the recorded artifact.
+- `false` (blind R2-B13): carried prior B13; the two generated `node_modules` metadata files predate the implementation baseline and remain preserved user/environment changes rather than deliverable content.
 
 ## Design Notes
 

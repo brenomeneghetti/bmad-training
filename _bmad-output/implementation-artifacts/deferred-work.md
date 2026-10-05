@@ -10,3 +10,12 @@
 - source_spec: `/media/breno/Novo volume/Projetos/bmad-training/_bmad-output/implementation-artifacts/spec-epic-1-safely-inspect-find-url-pieces.md`
   summary: Confirm 400% browser-zoom reflow across the supported manual browser and assistive-technology matrix.
   evidence: Automated Chromium covers the normative 320 CSS-pixel layout at 4× device scale, but a real browser zoom/manual matrix is required to settle cross-browser equivalence.
+- source_spec: `/media/breno/Novo volume/Projetos/bmad-training/_bmad-output/implementation-artifacts/spec-2-1-edit-path-and-query-text-without-rewriting-untouched-content.md`
+  summary: Establish cross-engine native structured-edit verification in the supported browser release matrix.
+  evidence: Playwright is configured only for Chromium, so Firefox/WebKit beforeinput, clipboard, selection, and composition ordering remain unverified until the repository provides those installed release targets.
+- source_spec: `/media/breno/Novo volume/Projetos/bmad-training/_bmad-output/implementation-artifacts/spec-2-1-edit-path-and-query-text-without-rewriting-untouched-content.md`
+  summary: Bind evidence cells to immutable passing run artifacts rather than source-file existence.
+  evidence: The inherited evidence validator checks required cell names and accessible source paths, which cannot prove that each mapped claim passed for the recorded build artifact.
+- source_spec: `/media/breno/Novo volume/Projetos/bmad-training/_bmad-output/implementation-artifacts/spec-2-1-edit-path-and-query-text-without-rewriting-untouched-content.md`
+  summary: Verify 400% browser zoom directly in a portable release evidence strategy.
+  evidence: The existing automated scenario combines a 320 CSS-pixel viewport with DPR 4; direct browser zoom behavior remains outside the current portable test infrastructure.

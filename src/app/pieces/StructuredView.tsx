@@ -130,6 +130,16 @@ const minimalReplacement = (before: string, after: string) => {
     afterEnd -= 1;
   }
   const expanded = expandAtomicRange(before, start, beforeEnd);
+  if (
+    after.length < before.length &&
+    (expanded.start !== start || expanded.end !== beforeEnd)
+  ) {
+    return {
+      start: expanded.start,
+      end: expanded.end,
+      insertedText: "",
+    };
+  }
   afterEnd += expanded.end - beforeEnd;
   const afterStart =
     after.length < before.length && expanded.start < start
@@ -238,6 +248,14 @@ function EditableToken({
       return;
     }
     if (inputType.startsWith("delete")) {
+      if (
+        inputType !== "deleteContentBackward" &&
+        inputType !== "deleteContentForward" &&
+        inputType !== "deleteWordBackward" &&
+        inputType !== "deleteWordForward"
+      ) {
+        return;
+      }
       ({ start, end } = expandAtomicRange(value, start, end));
       insertedText = "";
     }
@@ -263,7 +281,7 @@ function EditableToken({
     const range = selection(event.currentTarget);
     let { start, end } = range;
     const word = event.ctrlKey || event.altKey || event.metaKey;
-    if (word) return;
+    if (word || event.shiftKey) return;
     if (start === end && event.key === "Backspace") {
       if (start === 0) {
         event.preventDefault();
@@ -314,6 +332,9 @@ function EditableToken({
         onKeyDown={keyDown}
         onSelect={cancelCaretFrame}
         onKeyUp={() => {
+          suppressBeforeInput.current = false;
+        }}
+        onBlur={() => {
           suppressBeforeInput.current = false;
         }}
         onBeforeInput={beforeInput}

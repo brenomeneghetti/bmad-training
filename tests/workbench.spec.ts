@@ -567,6 +567,37 @@ test("structured editing handles search, selections, word deletion, caret, and d
   });
   await expect(value).toHaveValue("%E6%97%A5%E6%9C%AC");
 
+  await value.evaluate((input) => {
+    const field = input as HTMLInputElement;
+    const setter = Object.getOwnPropertyDescriptor(
+      HTMLInputElement.prototype,
+      "value",
+    )?.set;
+    setter?.call(field, "日本");
+    field.dispatchEvent(
+      new InputEvent("input", {
+        bubbles: true,
+        data: "日本",
+        inputType: "insertText",
+        isComposing: false,
+      }),
+    );
+  });
+  await expect(value).toHaveValue("%E6%97%A5%E6%9C%AC");
+
+  await search.fill("%E6");
+  await value.focus();
+  await value.press("End");
+  await page.keyboard.insertText("%");
+  await expect(search).toHaveValue("");
+  await expect(page.locator("#search-status")).toContainText(
+    "4 of 4 Managed Pieces shown.",
+  );
+  await expect(value).toHaveAttribute("aria-invalid", "true");
+  const errorId = await value.getAttribute("aria-errormessage");
+  if (!errorId) throw new Error("Missing associated structured field error");
+  await expect(page.locator(`#${errorId}`)).toContainText("complete triplet");
+
   await fullUrl.fill("/invalid");
   await page.getByRole("button", { name: "Apply URL" }).click();
   await expect(value).toBeDisabled();

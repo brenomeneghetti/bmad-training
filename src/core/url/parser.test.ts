@@ -148,6 +148,28 @@ describe("lossless URL parser", () => {
     expect(result.value.serialized).toBe("https://example.com\\one/two\\");
   });
 
+  it.each([
+    ["https:example.com/a", "https:example.com/z"],
+    ["https:////example.com/a", "https:////example.com/z"],
+    ["https:\\\\example.com\\a", "https:\\\\example.com\\z"],
+    ["https://example.com\\one/two\\", "https://example.com\\z/two\\"],
+  ])("preserves special URL syntax while editing: %s", (input, expected) => {
+    const parsed = parseLosslessUrl(input);
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    const target = parsed.value.path[0];
+    if (!target) throw new Error("Missing special-form path piece");
+    const edited = editLosslessToken(parsed.value, {
+      pieceId: target.id,
+      field: "path",
+      start: 0,
+      end: target.rawSegment.length,
+      insertedText: "z",
+    });
+    expect(edited.ok).toBe(true);
+    if (edited.ok) expect(edited.value.serialized).toBe(expected);
+  });
+
   it("edits one addressed token without rewriting any other bytes", () => {
     const parsed = parseLosslessUrl(
       "https://User@example.com:044/a%2fb?dup=1&dup=2&flag#Frag%2f",

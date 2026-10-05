@@ -428,6 +428,58 @@ describe("URL Workbench", () => {
     expect(value).not.toHaveAttribute("aria-invalid");
   });
 
+  it("expands fallback partial triplet deletion to the complete atom", () => {
+    render(<Workbench />);
+    fireEvent.change(
+      screen.getByLabelText("Complete HTTP or HTTPS Absolute URL"),
+      { target: { value: "https://example.com/a?x=%2F" } },
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
+    const value = screen.getByLabelText(/^Value, Query Parameter/);
+    fireEvent.change(value, { target: { value: "%F" } });
+    expect(value).toHaveValue("");
+    expect(
+      screen.getByLabelText("Complete HTTP or HTTPS Absolute URL"),
+    ).toHaveValue("https://example.com/a?x=");
+  });
+
+  it("preserves piece identity when applying an unchanged active URL", () => {
+    render(<Workbench />);
+    const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
+    fireEvent.change(editor, { target: { value: "https://example.com/a?x=1" } });
+    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
+    const before = screen
+      .getAllByRole("listitem")
+      .map((item) => item.getAttribute("data-piece-id"));
+    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
+    expect(
+      screen
+        .getAllByRole("listitem")
+        .map((item) => item.getAttribute("data-piece-id")),
+    ).toEqual(before);
+  });
+
+  it("announces Search restoration even when a structured edit is rejected", () => {
+    render(<Workbench />);
+    fireEvent.change(
+      screen.getByLabelText("Complete HTTP or HTTPS Absolute URL"),
+      { target: { value: "https://example.com/a?x=1" } },
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
+    fireEvent.change(screen.getByLabelText("Search Managed Pieces"), {
+      target: { value: "x" },
+    });
+    fireEvent.change(screen.getByLabelText(/^Value, Query Parameter/), {
+      target: { value: "%" },
+    });
+    expect(screen.getByLabelText("Search Managed Pieces")).toHaveValue("");
+    expect(
+      within(document.querySelector("#search-status") as HTMLElement).getByText(
+        "3 of 3 Managed Pieces shown.",
+      ),
+    ).toBeInTheDocument();
+  });
+
   it("preserves untouched raw Unicode in fallback and IME changes", () => {
     render(<Workbench />);
     const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
