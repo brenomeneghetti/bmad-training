@@ -78,6 +78,7 @@ context:
 - `medium` → patched: token edits rebuilt serialization but retained stale malformed-percent diagnostics; mutation now rescans the exact result and a regression test verifies correction clears the problem.
 - `medium` → patched: stale-revision rejection applied old selection coordinates to the current token when constructing a draft, which was a local rebase; it now preserves the current raw field unchanged and attaches safe guidance.
 - `medium` → patched: missing-piece rejections were reducer-visible but had no rendered feedback path; Structured View now exposes the non-content explanation without duplicating field-associated draft errors.
+- `medium` → patched: the reducer performance test used only about 14,000 characters, so it did not verify the matrix's near-20,000-character case; it now uses the exact 20,000-character shared capacity fixture with 260 query entries.
 
 ## Design Notes
 

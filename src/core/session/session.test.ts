@@ -5,6 +5,7 @@ import {
   sessionReducer,
   type SessionState,
 } from ".";
+import { createCapacityFixture } from "../../test/fixtures/semantic";
 
 const apply = (state: SessionState, input: string) => {
   const changed = sessionReducer(state, { type: "inputChanged", value: input });
@@ -218,10 +219,8 @@ describe("session authority", () => {
   });
 
   it("edits a 250+ parameter URL within the local response target", () => {
-    const input = `https://example.com/?${Array.from(
-      { length: 260 },
-      (_, index) => `p${index}=${"x".repeat(50)}`,
-    ).join("&")}`;
+    const input = createCapacityFixture();
+    expect(input).toHaveLength(20_000);
     const active = apply(initialSessionState, input);
     const target = active.snapshot?.query[259];
     if (!target) throw new Error("Missing capacity target");
