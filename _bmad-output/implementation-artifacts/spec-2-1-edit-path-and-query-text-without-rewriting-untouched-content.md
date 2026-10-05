@@ -2,7 +2,7 @@
 title: 'Story 2.1: Edit Path and Query Text Without Rewriting Untouched Content'
 type: 'feature'
 created: '2026-10-04'
-status: 'done'
+status: 'in-progress'
 route: 'dispatch'
 review_loop_iteration: 0
 baseline_commit: '8716db16edf048bd76ed07e00435dc78d135729a'
@@ -68,6 +68,7 @@ context:
 - Added immutable ID-targeted token mutation, exact URL reconstruction, reducer-owned local drafts and token revisions, Last Valid/current snapshots, and complete before/after mutation entries.
 - Converted Path and Query fields into accessible controlled editors with selection-aware input/paste handling, IME suppression, persistent associated errors, and focus-stable updates.
 - Extended the shared semantic corpus, core/component/browser coverage, and evidence matrix through Story 2.1.
+- Audit follow-up aligned query key/value apostrophe encoding with the special-query profile and preserved pre-existing malformed percent text while correcting a newer invalid draft.
 
 ## Spec Change Log
 
@@ -94,4 +95,4 @@ Structured invalid drafts remain keyed by immutable Piece ID and field. A correc
 - `pnpm run typecheck && pnpm run lint && pnpm run build` -- static checks and production build pass.
 - `pnpm exec playwright test tests/workbench.spec.ts` -- focused browser, accessibility, privacy, and capacity scenarios pass.
 
-**Result:** 67 Vitest tests, 4 evidence-validator tests, typecheck, lint, production build, 6 Playwright scenarios, and final evidence validation passed.
+**Result:** 68 Vitest tests, 4 evidence-validator tests, typecheck, lint, production build, 6 Playwright scenarios, and final evidence validation passed. Matrix coverage includes path insertion/validation, query editing/drafts, stale and invalid commands, and the exact 20,000-character/260-entry capacity fixture.

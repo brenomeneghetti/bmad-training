@@ -158,6 +158,43 @@ describe("session authority", () => {
     expect(corrected.history).toHaveLength(1);
   });
 
+  it("preserves accepted malformed percent text when correcting a new invalid draft", () => {
+    const active = apply(initialSessionState, "https://example.com/a?x=%zzA");
+    const target = active.snapshot?.query[0];
+    if (!target) throw new Error("Missing fixture query piece");
+    const invalid = sessionReducer(active, {
+      type: "structuredEdit",
+      command: {
+        pieceId: target.id,
+        field: "query-value",
+        tokenRevision: 0,
+        start: 4,
+        end: 4,
+        insertedText: "%",
+      },
+    });
+    expect(invalid.structuredDrafts[`${target.id}:query-value`]?.value).toBe(
+      "%zzA%",
+    );
+
+    const corrected = sessionReducer(invalid, {
+      type: "structuredEdit",
+      command: {
+        pieceId: target.id,
+        field: "query-value",
+        tokenRevision: 0,
+        start: 4,
+        end: 5,
+        insertedText: "%20",
+      },
+    });
+    expect(corrected.snapshot?.serialized).toBe(
+      "https://example.com/a?x=%zzA%20",
+    );
+    expect(corrected.structuredDrafts).toEqual({});
+    expect(corrected.history).toHaveLength(1);
+  });
+
   it.each([
     {
       name: "stale revision",

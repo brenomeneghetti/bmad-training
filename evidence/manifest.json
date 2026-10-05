@@ -5,7 +5,7 @@
   "evaluatorVersion": "1.0.0",
   "artifact": {
     "path": "dist",
-    "digest": "78780cb3e702259640f8a2a38a1faf22e73e502ca7ae200fb1dd98956a7b834b",
+    "digest": "9ad8b37c8c9af60464bc2eb472a04deb8cb7ff0348be4313a8746a4a6cddcc99",
     "delivery": "deployment/static-delivery.json"
   },
   "toolVersions": {
@@ -16,7 +16,7 @@
   },
   "signOff": {
     "owner": "automated-verification",
-    "recordedAt": "2026-10-05T00:36:00.000Z"
+    "recordedAt": "2026-10-05T00:58:10.000Z"
   },
   "cells": [
     {

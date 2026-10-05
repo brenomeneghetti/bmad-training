@@ -110,6 +110,39 @@ const draftValue = (raw: string, command: StructuredEditCommand): string => {
   return `${raw.slice(0, command.start)}${command.insertedText}${raw.slice(command.end)}`;
 };
 
+const correctionFromDraft = (
+  raw: string,
+  desired: string,
+  command: StructuredEditCommand,
+): StructuredEditCommand => {
+  let start = 0;
+  while (
+    start < raw.length &&
+    start < desired.length &&
+    raw[start] === desired[start]
+  ) {
+    start += 1;
+  }
+
+  let rawEnd = raw.length;
+  let desiredEnd = desired.length;
+  while (
+    rawEnd > start &&
+    desiredEnd > start &&
+    raw[rawEnd - 1] === desired[desiredEnd - 1]
+  ) {
+    rawEnd -= 1;
+    desiredEnd -= 1;
+  }
+
+  return {
+    ...command,
+    start,
+    end: rawEnd,
+    insertedText: desired.slice(start, desiredEnd),
+  };
+};
+
 const revisionsFor = (snapshot: LosslessUrl): Readonly<Record<string, number>> =>
   Object.fromEntries([
     ...snapshot.path.map((piece) => [structuredFieldKey(piece.id, "path"), 0]),
@@ -227,12 +260,11 @@ export const sessionReducer = (
 
       const existingDraft = state.structuredDrafts[key];
       const editCommand = existingDraft
-        ? {
-            ...action.command,
-            start: 0,
-            end: raw.length,
-            insertedText: draftValue(existingDraft.value, action.command),
-          }
+        ? correctionFromDraft(
+            raw,
+            draftValue(existingDraft.value, action.command),
+            action.command,
+          )
         : action.command;
       const result = editLosslessToken(state.snapshot, editCommand);
       if (!result.ok) {

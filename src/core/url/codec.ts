@@ -50,7 +50,8 @@ const splitsSurrogatePair = (raw: string, boundary: number): boolean => {
 
 const allowedAscii = (character: string, profile: ComponentProfile): boolean => {
   if (/^[A-Za-z0-9\-._~]$/.test(character)) return true;
-  if ("!$'()*+,;:@".includes(character)) return true;
+  if ("!$()*+,;:@".includes(character)) return true;
+  if (profile === "path-segment" && character === "'") return true;
   if (profile === "path-segment" && (character === "&" || character === "=")) {
     return true;
   }

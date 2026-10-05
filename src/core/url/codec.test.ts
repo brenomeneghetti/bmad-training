@@ -15,9 +15,9 @@ describe("raw component insertion codec", () => {
   });
 
   it.each([
-    ["path-segment", "/?&#=", "%2F%3F&%23="],
-    ["query-key", "&=", "%26%3D"],
-    ["query-value", "&=", "%26="],
+    ["path-segment", "/?&#='", "%2F%3F&%23='"],
+    ["query-key", "&='", "%26%3D%27"],
+    ["query-value", "&='", "%26=%27"],
   ] as const)("uses the %s profile", (profile, insertedText, expected) => {
     expect(
       insertRawComponent({ raw: "", start: 0, end: 0, insertedText, profile }),
