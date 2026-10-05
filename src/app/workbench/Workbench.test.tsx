@@ -354,13 +354,13 @@ describe("URL Workbench", () => {
   it("suppresses commits during IME composition and commits once at its end", () => {
     render(<Workbench />);
     const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
-    fireEvent.change(editor, { target: { value: "https://example.com/a?x=1" } });
+    fireEvent.change(editor, { target: { value: "https://example.com/a?x=long" } });
     fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
     const value = screen.getByLabelText("Value");
     fireEvent.compositionStart(value);
-    fireEvent.change(value, { target: { value: "日" } });
-    expect(editor).toHaveValue("https://example.com/a?x=1");
-    fireEvent.compositionEnd(value, { data: "日" });
-    expect(editor).toHaveValue("https://example.com/a?x=%E6%97%A5");
+    fireEvent.change(value, { target: { value: "日本" } });
+    expect(editor).toHaveValue("https://example.com/a?x=long");
+    fireEvent.compositionEnd(value, { data: "日本" });
+    expect(editor).toHaveValue("https://example.com/a?x=%E6%97%A5%E6%9C%AC");
   });
 });

@@ -79,6 +79,7 @@ context:
 - `medium` → patched: stale-revision rejection applied old selection coordinates to the current token when constructing a draft, which was a local rebase; it now preserves the current raw field unchanged and attaches safe guidance.
 - `medium` → patched: missing-piece rejections were reducer-visible but had no rendered feedback path; Structured View now exposes the non-content explanation without duplicating field-associated draft errors.
 - `medium` → patched: the reducer performance test used only about 14,000 characters, so it did not verify the matrix's near-20,000-character case; it now uses the exact 20,000-character shared capacity fixture with 260 query entries.
+- `medium` → patched: IME completion used the composed draft length as the replacement range, which could retain a suffix from a longer committed value; it now replaces the full pre-composition field and has a multi-character regression test.
 
 ## Design Notes
 

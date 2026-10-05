@@ -108,7 +108,7 @@ function EditableToken({
         onCompositionEnd={(event) => {
           const next = event.currentTarget.value;
           setCompositionValue(null);
-          dispatch(0, value.length, next);
+          dispatch(0, (draft?.value ?? committedValue).length, next);
         }}
         onChange={(event) => {
           if (compositionValue !== null) {
