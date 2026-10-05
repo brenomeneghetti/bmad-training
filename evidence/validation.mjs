@@ -16,6 +16,11 @@ const requiredCells = new Map([
   ["story-2-1-accessibility", "2.1"],
   ["story-2-1-privacy", "2.1"],
   ["story-2-1-performance", "2.1"],
+  ["story-2-2-domain-conversion", "2.2"],
+  ["story-2-2-host-only-mutation", "2.2"],
+  ["story-2-2-accessibility", "2.2"],
+  ["story-2-2-privacy", "2.2"],
+  ["story-2-2-performance", "2.2"],
 ]);
 
 const requiredCsp = new Map([

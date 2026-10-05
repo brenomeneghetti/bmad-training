@@ -4,7 +4,12 @@ import {
   semanticFixture,
   unsupportedFixtures,
 } from "../../test/fixtures/semantic";
-import { editLosslessToken, parseLosslessUrl, serializeLosslessUrl } from ".";
+import {
+  editLosslessToken,
+  parseLosslessUrl,
+  replaceLosslessDomain,
+  serializeLosslessUrl,
+} from ".";
 
 describe("lossless URL parser", () => {
   it("preserves exact serialization and every structural distinction", () => {
@@ -127,6 +132,73 @@ describe("lossless URL parser", () => {
     const ipv6 = parseLosslessUrl("https://[::1]/");
     expect(ipv4.ok && ipv4.value.domain.ascii).toBe("127.0.0.1");
     expect(ipv6.ok && ipv6.value.domain.ascii).toBe("[::1]");
+  });
+
+  it("replaces only the exact host while preserving every unrelated byte and ID", () => {
+    const parsed = parseLosslessUrl(
+      "https://User:Pass@Example.COM:044/a%2fb//?dup=1&dup=2#Frag%2f",
+    );
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    const edited = replaceLosslessDomain(parsed.value, {
+      pieceId: parsed.value.domainId,
+      field: "domain-unicode",
+      value: "faß.de",
+    });
+    expect(edited.ok).toBe(true);
+    if (!edited.ok) return;
+    expect(edited.value.serialized).toBe(
+      "https://User:Pass@xn--fa-hia.de:044/a%2fb//?dup=1&dup=2#Frag%2f",
+    );
+    expect(edited.value.domain).toEqual({
+      unicode: "faß.de",
+      ascii: "xn--fa-hia.de",
+    });
+    expect(edited.value.domainId).toBe(parsed.value.domainId);
+    expect(edited.value.path).toBe(parsed.value.path);
+    expect(edited.value.query).toBe(parsed.value.query);
+    expect(edited.value.authorityPrefix).toBe("User:Pass@");
+    expect(edited.value.authoritySuffix).toBe(":044");
+  });
+
+  it("preserves the exact snapshot when an edit converts to the committed host", () => {
+    const parsed = parseLosslessUrl("https://faß.de/a");
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    const unchanged = replaceLosslessDomain(parsed.value, {
+      pieceId: parsed.value.domainId,
+      field: "domain-ascii",
+      value: "XN--FA-HIA.DE",
+    });
+    expect(unchanged).toEqual({ ok: true, value: parsed.value });
+    if (unchanged.ok) expect(unchanged.value).toBe(parsed.value);
+  });
+
+  it("rejects missing, invalid, and over-capacity Domain replacements atomically", () => {
+    const parsed = parseLosslessUrl(`https://a.de/${"x".repeat(19_987)}`);
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    expect(
+      replaceLosslessDomain(parsed.value, {
+        pieceId: "missing" as typeof parsed.value.domainId,
+        field: "domain-unicode",
+        value: "faß.de",
+      }),
+    ).toMatchObject({ ok: false, error: { code: "missing-piece" } });
+    expect(
+      replaceLosslessDomain(parsed.value, {
+        pieceId: parsed.value.domainId,
+        field: "domain-ascii",
+        value: "xn--",
+      }),
+    ).toMatchObject({ ok: false, error: { code: "invalid-domain" } });
+    expect(
+      replaceLosslessDomain(parsed.value, {
+        pieceId: parsed.value.domainId,
+        field: "domain-unicode",
+        value: "longer.example",
+      }),
+    ).toMatchObject({ ok: false, error: { code: "url-capacity-exceeded" } });
   });
 
   it("uses WHATWG special-URL backslashes as exact path separators", () => {

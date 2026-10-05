@@ -117,6 +117,10 @@ test("intake preserves lossless semantics and rejects replacement", async ({ pag
   await expect(page.getByLabel("Complete HTTP or HTTPS Absolute URL")).toHaveValue(
     semanticFixture.replace("a%2Fb", "edited+%2F"),
   );
+  await page.getByLabel("Unicode Domain").fill("example.com");
+  await expect(page.getByLabel("ASCII/Punycode Domain")).toHaveValue(
+    "example.com",
+  );
 
   await page.getByLabel("Complete HTTP or HTTPS Absolute URL").fill("/relative");
   await page.getByRole("button", { name: "Apply URL" }).click();
@@ -145,6 +149,96 @@ test("intake preserves lossless semantics and rejects replacement", async ({ pag
           : 0,
     })),
   ).toEqual({ local: 0, session: 0, cookies: "", indexedDatabases: 0 });
+});
+
+test("Domain editing is synchronized, correctable, IME-safe, and host-only", async ({
+  page,
+}) => {
+    await page.goto("/");
+    const fullUrl = page.getByLabel("Complete HTTP or HTTPS Absolute URL");
+    await fullUrl.fill(
+      "https://User:Pass@Example.COM:044/a%2fb//?dup=1&dup=2#Frag%2f",
+    );
+    await page.getByRole("button", { name: "Apply URL" }).click();
+    const rows = page.locator("#managed-pieces > li");
+    const originalIds = await rows.evaluateAll((items) =>
+      items.map((item) => (item as HTMLElement).dataset.pieceId),
+    );
+    const unicode = page.getByLabel("Unicode Domain");
+    const ascii = page.getByLabel("ASCII/Punycode Domain");
+
+    await unicode.fill("faß.de");
+    await expect(unicode).toBeFocused();
+    await expect(unicode).toHaveValue("faß.de");
+    await expect(ascii).toHaveValue("xn--fa-hia.de");
+    await expect(fullUrl).toHaveValue(
+      "https://User:Pass@xn--fa-hia.de:044/a%2fb//?dup=1&dup=2#Frag%2f",
+    );
+    expect(
+      await rows.evaluateAll((items) =>
+        items.map((item) => (item as HTMLElement).dataset.pieceId),
+      ),
+    ).toEqual(originalIds);
+
+    await ascii.fill("xn--");
+    await expect(ascii).toHaveValue("xn--");
+    await expect(ascii).toHaveAttribute("aria-invalid", "true");
+    const errorId = await ascii.getAttribute("aria-errormessage");
+    if (!errorId) throw new Error("Missing associated Domain error");
+    await expect(page.locator(`#${errorId}`)).toContainText(
+      "valid ASCII or Punycode",
+    );
+    await expect(unicode).toHaveValue("faß.de");
+    await expect(fullUrl).toHaveValue(
+      "https://User:Pass@xn--fa-hia.de:044/a%2fb//?dup=1&dup=2#Frag%2f",
+    );
+
+    await ascii.fill("EXAMPLE.COM");
+    await expect(ascii).toBeFocused();
+    await expect(ascii).toHaveValue("example.com");
+    await expect(unicode).toHaveValue("example.com");
+    await expect(fullUrl).toHaveValue(
+      "https://User:Pass@example.com:044/a%2fb//?dup=1&dup=2#Frag%2f",
+    );
+
+    await unicode.dispatchEvent("compositionstart", { data: "" });
+    await unicode.evaluate((input) => {
+      const field = input as HTMLInputElement;
+      const setter = Object.getOwnPropertyDescriptor(
+        HTMLInputElement.prototype,
+        "value",
+      )?.set;
+      setter?.call(field, "日本.jp");
+      field.dispatchEvent(
+        new InputEvent("input", {
+          bubbles: true,
+          data: "日本",
+          inputType: "insertCompositionText",
+          isComposing: true,
+        }),
+      );
+    });
+    await expect(fullUrl).toHaveValue(
+      "https://User:Pass@example.com:044/a%2fb//?dup=1&dup=2#Frag%2f",
+    );
+    await unicode.evaluate((input) => {
+      input.dispatchEvent(
+        new CompositionEvent("compositionend", {
+          bubbles: true,
+          data: "日本",
+        }),
+      );
+    });
+    await expect(fullUrl).toHaveValue(
+      "https://User:Pass@xn--wgv71a.jp:044/a%2fb//?dup=1&dup=2#Frag%2f",
+    );
+    await expect(unicode).toHaveCSS("unicode-bidi", "isolate");
+
+    await fullUrl.fill("/invalid");
+    await page.getByRole("button", { name: "Apply URL" }).click();
+    await expect(unicode).toBeDisabled();
+    await expect(ascii).toBeDisabled();
+    await expect(fullUrl).toHaveValue("/invalid");
 });
 
 test("capacity view renders every row and stays usable at 320px", async ({ page }) => {
@@ -310,6 +404,38 @@ test("capacity view renders every row and stays usable at 320px", async ({ page 
   });
   expect(editDuration).toBeLessThan(100);
   await expect(lastKey).toHaveValue("last%2Fkey");
+  const domain = page.getByLabel("ASCII/Punycode Domain");
+  const domainDuration = await domain.evaluate(async (input) => {
+    const setter = Object.getOwnPropertyDescriptor(
+      HTMLInputElement.prototype,
+      "value",
+    )?.set;
+    const started = performance.now();
+    setter?.call(input, "a.co");
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    await new Promise<void>((resolve) => {
+      const check = () => {
+        const fullUrl = document.querySelector<HTMLTextAreaElement>(
+          "#full-url-editor",
+        );
+        if (fullUrl?.value.includes("https://a.co/")) {
+          requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+        } else {
+          requestAnimationFrame(check);
+        }
+      };
+      check();
+    });
+    return performance.now() - started;
+  });
+  await expect(
+    page.getByLabel("Complete HTTP or HTTPS Absolute URL"),
+  ).toHaveValue(
+    originalFullUrl
+      .replace("example.com", "a.co")
+      .replace("parameter-259", "last%2Fkey"),
+  );
+  expect(domainDuration).toBeLessThan(100);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
     320,
   );

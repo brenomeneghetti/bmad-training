@@ -364,6 +364,72 @@ describe("URL Workbench", () => {
     expect(editor).toHaveValue("https://example.com/a?x=%E6%97%A5%E6%9C%AC");
   });
 
+  it("edits either Domain form while preserving focus and synchronized commits", () => {
+    render(<Workbench />);
+    const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
+    fireEvent.change(editor, {
+      target: { value: "https://User@example.com:044/a%2fb?x=1#Frag%2f" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
+    const unicode = screen.getByLabelText("Unicode Domain");
+    unicode.focus();
+    fireEvent.change(unicode, { target: { value: "faß.de" } });
+    expect(unicode).toHaveFocus();
+    expect(unicode).toHaveValue("faß.de");
+    expect(screen.getByLabelText("ASCII/Punycode Domain")).toHaveValue(
+      "xn--fa-hia.de",
+    );
+    expect(editor).toHaveValue(
+      "https://User@xn--fa-hia.de:044/a%2fb?x=1#Frag%2f",
+    );
+
+    const ascii = screen.getByLabelText("ASCII/Punycode Domain");
+    ascii.focus();
+    fireEvent.change(ascii, { target: { value: "EXAMPLE.COM" } });
+    expect(ascii).toHaveFocus();
+    expect(ascii).toHaveValue("example.com");
+    expect(unicode).toHaveValue("example.com");
+    expect(editor).toHaveValue(
+      "https://User@example.com:044/a%2fb?x=1#Frag%2f",
+    );
+  });
+
+  it("isolates an invalid Domain draft and associates its stable guidance", () => {
+    render(<Workbench />);
+    const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
+    fireEvent.change(editor, { target: { value: "https://example.com/a?x=1" } });
+    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
+    const ascii = screen.getByLabelText("ASCII/Punycode Domain");
+    fireEvent.change(ascii, { target: { value: "xn--" } });
+    expect(ascii).toHaveValue("xn--");
+    expect(ascii).toHaveAttribute("aria-invalid", "true");
+    expect(ascii).toHaveAttribute("aria-errormessage");
+    expect(screen.getByLabelText("Unicode Domain")).toHaveValue("example.com");
+    expect(editor).toHaveValue("https://example.com/a?x=1");
+
+    fireEvent.change(ascii, { target: { value: "XN--FA-HIA.DE" } });
+    expect(ascii).not.toHaveAttribute("aria-invalid");
+    expect(ascii).toHaveValue("xn--fa-hia.de");
+    expect(screen.getByLabelText("Unicode Domain")).toHaveValue("faß.de");
+    expect(editor).toHaveValue("https://xn--fa-hia.de/a?x=1");
+  });
+
+  it("suppresses Domain commits during IME composition", () => {
+    render(<Workbench />);
+    const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
+    fireEvent.change(editor, { target: { value: "https://example.com/" } });
+    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
+    const unicode = screen.getByLabelText("Unicode Domain");
+    fireEvent.compositionStart(unicode);
+    fireEvent.change(unicode, { target: { value: "日本.jp" } });
+    expect(editor).toHaveValue("https://example.com/");
+    fireEvent.compositionEnd(unicode, {
+      target: { value: "日本.jp" },
+      data: "日本",
+    });
+    expect(editor).toHaveValue("https://xn--wgv71a.jp/");
+  });
+
   it("disables structured editors while Full URL text is pending or invalid", () => {
     render(<Workbench />);
     const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");

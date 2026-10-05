@@ -20,7 +20,21 @@ export const idnFixtures = [
   ["עברית.example", "xn--5dbqzzl.example", "עברית.example"],
 ] as const;
 
-export const invalidIdnFixtures = ["xn--", "a..b", "\u0301example.com"] as const;
+export const invalidIdnFixtures = [
+  "xn--",
+  "a..b",
+  "\u0301example.com",
+  "a\u200Db.example",
+  "abcא.example",
+] as const;
+
+export const domainEditFixtures = {
+  unicode: "faß.de",
+  ascii: "xn--fa-hia.de",
+  mixedCaseAscii: "XN--FA-HIA.DE",
+  ipv4: "127.0.0.1",
+  ipv6: "[::1]",
+} as const;
 
 export const unsupportedFixtures = [
   { input: "", code: "empty", message: "Enter a complete HTTP or HTTPS" },

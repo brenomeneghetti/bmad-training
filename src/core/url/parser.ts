@@ -7,8 +7,8 @@ import {
   type Result,
   type UrlProblem,
 } from "../contracts";
-import { convertDomain } from "../idn";
-import type { LosslessUrl, PathPiece, QueryPiece } from "./model";
+import { convertDomain, convertDomainEdit } from "../idn";
+import type { DomainEdit, LosslessUrl, PathPiece, QueryPiece } from "./model";
 import { insertRawComponent, type ComponentProfile } from "./codec";
 import type { TokenEdit } from "./model";
 
@@ -318,5 +318,44 @@ export const editLosslessToken = (
     ...nextWithoutSerialization,
     serialized,
     problems: scanMalformedPercent(serialized),
+  });
+};
+
+export const replaceLosslessDomain = (
+  url: LosslessUrl,
+  edit: DomainEdit,
+): Result<LosslessUrl, UrlProblem> => {
+  if (edit.pieceId !== url.domainId) {
+    return err({
+      code: "missing-piece",
+      field: "domain",
+      message: "This Domain is no longer available. Review the current URL and try again.",
+    });
+  }
+  const converted = convertDomainEdit(
+    edit.value,
+    edit.field === "domain-ascii" ? "ascii" : "unicode",
+  );
+  if (!converted.ok) return converted;
+  if (converted.value.ascii === url.domain.ascii) return ok(url);
+  const nextWithoutSerialization = {
+    ...url,
+    rawHost: converted.value.serializedHost,
+    domain: {
+      ascii: converted.value.ascii,
+      unicode: converted.value.unicode,
+    },
+  };
+  const serialized = serializeParts(nextWithoutSerialization);
+  if (Array.from(serialized).length > 20_000) {
+    return err({
+      code: "url-capacity-exceeded",
+      field: "domain",
+      message: "This edit would exceed the 20,000-character URL limit.",
+    });
+  }
+  return ok({
+    ...nextWithoutSerialization,
+    serialized,
   });
 };

@@ -5,7 +5,7 @@
   "evaluatorVersion": "1.0.0",
   "artifact": {
     "path": "dist",
-    "digest": "69d5039ccdb662a74c06c0c1ec4ced5c399777f2bb7d65a9a01fb8ca0535aa05",
+    "digest": "afc2b284e4d666defbf8fe0fe6ae6ef6ad419f00017b08fcbff47e07d4a42852",
     "delivery": "deployment/static-delivery.json"
   },
   "toolVersions": {
@@ -125,6 +125,58 @@
     {
       "id": "story-2-1-performance",
       "story": "2.1",
+      "status": "pass",
+      "owner": "automated",
+      "evidence": [
+        "src/test/fixtures/semantic.ts",
+        "src/core/session/session.test.ts",
+        "tests/workbench.spec.ts"
+      ]
+    },
+    {
+      "id": "story-2-2-domain-conversion",
+      "story": "2.2",
+      "status": "pass",
+      "owner": "automated",
+      "evidence": [
+        "src/core/idn/index.test.ts",
+        "src/core/session/session.test.ts"
+      ]
+    },
+    {
+      "id": "story-2-2-host-only-mutation",
+      "story": "2.2",
+      "status": "pass",
+      "owner": "automated",
+      "evidence": [
+        "src/core/url/parser.test.ts",
+        "src/core/session/session.test.ts",
+        "tests/workbench.spec.ts"
+      ]
+    },
+    {
+      "id": "story-2-2-accessibility",
+      "story": "2.2",
+      "status": "pass",
+      "owner": "automated",
+      "evidence": [
+        "src/app/workbench/Workbench.test.tsx",
+        "tests/workbench.spec.ts"
+      ]
+    },
+    {
+      "id": "story-2-2-privacy",
+      "story": "2.2",
+      "status": "pass",
+      "owner": "automated",
+      "evidence": [
+        "tests/workbench.spec.ts",
+        "deployment/static-delivery.json"
+      ]
+    },
+    {
+      "id": "story-2-2-performance",
+      "story": "2.2",
       "status": "pass",
       "owner": "automated",
       "evidence": [

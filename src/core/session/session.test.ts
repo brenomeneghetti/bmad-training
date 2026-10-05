@@ -122,6 +122,170 @@ describe("session authority", () => {
     expect(edited.tokenRevisions[`${target.id}:query-key`]).toBe(1);
   });
 
+  it("commits a Unicode Domain edit atomically across both forms and snapshots", () => {
+      const active = apply(
+        initialSessionState,
+        "https://User@example.com:044/a%2fb?dup=1&dup=2#Frag%2f",
+      );
+      if (!active.snapshot) throw new Error("Missing active snapshot");
+      const edited = sessionReducer(active, {
+        type: "structuredEdit",
+        command: {
+          pieceId: active.snapshot.domainId,
+          field: "domain-unicode",
+          tokenRevision: 0,
+          value: "faß.de",
+        },
+      });
+      expect(edited.input).toBe(
+        "https://User@xn--fa-hia.de:044/a%2fb?dup=1&dup=2#Frag%2f",
+      );
+      expect(edited.snapshot).toBe(edited.lastValidSnapshot);
+      expect(edited.snapshot?.domain).toEqual({
+        unicode: "faß.de",
+        ascii: "xn--fa-hia.de",
+      });
+      expect(edited.snapshot?.domainId).toBe(active.snapshot.domainId);
+      expect(edited.snapshot?.path).toBe(active.snapshot.path);
+      expect(edited.snapshot?.query).toBe(active.snapshot.query);
+      expect(edited.history).toHaveLength(1);
+      expect(edited.history[0]).toMatchObject({
+        before: active.snapshot,
+        after: edited.snapshot,
+        pieceId: active.snapshot.domainId,
+        field: "domain-unicode",
+      });
+      expect(edited.revision).toBe(active.revision + 1);
+      expect(
+        edited.tokenRevisions[`${active.snapshot.domainId}:domain-unicode`],
+      ).toBe(1);
+      expect(
+        edited.tokenRevisions[`${active.snapshot.domainId}:domain-ascii`],
+      ).toBe(1);
+  });
+
+  it("keeps only the focused invalid Domain form as a correctable draft", () => {
+      const active = apply(initialSessionState, "https://example.com/a?x=1");
+      if (!active.snapshot) throw new Error("Missing active snapshot");
+      const key = `${active.snapshot.domainId}:domain-ascii`;
+      const invalid = sessionReducer(active, {
+        type: "structuredEdit",
+        command: {
+          pieceId: active.snapshot.domainId,
+          field: "domain-ascii",
+          tokenRevision: 0,
+          value: "xn--",
+        },
+      });
+      expect(invalid.snapshot).toBe(active.snapshot);
+      expect(invalid.input).toBe(active.input);
+      expect(invalid.history).toBe(active.history);
+      expect(invalid.structuredDrafts[key]?.value).toBe("xn--");
+      expect(
+        invalid.structuredDrafts[
+          `${active.snapshot.domainId}:domain-unicode`
+        ],
+      ).toBeUndefined();
+      const switched = sessionReducer(invalid, {
+        type: "structuredEdit",
+        command: {
+          pieceId: active.snapshot.domainId,
+          field: "domain-unicode",
+          tokenRevision: 0,
+          value: "a..b",
+        },
+      });
+      expect(switched.structuredDrafts[key]).toBeUndefined();
+      expect(
+        switched.structuredDrafts[
+          `${active.snapshot.domainId}:domain-unicode`
+        ]?.value,
+      ).toBe("a..b");
+
+      const corrected = sessionReducer(switched, {
+        type: "structuredEdit",
+        command: {
+          pieceId: active.snapshot.domainId,
+          field: "domain-ascii",
+          tokenRevision: 0,
+          value: "XN--FA-HIA.DE",
+        },
+      });
+      expect(corrected.snapshot?.serialized).toBe("https://xn--fa-hia.de/a?x=1");
+      expect(corrected.structuredDrafts).toEqual({});
+      expect(corrected.history).toHaveLength(1);
+  });
+
+  it.each([
+      ["stale", "domain-unicode", 9, "faß.de", "stale-token-revision"],
+      ["no-op", "domain-ascii", 0, "EXAMPLE.COM", null],
+    ] as const)(
+      "handles %s Domain commands without unrelated committed side effects",
+      (_name, field, tokenRevision, value, code) => {
+        const active = apply(initialSessionState, "https://example.com/a?x=1");
+        if (!active.snapshot) throw new Error("Missing active snapshot");
+        const result = sessionReducer(active, {
+          type: "structuredEdit",
+          command: {
+            pieceId: active.snapshot.domainId,
+            field,
+            tokenRevision,
+            value,
+          },
+        });
+        expect(result.snapshot).toBe(active.snapshot);
+        expect(result.input).toBe(active.input);
+        expect(result.history).toBe(active.history);
+        expect(result.revision).toBe(active.revision);
+        expect(result.structuredProblem?.code ?? null).toBe(code);
+        if (_name === "no-op") expect(result).toBe(active);
+      },
+  );
+
+  it("rejects missing, disabled, and over-capacity Domain commands", () => {
+      const active = apply(initialSessionState, "https://example.com/a?x=1");
+      if (!active.snapshot) throw new Error("Missing active snapshot");
+      const base = {
+        field: "domain-unicode" as const,
+        tokenRevision: 0,
+        value: "faß.de",
+      };
+      const missing = sessionReducer(active, {
+        type: "structuredEdit",
+        command: {
+          ...base,
+          pieceId: "missing" as typeof active.snapshot.domainId,
+        },
+      });
+      expect(missing.structuredProblem?.code).toBe("missing-piece");
+      expect(missing.snapshot).toBe(active.snapshot);
+
+      const editing = sessionReducer(active, {
+        type: "inputChanged",
+        value: "https://example.com/draft",
+      });
+      const disabled = sessionReducer(editing, {
+        type: "structuredEdit",
+        command: { ...base, pieceId: active.snapshot.domainId },
+      });
+      expect(disabled.structuredProblem?.code).toBe("structured-edit-unavailable");
+      expect(disabled.input).toBe("https://example.com/draft");
+
+      const capacity = apply(initialSessionState, createCapacityFixture());
+      if (!capacity.snapshot) throw new Error("Missing capacity snapshot");
+      const tooLong = sessionReducer(capacity, {
+        type: "structuredEdit",
+        command: {
+          ...base,
+          pieceId: capacity.snapshot.domainId,
+          value: "longer.example",
+        },
+      });
+      expect(tooLong.structuredProblem?.code).toBe("url-capacity-exceeded");
+      expect(tooLong.snapshot).toBe(capacity.snapshot);
+      expect(tooLong.history).toBe(capacity.history);
+  });
+
   it("keeps invalid text as a correctable local draft", () => {
     const active = apply(initialSessionState, "https://example.com/a?x=1");
     const target = active.snapshot?.query[0];

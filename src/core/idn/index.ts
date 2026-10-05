@@ -16,10 +16,19 @@ export interface DomainForms {
   readonly ascii: string;
 }
 
-const problem = (): UrlProblem => ({
+export type DomainFormKind = "unicode" | "ascii";
+
+export interface DomainEditResult extends DomainForms {
+  readonly serializedHost: string;
+}
+
+const problem = (form?: DomainFormKind): UrlProblem => ({
   code: "invalid-domain",
   field: "domain",
-  message: "Enter a domain that can be represented safely as Unicode and ASCII/Punycode.",
+  message:
+    form === "ascii"
+      ? "Enter a valid ASCII or Punycode domain."
+      : "Enter a domain that can be represented safely as Unicode and ASCII/Punycode.",
 });
 
 const validateWhatwgHost = (ascii: string): boolean => {
@@ -48,4 +57,22 @@ export const convertDomain = (input: string): Result<DomainForms, UrlProblem> =>
   const unicode = tr46.toUnicode(ascii, options);
   if (unicode.error || !unicode.domain) return err(problem());
   return ok({ ascii: ascii.toLowerCase(), unicode: unicode.domain });
+};
+
+export const convertDomainEdit = (
+  input: string,
+  form: DomainFormKind,
+): Result<DomainEditResult, UrlProblem> => {
+  if (
+    form === "ascii" &&
+    Array.from(input).some((character) => (character.codePointAt(0) ?? 0) > 0x7f)
+  ) {
+    return err(problem(form));
+  }
+  const converted = convertDomain(input);
+  if (!converted.ok) return err(problem(form));
+  return ok({
+    ...converted.value,
+    serializedHost: converted.value.ascii,
+  });
 };

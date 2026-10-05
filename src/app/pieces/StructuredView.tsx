@@ -10,8 +10,10 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { ManagedPiece } from "./search";
 import {
   structuredFieldKey,
+  type DomainEditCommand,
   type StructuredDraft,
   type StructuredEditCommand,
+  type StructuredCommand,
 } from "../../core/session";
 import type { UrlProblem } from "../../core/contracts";
 import styles from "../../styles/workbench.module.css";
@@ -26,9 +28,88 @@ interface StructuredViewProps {
   readonly searchInputRef: RefObject<HTMLInputElement | null>;
   readonly structuredDrafts: Readonly<Record<string, StructuredDraft>>;
   readonly tokenRevisions: Readonly<Record<string, number>>;
-  readonly onStructuredEdit: (command: StructuredEditCommand) => void;
+  readonly onStructuredEdit: (command: StructuredCommand) => void;
   readonly structuredProblem: UrlProblem | null;
   readonly editorsDisabled: boolean;
+}
+
+interface DomainEditorProps {
+  readonly id: string;
+  readonly label: string;
+  readonly pieceId: DomainEditCommand["pieceId"];
+  readonly field: DomainEditCommand["field"];
+  readonly committedValue: string;
+  readonly draft: StructuredDraft | undefined;
+  readonly tokenRevision: number;
+  readonly onEdit: (command: StructuredCommand) => void;
+  readonly disabled: boolean;
+}
+
+function DomainEditor({
+  id,
+  label,
+  pieceId,
+  field,
+  committedValue,
+  draft,
+  tokenRevision,
+  onEdit,
+  disabled,
+}: DomainEditorProps) {
+  const [compositionValue, setCompositionValue] = useState<string | null>(null);
+  const composing = useRef(false);
+  const value = compositionValue ?? draft?.value ?? committedValue;
+  const errorId = `${id}-error`;
+  return (
+    <>
+      <label htmlFor={id}>{label}</label>
+      <input
+        id={id}
+        className={styles.urlValue}
+        dir="ltr"
+        value={value}
+        aria-invalid={draft ? true : undefined}
+        aria-errormessage={draft ? errorId : undefined}
+        disabled={disabled}
+        onCompositionStart={(event) => {
+          composing.current = true;
+          setCompositionValue(event.currentTarget.value);
+        }}
+        onCompositionEnd={(event) => {
+          composing.current = false;
+          setCompositionValue(null);
+          onEdit({
+            pieceId,
+            field,
+            tokenRevision,
+            value: event.currentTarget.value,
+          });
+        }}
+        onChange={(event) => {
+          if (
+            composing.current ||
+            (event.nativeEvent as InputEvent).isComposing
+          ) {
+            setCompositionValue(event.currentTarget.value);
+            return;
+          }
+          onEdit({
+            pieceId,
+            field,
+            tokenRevision,
+            value: event.currentTarget.value,
+          });
+        }}
+        autoComplete="off"
+        spellCheck={false}
+      />
+      {draft ? (
+        <p id={errorId} className={styles.validation}>
+          {draft.problem.message}
+        </p>
+      ) : null}
+    </>
+  );
 }
 
 interface EditableTokenProps {
@@ -459,23 +540,43 @@ export function StructuredView({
                     <span className={styles.typeLabel}>Domain</span>
                     <p className={styles.position}>Domain, 1 of 1</p>
                     <p className={styles.position}>{filteredPosition}</p>
-                    <label htmlFor={`unicode-${managedPiece.id}`}>Unicode Domain</label>
-                    <input
+                    <DomainEditor
                       id={`unicode-${managedPiece.id}`}
-                      className={styles.urlValue}
-                      dir="ltr"
-                      value={managedPiece.unicode}
-                      readOnly
+                      label="Unicode Domain"
+                      pieceId={managedPiece.id}
+                      field="domain-unicode"
+                      committedValue={managedPiece.unicode}
+                      draft={
+                        structuredDrafts[
+                          structuredFieldKey(managedPiece.id, "domain-unicode")
+                        ]
+                      }
+                      tokenRevision={
+                        tokenRevisions[
+                          structuredFieldKey(managedPiece.id, "domain-unicode")
+                        ] ?? 0
+                      }
+                      onEdit={onStructuredEdit}
+                      disabled={editorsDisabled}
                     />
-                    <label htmlFor={`ascii-${managedPiece.id}`}>
-                      ASCII/Punycode Domain
-                    </label>
-                    <input
+                    <DomainEditor
                       id={`ascii-${managedPiece.id}`}
-                      className={styles.urlValue}
-                      dir="ltr"
-                      value={managedPiece.ascii}
-                      readOnly
+                      label="ASCII/Punycode Domain"
+                      pieceId={managedPiece.id}
+                      field="domain-ascii"
+                      committedValue={managedPiece.ascii}
+                      draft={
+                        structuredDrafts[
+                          structuredFieldKey(managedPiece.id, "domain-ascii")
+                        ]
+                      }
+                      tokenRevision={
+                        tokenRevisions[
+                          structuredFieldKey(managedPiece.id, "domain-ascii")
+                        ] ?? 0
+                      }
+                      onEdit={onStructuredEdit}
+                      disabled={editorsDisabled}
                     />
                     <p className={styles.conversionStatus}>Validated domain forms</p>
                   </li>

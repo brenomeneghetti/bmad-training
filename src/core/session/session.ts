@@ -2,6 +2,8 @@ import { createIdAllocator, type UrlProblem } from "../contracts";
 import {
   editLosslessToken,
   parseLosslessUrl,
+  replaceLosslessDomain,
+  type DomainFieldKind,
   type EditableFieldKind,
   type LosslessUrl,
   type TokenEdit,
@@ -11,6 +13,15 @@ export interface StructuredEditCommand extends TokenEdit {
   readonly tokenRevision: number;
 }
 
+export interface DomainEditCommand {
+  readonly pieceId: LosslessUrl["domainId"];
+  readonly field: DomainFieldKind;
+  readonly tokenRevision: number;
+  readonly value: string;
+}
+
+export type StructuredCommand = StructuredEditCommand | DomainEditCommand;
+
 export interface StructuredDraft {
   readonly value: string;
   readonly problem: UrlProblem;
@@ -19,7 +30,7 @@ export interface StructuredDraft {
 export interface MutationEntry {
   readonly before: LosslessUrl;
   readonly after: LosslessUrl;
-  readonly pieceId: StructuredEditCommand["pieceId"];
+  readonly pieceId: StructuredCommand["pieceId"];
   readonly field: EditableFieldKind;
 }
 
@@ -58,7 +69,7 @@ export type SessionAction =
       readonly revision: number;
       readonly result: ReturnType<typeof parseLosslessUrl>;
     }
-  | { readonly type: "structuredEdit"; readonly command: StructuredEditCommand };
+  | { readonly type: "structuredEdit"; readonly command: StructuredCommand };
 
 export const initialSessionState: SessionState = {
   phase: "no-session",
@@ -78,7 +89,7 @@ export const initialSessionState: SessionState = {
 };
 
 export const structuredFieldKey = (
-  pieceId: StructuredEditCommand["pieceId"],
+  pieceId: StructuredCommand["pieceId"],
   field: EditableFieldKind,
 ) => `${pieceId}:${field}`;
 
@@ -187,6 +198,8 @@ const correctionFromDraft = (
 
 const revisionsFor = (snapshot: LosslessUrl): Readonly<Record<string, number>> =>
   Object.fromEntries([
+    [structuredFieldKey(snapshot.domainId, "domain-unicode"), 0],
+    [structuredFieldKey(snapshot.domainId, "domain-ascii"), 0],
     ...snapshot.path.map((piece) => [structuredFieldKey(piece.id, "path"), 0]),
     ...snapshot.query.flatMap((piece) => [
       [structuredFieldKey(piece.id, "query-key"), 0],
@@ -287,7 +300,132 @@ export const sessionReducer = (
         action.command.field,
       );
       const currentRevision = state.tokenRevisions[key];
-      const raw = rawFieldValue(state.snapshot, action.command);
+      const isDomain =
+        action.command.field === "domain-unicode" ||
+        action.command.field === "domain-ascii";
+      if (isDomain) {
+        const domainDrafts = { ...state.structuredDrafts };
+        delete domainDrafts[
+          structuredFieldKey(
+            state.snapshot.domainId,
+            action.command.field === "domain-unicode"
+              ? "domain-ascii"
+              : "domain-unicode",
+          )
+        ];
+        if (action.command.pieceId !== state.snapshot.domainId) {
+          return {
+            ...state,
+            structuredProblem: {
+              code: "missing-piece",
+              field: "domain",
+              message:
+                "This Domain is no longer available. Review the current URL and try again.",
+            },
+          };
+        }
+        if (
+          currentRevision === undefined ||
+          action.command.tokenRevision !== currentRevision
+        ) {
+          const structuredProblem: UrlProblem = {
+            code: "stale-token-revision",
+            field: "domain",
+            message:
+              "This Domain changed before the edit arrived. Review it and try again.",
+          };
+          return {
+            ...state,
+            structuredProblem,
+            structuredDrafts: {
+              ...domainDrafts,
+              [key]: {
+                value:
+                  action.command.field === "domain-unicode"
+                    ? state.snapshot.domain.unicode
+                    : state.snapshot.domain.ascii,
+                problem: structuredProblem,
+              },
+            },
+          };
+        }
+        if (action.command.value.length > 20_000) {
+          return {
+            ...state,
+            structuredProblem: {
+              code: "url-capacity-exceeded",
+              field: "domain",
+              message: "This edit would exceed the 20,000-character URL limit.",
+            },
+            structuredDrafts: domainDrafts,
+          };
+        }
+        const result = replaceLosslessDomain(state.snapshot, action.command);
+        if (!result.ok) {
+          return {
+            ...state,
+            structuredProblem: result.error,
+            structuredDrafts: {
+              ...domainDrafts,
+              [key]: { value: action.command.value, problem: result.error },
+            },
+          };
+        }
+        const structuredDrafts = { ...state.structuredDrafts };
+        delete structuredDrafts[
+          structuredFieldKey(state.snapshot.domainId, "domain-unicode")
+        ];
+        delete structuredDrafts[
+          structuredFieldKey(state.snapshot.domainId, "domain-ascii")
+        ];
+        if (result.value.serialized === state.snapshot.serialized) {
+          const hadDomainDraft =
+            state.structuredDrafts[
+              structuredFieldKey(state.snapshot.domainId, "domain-unicode")
+            ] !== undefined ||
+            state.structuredDrafts[
+              structuredFieldKey(state.snapshot.domainId, "domain-ascii")
+            ] !== undefined;
+          if (!hadDomainDraft && state.structuredProblem === null) return state;
+          return {
+            ...state,
+            structuredProblem: null,
+            structuredDrafts,
+          };
+        }
+        return {
+          ...state,
+          input: result.value.serialized,
+          snapshot: result.value,
+          lastValidSnapshot: result.value,
+          problem: null,
+          structuredProblem: null,
+          structuredDrafts,
+          tokenRevisions: {
+            ...state.tokenRevisions,
+            [structuredFieldKey(state.snapshot.domainId, "domain-unicode")]:
+              (state.tokenRevisions[
+                structuredFieldKey(state.snapshot.domainId, "domain-unicode")
+              ] ?? 0) + 1,
+            [structuredFieldKey(state.snapshot.domainId, "domain-ascii")]:
+              (state.tokenRevisions[
+                structuredFieldKey(state.snapshot.domainId, "domain-ascii")
+              ] ?? 0) + 1,
+          },
+          revision: state.revision + 1,
+          history: [
+            ...state.history,
+            {
+              before: state.snapshot,
+              after: result.value,
+              pieceId: action.command.pieceId,
+              field: action.command.field,
+            },
+          ],
+        };
+      }
+      const tokenCommand = action.command as StructuredEditCommand;
+      const raw = rawFieldValue(state.snapshot, tokenCommand);
       if (raw === null) {
         const structuredProblem: UrlProblem = {
           code: "missing-piece",
@@ -299,7 +437,7 @@ export const sessionReducer = (
       }
       if (
         currentRevision === undefined ||
-        action.command.tokenRevision !== currentRevision
+        tokenCommand.tokenRevision !== currentRevision
       ) {
         const structuredProblem: UrlProblem = {
           code: "stale-token-revision",
@@ -320,7 +458,7 @@ export const sessionReducer = (
       }
 
       const existingDraft = state.structuredDrafts[key];
-      if (action.command.insertedText.length > 20_000) {
+      if (tokenCommand.insertedText.length > 20_000) {
         return {
           ...state,
           structuredProblem: {
@@ -333,10 +471,10 @@ export const sessionReducer = (
       const editCommand = existingDraft
         ? correctionFromDraft(
             raw,
-            draftValue(existingDraft.value, action.command),
-            action.command,
+            draftValue(existingDraft.value, tokenCommand),
+            tokenCommand,
           )
-        : action.command;
+        : tokenCommand;
       const result = editLosslessToken(state.snapshot, editCommand);
       if (!result.ok) {
         return {
@@ -345,7 +483,7 @@ export const sessionReducer = (
           structuredDrafts: {
             ...state.structuredDrafts,
             [key]: {
-              value: draftValue(existingDraft?.value ?? raw, action.command),
+              value: draftValue(existingDraft?.value ?? raw, tokenCommand),
               problem: result.error,
             },
           },

@@ -34,12 +34,20 @@ export interface LosslessUrl {
   readonly problems: readonly UrlProblem[];
 }
 
-export type EditableFieldKind = "path" | "query-key" | "query-value";
+export type TokenFieldKind = "path" | "query-key" | "query-value";
+export type DomainFieldKind = "domain-unicode" | "domain-ascii";
+export type EditableFieldKind = TokenFieldKind | DomainFieldKind;
 
 export interface TokenEdit {
   readonly pieceId: PieceId;
-  readonly field: EditableFieldKind;
+  readonly field: TokenFieldKind;
   readonly start: number;
   readonly end: number;
   readonly insertedText: string;
+}
+
+export interface DomainEdit {
+  readonly pieceId: PieceId;
+  readonly field: DomainFieldKind;
+  readonly value: string;
 }

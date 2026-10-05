@@ -69,6 +69,11 @@ const createFixture = async (context) => {
       ["story-2-1-accessibility", "2.1"],
       ["story-2-1-privacy", "2.1"],
       ["story-2-1-performance", "2.1"],
+      ["story-2-2-domain-conversion", "2.2"],
+      ["story-2-2-host-only-mutation", "2.2"],
+      ["story-2-2-accessibility", "2.2"],
+      ["story-2-2-privacy", "2.2"],
+      ["story-2-2-performance", "2.2"],
     ].map(([id, story]) => ({
       id,
       story,
@@ -90,7 +95,7 @@ const writeManifest = (root, manifest) =>
 
 test("accepts a complete valid evidence fixture", async (context) => {
   const { root } = await createFixture(context);
-  assert.equal((await validateEvidence(root)).cellCount, 11);
+  assert.equal((await validateEvidence(root)).cellCount, 16);
 });
 
 test("rejects schema and fixed-cell violations", async (context) => {
