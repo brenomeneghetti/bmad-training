@@ -4,7 +4,7 @@ import {
   semanticFixture,
   unsupportedFixtures,
 } from "../../test/fixtures/semantic";
-import { parseLosslessUrl, serializeLosslessUrl } from ".";
+import { editLosslessToken, parseLosslessUrl, serializeLosslessUrl } from ".";
 
 describe("lossless URL parser", () => {
   it("preserves exact serialization and every structural distinction", () => {
@@ -146,5 +146,66 @@ describe("lossless URL parser", () => {
       { separatorBefore: "\\", rawSegment: "" },
     ]);
     expect(result.value.serialized).toBe("https://example.com\\one/two\\");
+  });
+
+  it("edits one addressed token without rewriting any other bytes", () => {
+    const parsed = parseLosslessUrl(
+      "https://User@example.com:044/a%2fb?dup=1&dup=2&flag#Frag%2f",
+    );
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    const target = parsed.value.query[1];
+    if (!target) throw new Error("Missing fixture query piece");
+
+    const edited = editLosslessToken(parsed.value, {
+      pieceId: target.id,
+      field: "query-value",
+      start: 0,
+      end: 1,
+      insertedText: "x&😀",
+    });
+    expect(edited.ok).toBe(true);
+    if (!edited.ok) return;
+    expect(edited.value.serialized).toBe(
+      "https://User@example.com:044/a%2fb?dup=1&dup=x%26%F0%9F%98%80&flag#Frag%2f",
+    );
+    expect(edited.value.query[0]).toBe(parsed.value.query[0]);
+    expect(edited.value.query[1]?.id).toBe(target.id);
+    expect(edited.value.domainId).toBe(parsed.value.domainId);
+  });
+
+  it("makes an absent query value explicitly empty when edited", () => {
+    const parsed = parseLosslessUrl("https://example.com/?flag");
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    const target = parsed.value.query[0];
+    if (!target) throw new Error("Missing fixture query piece");
+    const edited = editLosslessToken(parsed.value, {
+      pieceId: target.id,
+      field: "query-value",
+      start: 0,
+      end: 0,
+      insertedText: "",
+    });
+    expect(edited.ok && edited.value.serialized).toBe(
+      "https://example.com/?flag=",
+    );
+  });
+
+  it("refreshes malformed-percent problems after an exact correction", () => {
+    const parsed = parseLosslessUrl("https://example.com/?value=%zz");
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    const target = parsed.value.query[0];
+    if (!target) throw new Error("Missing fixture query piece");
+    const edited = editLosslessToken(parsed.value, {
+      pieceId: target.id,
+      field: "query-value",
+      start: 0,
+      end: 3,
+      insertedText: "%2F",
+    });
+    expect(edited.ok).toBe(true);
+    if (edited.ok) expect(edited.value.problems).toEqual([]);
   });
 });

@@ -1,6 +1,5 @@
 import assert from "node:assert/strict";
 import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 import {
@@ -17,7 +16,7 @@ const delivery = {
 };
 
 const createFixture = async (context) => {
-  const root = await mkdtemp(join(tmpdir(), "url-evidence-"));
+  const root = await mkdtemp(join(process.cwd(), ".url-evidence-"));
   context.after(() => rm(root, { recursive: true, force: true }));
   await Promise.all([
     mkdir(join(root, "evidence"), { recursive: true }),
@@ -40,8 +39,8 @@ const createFixture = async (context) => {
 
   const manifest = {
     schemaVersion: 1,
-    epic: 1,
-    matrixVersion: "epic-1-v1",
+    epic: 2,
+    matrixVersion: "epic-2-v1",
     evaluatorVersion: "1.0.0",
     artifact: {
       path: "dist",
@@ -65,6 +64,7 @@ const createFixture = async (context) => {
       ["story-1-4-idn-forms", "1.4"],
       ["story-1-5-complete-structured-view", "1.5"],
       ["story-1-6-find-and-clear-managed-pieces", "1.6"],
+      ["story-2-1-exact-structured-editing", "2.1"],
     ].map(([id, story]) => ({
       id,
       story,
@@ -86,7 +86,7 @@ const writeManifest = (root, manifest) =>
 
 test("accepts a complete valid evidence fixture", async (context) => {
   const { root } = await createFixture(context);
-  assert.equal((await validateEvidence(root)).cellCount, 6);
+  assert.equal((await validateEvidence(root)).cellCount, 7);
 });
 
 test("rejects schema and fixed-cell violations", async (context) => {

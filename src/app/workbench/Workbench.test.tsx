@@ -304,4 +304,63 @@ describe("URL Workbench", () => {
     act(() => vi.advanceTimersByTime(1));
     expect(document.querySelector("#search-status span")).not.toBeInTheDocument();
   });
+
+  it("edits only the selected duplicate and keeps focus", () => {
+    render(<Workbench />);
+    const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
+    fireEvent.change(editor, {
+      target: { value: "https://example.com/a?dup=1&dup=2&flag" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
+    const values = screen.getAllByLabelText("Value");
+    const second = values[1] as HTMLInputElement;
+    second.focus();
+    fireEvent.change(second, { target: { value: "x&😀" } });
+
+    expect(second).toHaveFocus();
+    expect(second).toHaveValue("x%26%F0%9F%98%80");
+    expect(values[0]).toHaveValue("1");
+    expect(editor).toHaveValue(
+      "https://example.com/a?dup=1&dup=x%26%F0%9F%98%80&flag",
+    );
+  });
+
+  it("keeps an invalid percent draft associated until corrected", () => {
+    render(<Workbench />);
+    fireEvent.change(
+      screen.getByLabelText("Complete HTTP or HTTPS Absolute URL"),
+      { target: { value: "https://example.com/a?x=1" } },
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
+    const value = screen.getByLabelText("Value");
+    value.focus();
+    fireEvent.change(value, { target: { value: "%" } });
+    expect(value).toHaveValue("%");
+    expect(value).toHaveAttribute("aria-invalid", "true");
+    expect(screen.getByText(/complete triplet/)).toBeVisible();
+    expect(screen.getByLabelText("Complete HTTP or HTTPS Absolute URL")).toHaveValue(
+      "https://example.com/a?x=1",
+    );
+
+    fireEvent.change(value, { target: { value: "%2F" } });
+    expect(value).toHaveValue("%2F");
+    expect(value).not.toHaveAttribute("aria-invalid");
+    expect(value).toHaveFocus();
+    expect(screen.getByLabelText("Complete HTTP or HTTPS Absolute URL")).toHaveValue(
+      "https://example.com/a?x=%2F",
+    );
+  });
+
+  it("suppresses commits during IME composition and commits once at its end", () => {
+    render(<Workbench />);
+    const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
+    fireEvent.change(editor, { target: { value: "https://example.com/a?x=1" } });
+    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
+    const value = screen.getByLabelText("Value");
+    fireEvent.compositionStart(value);
+    fireEvent.change(value, { target: { value: "日" } });
+    expect(editor).toHaveValue("https://example.com/a?x=1");
+    fireEvent.compositionEnd(value, { data: "日" });
+    expect(editor).toHaveValue("https://example.com/a?x=%E6%97%A5");
+  });
 });

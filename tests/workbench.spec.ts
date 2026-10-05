@@ -4,6 +4,7 @@ import AxeBuilder from "@axe-core/playwright";
 import {
   createCapacityFixture,
   semanticFixture,
+  structuredEditFixture,
 } from "../src/test/fixtures/semantic";
 import delivery from "../deployment/static-delivery.json" with { type: "json" };
 
@@ -112,6 +113,10 @@ test("intake preserves lossless semantics and rejects replacement", async ({ pag
   await expect(page.locator("#managed-pieces > li")).toHaveCount(13);
   await expect(page.getByLabel("Path Segment 1 of 4")).toHaveValue("a%2Fb");
   await expect(page.getByText("Malformed percent text")).toBeVisible();
+  await page.getByLabel("Path Segment 1 of 4").fill("edited+%2F");
+  await expect(page.getByLabel("Complete HTTP or HTTPS Absolute URL")).toHaveValue(
+    semanticFixture.replace("a%2Fb", "edited+%2F"),
+  );
 
   await page.getByLabel("Complete HTTP or HTTPS Absolute URL").fill("/relative");
   await page.getByRole("button", { name: "Apply URL" }).click();
@@ -266,10 +271,22 @@ test("capacity view renders every row and stays usable at 320px", async ({ page 
   expect(searchMeasurements.rows.none).toEqual([]);
   expect(searchMeasurements.restoredIds).toEqual(searchMeasurements.originalIds);
   await expect(page.locator("#managed-pieces > li")).toHaveCount(263);
+  const editDuration = await page.getByLabel("Key").last().evaluate((input) => {
+    const setter = Object.getOwnPropertyDescriptor(
+      HTMLInputElement.prototype,
+      "value",
+    )?.set;
+    const started = performance.now();
+    setter?.call(input, "last%2Fkey");
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    return performance.now() - started;
+  });
+  expect(editDuration).toBeLessThan(100);
+  await expect(page.getByLabel("Key").last()).toHaveValue("last%2Fkey");
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
     320,
   );
-  await expect(page.getByLabel("Key").last()).toHaveValue("parameter-259");
+  await expect(page.getByLabel("Key").last()).toHaveValue("last%2Fkey");
 });
 
 test("initial and populated workbench pass automated accessibility checks", async ({
@@ -378,4 +395,50 @@ test("search no-results and clear remain keyboard and activation safe", async ({
   await clearSearch.press("Enter");
   await expect(search).toBeFocused();
   await expect(page.locator("#managed-pieces > li")).toHaveCount(3);
+});
+
+test("structured editing preserves exact bytes, identity, validation, and focus", async ({
+  page,
+}) => {
+  await page.goto("/");
+  const fullUrl = page.getByLabel("Complete HTTP or HTTPS Absolute URL");
+  await fullUrl.fill(structuredEditFixture);
+  await page.getByRole("button", { name: "Apply URL" }).click();
+  const rows = page.locator("#managed-pieces > li");
+  const originalIds = await rows.evaluateAll((items) =>
+    items.map((item) => (item as HTMLElement).dataset.pieceId),
+  );
+
+  const duplicateValue = page.getByLabel("Value").nth(1);
+  await duplicateValue.fill("x&😀");
+  await expect(duplicateValue).toBeFocused();
+  await expect(duplicateValue).toHaveValue("x%26%F0%9F%98%80");
+  await expect(page.getByLabel("Value").first()).toHaveValue("1");
+  await expect(fullUrl).toHaveValue(
+    "https://User@example.com:044/a%2fb//tail?dup=1&dup=x%26%F0%9F%98%80&flag&empty=#Frag%2f",
+  );
+  expect(
+    await rows.evaluateAll((items) =>
+      items.map((item) => (item as HTMLElement).dataset.pieceId),
+    ),
+  ).toEqual(originalIds);
+
+  await duplicateValue.fill("%");
+  await expect(duplicateValue).toHaveValue("%");
+  await expect(duplicateValue).toHaveAttribute("aria-invalid", "true");
+  await expect(page.getByText(/complete triplet/)).toBeVisible();
+  await expect(fullUrl).toHaveValue(
+    "https://User@example.com:044/a%2fb//tail?dup=1&dup=x%26%F0%9F%98%80&flag&empty=#Frag%2f",
+  );
+  await duplicateValue.fill("%2F");
+  await expect(duplicateValue).toHaveValue("%2F");
+  await expect(duplicateValue).not.toHaveAttribute("aria-invalid");
+  await expect(duplicateValue).toBeFocused();
+
+  const absentValue = page.locator('input[id^="query-value-"]').nth(2);
+  await absentValue.fill("x");
+  await absentValue.fill("");
+  await expect(fullUrl).toHaveValue(
+    "https://User@example.com:044/a%2fb//tail?dup=1&dup=%2F&flag=&empty=#Frag%2f",
+  );
 });

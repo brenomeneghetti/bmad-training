@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "epic": 1,
-  "matrixVersion": "epic-1-v1",
+  "epic": 2,
+  "matrixVersion": "epic-2-v1",
   "evaluatorVersion": "1.0.0",
   "artifact": {
     "path": "dist",
-    "digest": "dc7a1bd3a4fd7b0b1da0f4b9d5e4c40a4b1d17725778510c11267eabf54d1506",
+    "digest": "72ec04efd5c860d1a1aa7594a450f31b41bc8322cf5774359a2f789827aa2673",
     "delivery": "deployment/static-delivery.json"
   },
   "toolVersions": {
@@ -16,7 +16,7 @@
   },
   "signOff": {
     "owner": "automated-verification",
-    "recordedAt": "2026-09-30T17:46:38.645Z"
+    "recordedAt": "2026-10-05T00:36:00.000Z"
   },
   "cells": [
     {
@@ -77,6 +77,19 @@
       "owner": "automated",
       "evidence": [
         "src/app/pieces/search.ts",
+        "src/app/workbench/Workbench.test.tsx",
+        "tests/workbench.spec.ts"
+      ]
+    },
+    {
+      "id": "story-2-1-exact-structured-editing",
+      "story": "2.1",
+      "status": "pass",
+      "owner": "automated",
+      "evidence": [
+        "src/core/url/codec.test.ts",
+        "src/core/url/parser.test.ts",
+        "src/core/session/session.test.ts",
         "src/app/workbench/Workbench.test.tsx",
         "tests/workbench.spec.ts"
       ]

@@ -197,6 +197,12 @@ export function Workbench() {
         onSearchChange={setSearchTerm}
         onClearSearch={clearSearch}
         searchInputRef={searchInputRef}
+        structuredDrafts={state.structuredDrafts}
+        tokenRevisions={state.tokenRevisions}
+        onStructuredEdit={(command) =>
+          dispatch({ type: "structuredEdit", command })
+        }
+        structuredProblem={state.structuredProblem}
       />
       <div
         id="search-status"

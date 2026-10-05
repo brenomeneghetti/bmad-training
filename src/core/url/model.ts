@@ -18,6 +18,7 @@ export interface QueryPiece {
 export interface LosslessUrl {
   readonly serialized: string;
   readonly scheme: string;
+  readonly authorityMarker: string;
   readonly authorityPrefix: string;
   readonly rawHost: string;
   readonly authoritySuffix: string;
@@ -31,4 +32,14 @@ export interface LosslessUrl {
   readonly domainId: PieceId;
   readonly domain: DomainForms;
   readonly problems: readonly UrlProblem[];
+}
+
+export type EditableFieldKind = "path" | "query-key" | "query-value";
+
+export interface TokenEdit {
+  readonly pieceId: PieceId;
+  readonly field: EditableFieldKind;
+  readonly start: number;
+  readonly end: number;
+  readonly insertedText: string;
 }

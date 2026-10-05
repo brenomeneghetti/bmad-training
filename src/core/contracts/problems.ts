@@ -6,7 +6,12 @@ export type UrlProblemCode =
   | "unsupported-scheme"
   | "missing-host"
   | "invalid-domain"
-  | "malformed-percent";
+  | "malformed-percent"
+  | "missing-piece"
+  | "stale-token-revision"
+  | "invalid-edit-range"
+  | "split-percent-triplet"
+  | "invalid-percent-edit";
 
 export interface UrlProblem {
   readonly code: UrlProblemCode;

@@ -9,6 +9,8 @@ import {
 } from "../contracts";
 import { convertDomain } from "../idn";
 import type { LosslessUrl, PathPiece, QueryPiece } from "./model";
+import { insertRawComponent, type ComponentProfile } from "./codec";
+import type { TokenEdit } from "./model";
 
 const intakeProblem = (
   code: UrlProblem["code"],
@@ -90,6 +92,26 @@ const scanQuery = (raw: string, ids: IdAllocator): readonly QueryPiece[] => {
     start = index + 1;
   }
   return pieces;
+};
+
+const scanMalformedPercent = (input: string): readonly UrlProblem[] => {
+  const malformed: UrlProblem[] = [];
+  let sourcePosition = 1;
+  for (let index = 0; index < input.length; sourcePosition += 1) {
+    const codePoint = input.codePointAt(index) ?? 0;
+    if (
+      input[index] === "%" &&
+      !/^[0-9A-Fa-f]{2}$/.test(input.slice(index + 1, index + 3))
+    ) {
+      malformed.push({
+        code: "malformed-percent",
+        field: "component",
+        message: `Malformed percent text at character ${sourcePosition}.`,
+      });
+    }
+    index += codePoint > 0xffff ? 2 : 1;
+  }
+  return malformed;
 };
 
 export const parseLosslessUrl = (
@@ -180,26 +202,10 @@ export const parseLosslessUrl = (
   const domain = convertDomain(oracle.hostname);
   if (!domain.ok) return domain;
 
-  const malformed: UrlProblem[] = [];
-  let sourcePosition = 1;
-  for (let index = 0; index < input.length; sourcePosition += 1) {
-    const codePoint = input.codePointAt(index) ?? 0;
-    if (
-      input[index] === "%" &&
-      !/^[0-9A-Fa-f]{2}$/.test(input.slice(index + 1, index + 3))
-    ) {
-      malformed.push({
-        code: "malformed-percent",
-        field: "component",
-        message: `Malformed percent text at character ${sourcePosition}.`,
-      });
-    }
-    index += codePoint > 0xffff ? 2 : 1;
-  }
-
   return ok({
     serialized: input,
     scheme: input.slice(0, schemeEnd),
+    authorityMarker: input.slice(schemeEnd + 1, authorityStart),
     authorityPrefix: parts.prefix,
     rawHost: parts.host,
     authoritySuffix: parts.suffix,
@@ -212,8 +218,93 @@ export const parseLosslessUrl = (
     rawFragment,
     domainId: ids.next(),
     domain: domain.value,
-    problems: malformed,
+    problems: scanMalformedPercent(input),
   });
 };
 
 export const serializeLosslessUrl = (url: LosslessUrl): string => url.serialized;
+
+const serializeParts = (url: Omit<LosslessUrl, "serialized">): string =>
+  `${url.scheme}:${url.authorityMarker}${url.authorityPrefix}${url.rawHost}${
+    url.authoritySuffix
+  }${url.path.map((piece) => `${piece.separatorBefore}${piece.rawSegment}`).join("")}${
+    url.queryPresent
+      ? `?${url.query
+          .map(
+            (piece) =>
+              `${piece.separatorBefore}${piece.rawKey}${
+                piece.equalsPresent ? `=${piece.rawValue}` : ""
+              }`,
+          )
+          .join("")}`
+      : ""
+  }${url.fragmentPresent ? `#${url.rawFragment}` : ""}`;
+
+export const editLosslessToken = (
+  url: LosslessUrl,
+  edit: TokenEdit,
+): Result<LosslessUrl, UrlProblem> => {
+  const pathIndex = url.path.findIndex((piece) => piece.id === edit.pieceId);
+  const queryIndex = url.query.findIndex((piece) => piece.id === edit.pieceId);
+  if (
+    (edit.field === "path" && pathIndex < 0) ||
+    (edit.field !== "path" && queryIndex < 0)
+  ) {
+    return err({
+      code: "missing-piece",
+      field: "component",
+      message: "This URL piece is no longer available. Review the current URL and try again.",
+    });
+  }
+
+  const raw =
+    edit.field === "path"
+      ? url.path[pathIndex]?.rawSegment ?? ""
+      : edit.field === "query-key"
+        ? url.query[queryIndex]?.rawKey ?? ""
+        : url.query[queryIndex]?.rawValue ?? "";
+  const profile: ComponentProfile =
+    edit.field === "path"
+      ? "path-segment"
+      : edit.field === "query-key"
+        ? "query-key"
+        : "query-value";
+  const inserted = insertRawComponent({ raw, ...edit, profile });
+  if (!inserted.ok) return inserted;
+
+  const path =
+    edit.field === "path"
+      ? url.path.map((piece, index) =>
+          index === pathIndex ? { ...piece, rawSegment: inserted.value } : piece,
+        )
+      : url.path;
+  const query =
+    edit.field === "path"
+      ? url.query
+      : url.query.map((piece, index) => {
+          if (index !== queryIndex) return piece;
+          return edit.field === "query-key"
+            ? { ...piece, rawKey: inserted.value }
+            : { ...piece, rawValue: inserted.value, equalsPresent: true };
+        });
+  const nextWithoutSerialization = {
+    ...url,
+    path,
+    pathRaw: path.map((piece) => `${piece.separatorBefore}${piece.rawSegment}`).join(""),
+    query,
+    queryRaw: query
+      .map(
+        (piece) =>
+          `${piece.separatorBefore}${piece.rawKey}${
+            piece.equalsPresent ? `=${piece.rawValue}` : ""
+          }`,
+      )
+      .join(""),
+  };
+  const serialized = serializeParts(nextWithoutSerialization);
+  return ok({
+    ...nextWithoutSerialization,
+    serialized,
+    problems: scanMalformedPercent(serialized),
+  });
+};

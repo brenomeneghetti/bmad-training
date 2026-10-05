@@ -1,6 +1,18 @@
 export const semanticFixture =
   "https://user:pass@faß.de:8443/a%2Fb//tail/?dup=1&dup=2&key&key=&=empty&&encoded=a%26b%3Dc&bad=%zz#frag%23ment";
 
+export const structuredEditFixture =
+  "https://User@example.com:044/a%2fb//tail?dup=1&dup=2&flag&empty=#Frag%2f";
+
+export const structuredEditExpected = {
+  pathUnicode:
+    "https://User@example.com:044/a%2fb/%F0%9F%98%80%2Ftail?dup=1&dup=2&flag&empty=#Frag%2f",
+  duplicate:
+    "https://User@example.com:044/a%2fb//tail?dup=1&dup=x%26y&flag&empty=#Frag%2f",
+  emptyValue:
+    "https://User@example.com:044/a%2fb//tail?dup=1&dup=2&flag=&empty=#Frag%2f",
+} as const;
+
 export const idnFixtures = [
   ["faß.de", "xn--fa-hia.de", "faß.de"],
   ["XN--FA-HIA.DE", "xn--fa-hia.de", "faß.de"],
