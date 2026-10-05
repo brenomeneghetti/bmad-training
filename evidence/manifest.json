@@ -5,7 +5,7 @@
   "evaluatorVersion": "1.0.0",
   "artifact": {
     "path": "dist",
-    "digest": "9ad8b37c8c9af60464bc2eb472a04deb8cb7ff0348be4313a8746a4a6cddcc99",
+    "digest": "29e472a20c0bb03a163fa9733f72346db1dba8972235993c9d5ef01eb4971527",
     "delivery": "deployment/static-delivery.json"
   },
   "toolVersions": {
@@ -16,7 +16,7 @@
   },
   "signOff": {
     "owner": "automated-verification",
-    "recordedAt": "2026-10-05T00:58:10.000Z"
+    "recordedAt": "2026-10-05T01:33:21.000Z"
   },
   "cells": [
     {
@@ -82,15 +82,54 @@
       ]
     },
     {
-      "id": "story-2-1-exact-structured-editing",
+      "id": "story-2-1-fr6-exact-structured-editing",
+      "story": "2.1",
+      "status": "pass",
+      "owner": "automated",
+      "evidence": [
+        "src/core/url/parser.test.ts",
+        "src/core/session/session.test.ts",
+        "src/app/workbench/Workbench.test.tsx"
+      ]
+    },
+    {
+      "id": "story-2-1-ag1-component-codec",
       "story": "2.1",
       "status": "pass",
       "owner": "automated",
       "evidence": [
         "src/core/url/codec.test.ts",
-        "src/core/url/parser.test.ts",
-        "src/core/session/session.test.ts",
+        "src/core/url/parser.test.ts"
+      ]
+    },
+    {
+      "id": "story-2-1-accessibility",
+      "story": "2.1",
+      "status": "pass",
+      "owner": "automated",
+      "evidence": [
         "src/app/workbench/Workbench.test.tsx",
+        "tests/workbench.spec.ts"
+      ]
+    },
+    {
+      "id": "story-2-1-privacy",
+      "story": "2.1",
+      "status": "pass",
+      "owner": "automated",
+      "evidence": [
+        "tests/workbench.spec.ts",
+        "deployment/static-delivery.json"
+      ]
+    },
+    {
+      "id": "story-2-1-performance",
+      "story": "2.1",
+      "status": "pass",
+      "owner": "automated",
+      "evidence": [
+        "src/test/fixtures/semantic.ts",
+        "src/core/session/session.test.ts",
         "tests/workbench.spec.ts"
       ]
     }

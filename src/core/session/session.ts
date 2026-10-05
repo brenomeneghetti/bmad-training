@@ -135,6 +135,48 @@ const correctionFromDraft = (
     desiredEnd -= 1;
   }
 
+  const splitsPercentTriplet = (value: string, boundary: number) => {
+    for (
+      let percent = Math.max(0, boundary - 2);
+      percent < Math.min(boundary, value.length);
+      percent += 1
+    ) {
+      if (
+        value[percent] === "%" &&
+        /^[0-9A-Fa-f]{2}$/.test(value.slice(percent + 1, percent + 3)) &&
+        boundary > percent &&
+        boundary < percent + 3
+      ) {
+        return percent;
+      }
+    }
+    return -1;
+  };
+  const startTriplet = splitsPercentTriplet(raw, start);
+  if (startTriplet >= 0) {
+    start = startTriplet;
+  }
+  const endTriplet = splitsPercentTriplet(raw, rawEnd);
+  if (endTriplet >= 0) {
+    const expandedEnd = endTriplet + 3;
+    desiredEnd += expandedEnd - rawEnd;
+    rawEnd = expandedEnd;
+  }
+  const splitsSurrogatePair = (value: string, boundary: number) =>
+    boundary > 0 &&
+    boundary < value.length &&
+    value.charCodeAt(boundary - 1) >= 0xd800 &&
+    value.charCodeAt(boundary - 1) <= 0xdbff &&
+    value.charCodeAt(boundary) >= 0xdc00 &&
+    value.charCodeAt(boundary) <= 0xdfff;
+  if (splitsSurrogatePair(raw, start)) {
+    start -= 1;
+  }
+  if (splitsSurrogatePair(raw, rawEnd)) {
+    rawEnd += 1;
+    desiredEnd += 1;
+  }
+
   return {
     ...command,
     start,
@@ -221,6 +263,20 @@ export const sessionReducer = (
     }
     case "structuredEdit": {
       if (!state.snapshot) return state;
+      if (
+        state.phase !== "active" ||
+        state.input !== state.snapshot.serialized
+      ) {
+        return {
+          ...state,
+          structuredProblem: {
+            code: "structured-edit-unavailable",
+            field: "component",
+            message:
+              "Apply the current Full URL text before editing structured fields.",
+          },
+        };
+      }
       const key = structuredFieldKey(
         action.command.pieceId,
         action.command.field,
@@ -283,6 +339,13 @@ export const sessionReducer = (
 
       const structuredDrafts = { ...state.structuredDrafts };
       delete structuredDrafts[key];
+      if (result.value.serialized === state.snapshot.serialized) {
+        return {
+          ...state,
+          structuredProblem: null,
+          structuredDrafts,
+        };
+      }
       return {
         ...state,
         phase: "active",

@@ -173,6 +173,7 @@ describe("session authority", () => {
         insertedText: "%",
       },
     });
+
     expect(invalid.structuredDrafts[`${target.id}:query-value`]?.value).toBe(
       "%zzA%",
     );
@@ -193,6 +194,36 @@ describe("session authority", () => {
     );
     expect(corrected.structuredDrafts).toEqual({});
     expect(corrected.history).toHaveLength(1);
+  });
+
+  it("corrects a draft without collapsing the trusted range inside a triplet", () => {
+    const active = apply(initialSessionState, "https://example.com/a?x=%2F");
+    const target = active.snapshot?.query[0];
+    if (!target) throw new Error("Missing fixture query piece");
+    const invalid = sessionReducer(active, {
+      type: "structuredEdit",
+      command: {
+        pieceId: target.id,
+        field: "query-value",
+        tokenRevision: 0,
+        start: 2,
+        end: 3,
+        insertedText: "%",
+      },
+    });
+    const corrected = sessionReducer(invalid, {
+      type: "structuredEdit",
+      command: {
+        pieceId: target.id,
+        field: "query-value",
+        tokenRevision: 0,
+        start: 0,
+        end: 3,
+        insertedText: "%3A",
+      },
+    });
+    expect(corrected.snapshot?.serialized).toBe("https://example.com/a?x=%3A");
+    expect(corrected.structuredDrafts).toEqual({});
   });
 
   it.each([
@@ -244,6 +275,7 @@ describe("session authority", () => {
         insertedText: "secret",
       },
     });
+
     expect(rejected.snapshot).toBe(active.snapshot);
     expect(rejected.history).toBe(active.history);
     expect(rejected.structuredProblem).toEqual({
@@ -253,6 +285,72 @@ describe("session authority", () => {
         "This URL piece is no longer available. Review the current URL and try again.",
     });
     expect(JSON.stringify(rejected.structuredProblem)).not.toContain("secret");
+  });
+
+  it("rejects structured commands while Full URL text is unapplied", () => {
+    const active = apply(initialSessionState, "https://example.com/a?x=1");
+    const target = active.snapshot?.query[0];
+    if (!target) throw new Error("Missing fixture query piece");
+    const editing = sessionReducer(active, {
+      type: "inputChanged",
+      value: "https://example.com/a?x=draft",
+    });
+    const rejected = sessionReducer(editing, {
+      type: "structuredEdit",
+      command: {
+        pieceId: target.id,
+        field: "query-value",
+        tokenRevision: 0,
+        start: 0,
+        end: 1,
+        insertedText: "2",
+      },
+    });
+    expect(rejected.input).toBe("https://example.com/a?x=draft");
+    expect(rejected.snapshot).toBe(active.snapshot);
+    expect(rejected.history).toBe(active.history);
+    expect(rejected.structuredProblem?.code).toBe("structured-edit-unavailable");
+  });
+
+  it("does not publish or journal serialized no-ops", () => {
+    const active = apply(initialSessionState, "https://example.com/a?flag");
+    const target = active.snapshot?.query[0];
+    if (!target) throw new Error("Missing fixture query piece");
+    const unchanged = sessionReducer(active, {
+      type: "structuredEdit",
+      command: {
+        pieceId: target.id,
+        field: "query-value",
+        tokenRevision: 0,
+        start: 0,
+        end: 0,
+        insertedText: "",
+      },
+    });
+    expect(unchanged.snapshot).toBe(active.snapshot);
+    expect(unchanged.history).toBe(active.history);
+    expect(unchanged.revision).toBe(active.revision);
+    expect(unchanged.tokenRevisions).toBe(active.tokenRevisions);
+  });
+
+  it("rejects an edit that would exceed supported capacity atomically", () => {
+    const active = apply(initialSessionState, createCapacityFixture());
+    const target = active.snapshot?.query[0];
+    if (!target) throw new Error("Missing capacity target");
+    const rejected = sessionReducer(active, {
+      type: "structuredEdit",
+      command: {
+        pieceId: target.id,
+        field: "query-value",
+        tokenRevision: 0,
+        start: 0,
+        end: 0,
+        insertedText: "extra",
+      },
+    });
+    expect(rejected.snapshot).toBe(active.snapshot);
+    expect(rejected.history).toBe(active.history);
+    expect(rejected.structuredProblem?.code).toBe("url-capacity-exceeded");
   });
 
   it("edits a 250+ parameter URL within the local response target", () => {

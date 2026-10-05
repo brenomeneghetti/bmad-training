@@ -5,8 +5,8 @@
   "required": ["schemaVersion", "epic", "matrixVersion", "evaluatorVersion", "artifact", "toolVersions", "signOff", "cells"],
   "properties": {
     "schemaVersion": { "const": 1 },
-    "epic": { "enum": [1, 2] },
-    "matrixVersion": { "type": "string", "pattern": "^epic-[12]-v[0-9]+$" },
+    "epic": { "const": 2 },
+    "matrixVersion": { "type": "string", "pattern": "^epic-2-v[0-9]+$" },
     "evaluatorVersion": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
     "artifact": {
       "type": "object",
@@ -34,8 +34,8 @@
     },
     "cells": {
       "type": "array",
-      "minItems": 7,
-      "maxItems": 7,
+      "minItems": 11,
+      "maxItems": 11,
       "items": {
         "type": "object",
         "additionalProperties": false,

@@ -285,7 +285,12 @@ export const editLosslessToken = (
           if (index !== queryIndex) return piece;
           return edit.field === "query-key"
             ? { ...piece, rawKey: inserted.value }
-            : { ...piece, rawValue: inserted.value, equalsPresent: true };
+            : {
+                ...piece,
+                rawValue: inserted.value,
+                equalsPresent:
+                  piece.equalsPresent || inserted.value !== piece.rawValue,
+              };
         });
   const nextWithoutSerialization = {
     ...url,
@@ -302,6 +307,13 @@ export const editLosslessToken = (
       .join(""),
   };
   const serialized = serializeParts(nextWithoutSerialization);
+  if (Array.from(serialized).length > 20_000) {
+    return err({
+      code: "url-capacity-exceeded",
+      field: "component",
+      message: "This edit would exceed the 20,000-character URL limit.",
+    });
+  }
   return ok({
     ...nextWithoutSerialization,
     serialized,

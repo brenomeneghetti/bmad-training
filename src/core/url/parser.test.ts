@@ -174,7 +174,7 @@ describe("lossless URL parser", () => {
     expect(edited.value.domainId).toBe(parsed.value.domainId);
   });
 
-  it("makes an absent query value explicitly empty when edited", () => {
+  it("keeps an absent query value absent for an empty no-op", () => {
     const parsed = parseLosslessUrl("https://example.com/?flag");
     expect(parsed.ok).toBe(true);
     if (!parsed.ok) return;
@@ -187,9 +187,27 @@ describe("lossless URL parser", () => {
       end: 0,
       insertedText: "",
     });
-    expect(edited.ok && edited.value.serialized).toBe(
-      "https://example.com/?flag=",
-    );
+    expect(edited.ok && edited.value.serialized).toBe("https://example.com/?flag");
+  });
+
+  it("rejects a structured edit beyond the supported capacity", () => {
+    const parsed = parseLosslessUrl(createCapacityFixture());
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    const target = parsed.value.query[0];
+    if (!target) throw new Error("Missing fixture query piece");
+    const edited = editLosslessToken(parsed.value, {
+      pieceId: target.id,
+      field: "query-value",
+      start: 0,
+      end: 0,
+      insertedText: "extra",
+    });
+    expect(edited.ok).toBe(false);
+    if (!edited.ok) {
+      expect(edited.error.code).toBe("url-capacity-exceeded");
+      expect(edited.error.message).not.toContain(parsed.value.serialized);
+    }
   });
 
   it("refreshes malformed-percent problems after an exact correction", () => {

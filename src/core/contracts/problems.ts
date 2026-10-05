@@ -9,6 +9,8 @@ export type UrlProblemCode =
   | "malformed-percent"
   | "missing-piece"
   | "stale-token-revision"
+  | "structured-edit-unavailable"
+  | "url-capacity-exceeded"
   | "invalid-edit-range"
   | "split-percent-triplet"
   | "invalid-percent-edit";

@@ -1,10 +1,12 @@
 import type { LosslessUrl } from "../../core/url";
 import type {
+  ChangeEvent,
   ClipboardEvent,
   FormEvent,
+  KeyboardEvent,
   RefObject,
 } from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { ManagedPiece } from "./search";
 import {
   structuredFieldKey,
@@ -26,37 +28,178 @@ interface StructuredViewProps {
   readonly tokenRevisions: Readonly<Record<string, number>>;
   readonly onStructuredEdit: (command: StructuredEditCommand) => void;
   readonly structuredProblem: UrlProblem | null;
+  readonly editorsDisabled: boolean;
 }
 
 interface EditableTokenProps {
   readonly id: string;
   readonly label: string;
+  readonly accessibleLabel: string;
   readonly pieceId: StructuredEditCommand["pieceId"];
   readonly field: StructuredEditCommand["field"];
   readonly committedValue: string;
   readonly draft: StructuredDraft | undefined;
   readonly tokenRevision: number;
   readonly onEdit: (command: StructuredEditCommand) => void;
+  readonly disabled: boolean;
 }
+
+const percentTripletAt = (value: string, index: number) => {
+  for (
+    let percent = Math.max(0, index - 2);
+    percent <= index && percent < value.length;
+    percent += 1
+  ) {
+    if (
+      value[percent] === "%" &&
+      /^[0-9A-Fa-f]{2}$/.test(value.slice(percent + 1, percent + 3)) &&
+      index >= percent &&
+      index < percent + 3
+    ) {
+      return { start: percent, end: percent + 3 };
+    }
+  }
+  return null;
+};
+
+const previousCodePointStart = (value: string, index: number) => {
+  if (index <= 0) return 0;
+  const last = value.charCodeAt(index - 1);
+  return last >= 0xdc00 && last <= 0xdfff ? Math.max(0, index - 2) : index - 1;
+};
+
+const nextCodePointEnd = (value: string, index: number) => {
+  if (index >= value.length) return value.length;
+  const first = value.charCodeAt(index);
+  return first >= 0xd800 && first <= 0xdbff
+    ? Math.min(value.length, index + 2)
+    : index + 1;
+};
+
+const expandAtomicRange = (
+  value: string,
+  start: number,
+  end: number,
+): { start: number; end: number } => {
+  let expandedStart = start;
+  let expandedEnd = end;
+  const startTriplet = percentTripletAt(value, expandedStart);
+  if (startTriplet && expandedStart > startTriplet.start) {
+    expandedStart = startTriplet.start;
+  }
+  const endTriplet = percentTripletAt(value, Math.max(0, expandedEnd - 1));
+  if (endTriplet && expandedEnd < endTriplet.end) {
+    expandedEnd = endTriplet.end;
+  }
+  if (
+    expandedStart > 0 &&
+    expandedStart < value.length &&
+    value.charCodeAt(expandedStart - 1) >= 0xd800 &&
+    value.charCodeAt(expandedStart - 1) <= 0xdbff
+  ) {
+    expandedStart -= 1;
+  }
+  if (
+    expandedEnd > 0 &&
+    expandedEnd < value.length &&
+    value.charCodeAt(expandedEnd) >= 0xdc00 &&
+    value.charCodeAt(expandedEnd) <= 0xdfff
+  ) {
+    expandedEnd += 1;
+  }
+  return { start: expandedStart, end: expandedEnd };
+};
+
+const minimalReplacement = (before: string, after: string) => {
+  let start = 0;
+  while (
+    start < before.length &&
+    start < after.length &&
+    before[start] === after[start]
+  ) {
+    start += 1;
+  }
+  let beforeEnd = before.length;
+  let afterEnd = after.length;
+  while (
+    beforeEnd > start &&
+    afterEnd > start &&
+    before[beforeEnd - 1] === after[afterEnd - 1]
+  ) {
+    beforeEnd -= 1;
+    afterEnd -= 1;
+  }
+  const expanded = expandAtomicRange(before, start, beforeEnd);
+  afterEnd += expanded.end - beforeEnd;
+  const afterStart =
+    after.length < before.length && expanded.start < start
+      ? start
+      : expanded.start;
+  return {
+    start: expanded.start,
+    end: expanded.end,
+    insertedText: after.slice(afterStart, afterEnd),
+  };
+};
 
 function EditableToken({
   id,
   label,
+  accessibleLabel,
   pieceId,
   field,
   committedValue,
   draft,
   tokenRevision,
   onEdit,
+  disabled,
 }: EditableTokenProps) {
   const [compositionValue, setCompositionValue] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const compositionBase = useRef("");
+  const pendingSuffixLength = useRef<number | null>(null);
+  const caretFrame = useRef<number | null>(null);
+  const suppressBeforeInput = useRef(false);
   const value = compositionValue ?? draft?.value ?? committedValue;
   const errorId = `${id}-error`;
 
   useEffect(() => setCompositionValue(null), [pieceId, field, committedValue]);
+  useLayoutEffect(() => {
+    if (pendingSuffixLength.current === null || !inputRef.current) return;
+    const caret = Math.max(0, value.length - pendingSuffixLength.current);
+    inputRef.current.setSelectionRange(caret, caret);
+    pendingSuffixLength.current = null;
+    if (caretFrame.current !== null) {
+      window.cancelAnimationFrame(caretFrame.current);
+    }
+    caretFrame.current = window.requestAnimationFrame(() => {
+      inputRef.current?.setSelectionRange(caret, caret);
+      caretFrame.current = null;
+    });
+  }, [value]);
+  useEffect(() => {
+    return () => {
+      if (caretFrame.current !== null) {
+        window.cancelAnimationFrame(caretFrame.current);
+      }
+    };
+  }, []);
 
-  const dispatch = (start: number, end: number, insertedText: string) =>
+  const cancelCaretFrame = () => {
+    if (caretFrame.current === null) return;
+    window.cancelAnimationFrame(caretFrame.current);
+    caretFrame.current = null;
+  };
+
+  const dispatch = (
+    start: number,
+    end: number,
+    insertedText: string,
+    suffixLength = value.length - end,
+  ) => {
+    pendingSuffixLength.current = suffixLength;
     onEdit({ pieceId, field, tokenRevision, start, end, insertedText });
+  };
 
   const selection = (input: HTMLInputElement) => ({
     start: input.selectionStart ?? value.length,
@@ -64,32 +207,95 @@ function EditableToken({
   });
 
   const beforeInput = (event: FormEvent<HTMLInputElement>) => {
+    cancelCaretFrame();
     const native = event.nativeEvent as InputEvent;
+    if (suppressBeforeInput.current) {
+      event.preventDefault();
+      return;
+    }
     if (native.isComposing || compositionValue !== null) return;
     const inputType = native.inputType ?? "";
     const range = selection(event.currentTarget);
     let start = range.start;
     let end = range.end;
     let insertedText = native.data ?? "";
-    if (inputType === "deleteContentBackward" && start === end && start > 0) {
-      start -= 1;
-    } else if (
-      inputType === "deleteContentForward" &&
-      start === end &&
-      end < value.length
-    ) {
-      end += 1;
+    if (start === end && inputType === "deleteContentBackward") {
+      if (start === 0) return;
+      start = previousCodePointStart(value, start);
+    } else if (start === end && inputType === "deleteContentForward") {
+      if (end === value.length) return;
+      end = nextCodePointEnd(value, end);
+    } else if (start === end && inputType === "deleteWordBackward") {
+      if (start === 0) return;
+      const prefix = value.slice(0, start);
+      start = prefix.search(/[\p{L}\p{N}_]+$/u);
+      if (start < 0) start = 0;
+    } else if (start === end && inputType === "deleteWordForward") {
+      if (end === value.length) return;
+      const match = value.slice(end).match(/^[\p{L}\p{N}_]+/u);
+      end += match?.[0].length ?? value.length - end;
     } else if (inputType.startsWith("insert") && native.data === null) {
       return;
+    }
+    if (inputType.startsWith("delete")) {
+      ({ start, end } = expandAtomicRange(value, start, end));
+      insertedText = "";
     }
     event.preventDefault();
     dispatch(start, end, insertedText);
   };
 
   const paste = (event: ClipboardEvent<HTMLInputElement>) => {
+    cancelCaretFrame();
     event.preventDefault();
     const range = selection(event.currentTarget);
     dispatch(range.start, range.end, event.clipboardData.getData("text"));
+  };
+
+  const keyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    cancelCaretFrame();
+    if (
+      compositionValue !== null ||
+      (event.key !== "Backspace" && event.key !== "Delete")
+    ) {
+      return;
+    }
+    const range = selection(event.currentTarget);
+    let { start, end } = range;
+    const word = event.ctrlKey || event.altKey || event.metaKey;
+    if (word) return;
+    if (start === end && event.key === "Backspace") {
+      if (start === 0) {
+        event.preventDefault();
+        return;
+      }
+      start = previousCodePointStart(value, start);
+    } else if (start === end && event.key === "Delete") {
+      if (end === value.length) {
+        event.preventDefault();
+        return;
+      }
+      end = nextCodePointEnd(value, end);
+    }
+    ({ start, end } = expandAtomicRange(value, start, end));
+    event.preventDefault();
+    suppressBeforeInput.current = true;
+    dispatch(start, end, "");
+  };
+
+  const fallbackChange = (event: ChangeEvent<HTMLInputElement>) => {
+    if (compositionValue !== null) {
+      setCompositionValue(event.currentTarget.value);
+      return;
+    }
+    const next = event.currentTarget.value;
+    const replacement = minimalReplacement(value, next);
+    dispatch(
+      replacement.start,
+      replacement.end,
+      replacement.insertedText,
+      next.length - (event.currentTarget.selectionStart ?? next.length),
+    );
   };
 
   return (
@@ -97,26 +303,47 @@ function EditableToken({
       <label htmlFor={id}>{label}</label>
       <input
         id={id}
+        ref={inputRef}
         className={styles.urlValue}
         dir="ltr"
         value={value}
+        aria-label={accessibleLabel}
         aria-invalid={draft ? true : undefined}
         aria-errormessage={draft ? errorId : undefined}
+        disabled={disabled}
+        onKeyDown={keyDown}
+        onSelect={cancelCaretFrame}
+        onKeyUp={() => {
+          suppressBeforeInput.current = false;
+        }}
         onBeforeInput={beforeInput}
         onPaste={paste}
-        onCompositionStart={(event) => setCompositionValue(event.currentTarget.value)}
+        onCut={(event) => {
+          cancelCaretFrame();
+          let { start, end } = selection(event.currentTarget);
+          if (start === end) return;
+          ({ start, end } = expandAtomicRange(value, start, end));
+          event.preventDefault();
+          event.clipboardData.setData("text/plain", value.slice(start, end));
+          dispatch(start, end, "");
+        }}
+        onCompositionStart={(event) => {
+          cancelCaretFrame();
+          compositionBase.current = event.currentTarget.value;
+          setCompositionValue(event.currentTarget.value);
+        }}
         onCompositionEnd={(event) => {
           const next = event.currentTarget.value;
+          const replacement = minimalReplacement(compositionBase.current, next);
           setCompositionValue(null);
-          dispatch(0, (draft?.value ?? committedValue).length, next);
+          dispatch(
+            replacement.start,
+            replacement.end,
+            replacement.insertedText,
+            next.length - (event.currentTarget.selectionStart ?? next.length),
+          );
         }}
-        onChange={(event) => {
-          if (compositionValue !== null) {
-            setCompositionValue(event.currentTarget.value);
-          } else {
-            dispatch(0, value.length, event.currentTarget.value);
-          }
-        }}
+        onChange={fallbackChange}
         autoComplete="off"
         spellCheck={false}
       />
@@ -141,6 +368,7 @@ export function StructuredView({
   tokenRevisions,
   onStructuredEdit,
   structuredProblem,
+  editorsDisabled,
 }: StructuredViewProps) {
   const managedCount = snapshot ? 1 + snapshot.path.length + snapshot.query.length : 0;
   const visibleCount = pieces.length;
@@ -236,6 +464,7 @@ export function StructuredView({
                     <EditableToken
                       id={`path-${managedPiece.id}`}
                       label={`Path Segment ${managedPiece.sourcePosition} of ${managedPiece.sourceTotal}`}
+                      accessibleLabel={`Path Segment ${managedPiece.sourcePosition} of ${managedPiece.sourceTotal}`}
                       pieceId={managedPiece.id}
                       field="path"
                       committedValue={managedPiece.piece.rawSegment}
@@ -244,6 +473,7 @@ export function StructuredView({
                         tokenRevisions[structuredFieldKey(managedPiece.id, "path")] ?? 0
                       }
                       onEdit={onStructuredEdit}
+                      disabled={editorsDisabled}
                     />
                   </li>
                 );
@@ -270,6 +500,7 @@ export function StructuredView({
                   <EditableToken
                     id={`query-key-${managedPiece.id}`}
                     label="Key"
+                    accessibleLabel={`Key, Query Parameter ${managedPiece.sourcePosition} of ${managedPiece.sourceTotal}${occurrence}`}
                     pieceId={managedPiece.id}
                     field="query-key"
                     committedValue={managedPiece.piece.rawKey}
@@ -284,10 +515,12 @@ export function StructuredView({
                       ] ?? 0
                     }
                     onEdit={onStructuredEdit}
+                    disabled={editorsDisabled}
                   />
                   <EditableToken
                     id={`query-value-${managedPiece.id}`}
                     label={managedPiece.piece.equalsPresent ? "Value" : "Value absent"}
+                    accessibleLabel={`${managedPiece.piece.equalsPresent ? "Value" : "Value absent"}, Query Parameter ${managedPiece.sourcePosition} of ${managedPiece.sourceTotal}${occurrence}`}
                     pieceId={managedPiece.id}
                     field="query-value"
                     committedValue={managedPiece.piece.rawValue}
@@ -302,6 +535,7 @@ export function StructuredView({
                       ] ?? 0
                     }
                     onEdit={onStructuredEdit}
+                    disabled={editorsDisabled}
                   />
                 </li>
               );

@@ -157,9 +157,11 @@ test("capacity view renders every row and stays usable at 320px", async ({ page 
   await page.getByRole("button", { name: "Apply URL" }).click();
   await expect(page.locator("#managed-pieces > li")).toHaveCount(263);
   expect(
-    await page.getByLabel("Key").evaluateAll((inputs) =>
-      inputs.map((input) => (input as HTMLInputElement).value),
-    ),
+    await page
+      .getByRole("textbox", { name: /^Key, Query Parameter/ })
+      .evaluateAll((inputs) =>
+        inputs.map((input) => (input as HTMLInputElement).value),
+      ),
   ).toEqual(Array.from({ length: 260 }, (_, index) => `parameter-${index}`));
   expect(Date.now() - start).toBeLessThan(1_000);
   const searchMeasurements = await page.evaluate(async () => {
@@ -271,7 +273,19 @@ test("capacity view renders every row and stays usable at 320px", async ({ page 
   expect(searchMeasurements.rows.none).toEqual([]);
   expect(searchMeasurements.restoredIds).toEqual(searchMeasurements.originalIds);
   await expect(page.locator("#managed-pieces > li")).toHaveCount(263);
-  const editDuration = await page.getByLabel("Key").last().evaluate((input) => {
+  const lastKey = page.getByRole("textbox", {
+    name: /^Key, Query Parameter/,
+  }).last();
+  const originalFullUrl = createCapacityFixture();
+  await lastKey.focus();
+  await lastKey.press("End");
+  await lastKey.press("x");
+  await expect(lastKey).toHaveAttribute("aria-invalid", "true");
+  await expect(
+    page.getByLabel("Complete HTTP or HTTPS Absolute URL"),
+  ).toHaveValue(originalFullUrl);
+
+  const editDuration = await lastKey.evaluate(async (input) => {
     const setter = Object.getOwnPropertyDescriptor(
       HTMLInputElement.prototype,
       "value",
@@ -279,14 +293,27 @@ test("capacity view renders every row and stays usable at 320px", async ({ page 
     const started = performance.now();
     setter?.call(input, "last%2Fkey");
     input.dispatchEvent(new Event("input", { bubbles: true }));
+    await new Promise<void>((resolve) => {
+      const check = () => {
+        const fullUrl = document.querySelector<HTMLTextAreaElement>(
+          "#full-url-editor",
+        );
+        if (fullUrl?.value.includes("last%2Fkey")) {
+          requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+        } else {
+          requestAnimationFrame(check);
+        }
+      };
+      check();
+    });
     return performance.now() - started;
   });
   expect(editDuration).toBeLessThan(100);
-  await expect(page.getByLabel("Key").last()).toHaveValue("last%2Fkey");
+  await expect(lastKey).toHaveValue("last%2Fkey");
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
     320,
   );
-  await expect(page.getByLabel("Key").last()).toHaveValue("last%2Fkey");
+  await expect(lastKey).toHaveValue("last%2Fkey");
 });
 
 test("initial and populated workbench pass automated accessibility checks", async ({
@@ -409,11 +436,15 @@ test("structured editing preserves exact bytes, identity, validation, and focus"
     items.map((item) => (item as HTMLElement).dataset.pieceId),
   );
 
-  const duplicateValue = page.getByLabel("Value").nth(1);
+  const duplicateValue = page.getByRole("textbox", {
+    name: /^Value, Query Parameter/,
+  }).nth(1);
   await duplicateValue.fill("x&😀");
   await expect(duplicateValue).toBeFocused();
   await expect(duplicateValue).toHaveValue("x%26%F0%9F%98%80");
-  await expect(page.getByLabel("Value").first()).toHaveValue("1");
+  await expect(
+    page.getByRole("textbox", { name: /^Value, Query Parameter/ }).first(),
+  ).toHaveValue("1");
   await expect(fullUrl).toHaveValue(
     "https://User@example.com:044/a%2fb//tail?dup=1&dup=x%26%F0%9F%98%80&flag&empty=#Frag%2f",
   );
@@ -441,4 +472,103 @@ test("structured editing preserves exact bytes, identity, validation, and focus"
   await expect(fullUrl).toHaveValue(
     "https://User@example.com:044/a%2fb//tail?dup=1&dup=%2F&flag=&empty=#Frag%2f",
   );
+});
+
+test("structured editing handles search, selections, word deletion, caret, and drafts", async ({
+  page,
+}) => {
+  await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
+  await page.goto("/");
+  const fullUrl = page.getByLabel("Complete HTTP or HTTPS Absolute URL");
+  await fullUrl.fill("https://example.com/a?dup=alpha%2F😀omega&other=two");
+  await page.getByRole("button", { name: "Apply URL" }).click();
+
+  const search = page.getByLabel("Search Managed Pieces");
+  await search.fill("alpha");
+  const value = page.getByRole("textbox", {
+    name: "Value, Query Parameter 1 of 2",
+  });
+  await value.focus();
+  await value.evaluate((input) => {
+    (input as HTMLInputElement).setSelectionRange(0, 5);
+  });
+  await value.press("ControlOrMeta+X");
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe("alpha");
+  await expect(search).toHaveValue("");
+  await expect(value).toBeFocused();
+  await expect(value).toHaveValue("%2F😀omega");
+  await expect(page.locator("#managed-pieces > li")).toHaveCount(4);
+  await expect(page.locator("#search-status")).toContainText(
+    "4 of 4 Managed Pieces shown.",
+  );
+
+  await value.evaluate((input) => {
+    (input as HTMLInputElement).setSelectionRange(0, 0);
+  });
+  await value.press("Delete");
+  await expect(value).toHaveValue("😀omega");
+  await value.press("Delete");
+  await expect(value).toHaveValue("omega");
+
+  await value.evaluate((input) => {
+    const field = input as HTMLInputElement;
+    field.setSelectionRange(0, field.value.length);
+  });
+  await page.evaluate(() => navigator.clipboard.writeText("paste&😀"));
+  await value.press("ControlOrMeta+V");
+  await expect(value).toHaveValue("paste%26%F0%9F%98%80");
+  await value.fill("one two");
+  await expect(value).toHaveValue("one%20two");
+  await expect
+    .poll(() =>
+      value.evaluate((input) => ({
+        start: (input as HTMLInputElement).selectionStart,
+        end: (input as HTMLInputElement).selectionEnd,
+      })),
+    )
+    .toEqual({ start: 9, end: 9 });
+  await value.press("Control+Backspace");
+  await expect(value).toHaveValue("one");
+
+  await value.evaluate((input) => {
+    const field = input as HTMLInputElement;
+    field.setSelectionRange(1, 1);
+  });
+  await page.keyboard.insertText("😀");
+  await expect(value).toHaveValue("o%F0%9F%98%80ne");
+  await expect
+    .poll(() =>
+      value.evaluate((input) => (input as HTMLInputElement).selectionStart),
+    )
+    .toBe(13);
+
+  await value.evaluate((input) => {
+    const field = input as HTMLInputElement;
+    const setter = Object.getOwnPropertyDescriptor(
+      HTMLInputElement.prototype,
+      "value",
+    )?.set;
+    field.dispatchEvent(new CompositionEvent("compositionstart", { bubbles: true }));
+    setter?.call(field, "日本");
+    field.dispatchEvent(
+      new InputEvent("input", {
+        bubbles: true,
+        data: "日本",
+        inputType: "insertCompositionText",
+        isComposing: true,
+      }),
+    );
+    field.dispatchEvent(
+      new CompositionEvent("compositionend", {
+        bubbles: true,
+        data: "日本",
+      }),
+    );
+  });
+  await expect(value).toHaveValue("%E6%97%A5%E6%9C%AC");
+
+  await fullUrl.fill("/invalid");
+  await page.getByRole("button", { name: "Apply URL" }).click();
+  await expect(value).toBeDisabled();
+  await expect(fullUrl).toHaveValue("/invalid");
 });

@@ -11,7 +11,11 @@ const requiredCells = new Map([
   ["story-1-4-idn-forms", "1.4"],
   ["story-1-5-complete-structured-view", "1.5"],
   ["story-1-6-find-and-clear-managed-pieces", "1.6"],
-  ["story-2-1-exact-structured-editing", "2.1"],
+  ["story-2-1-fr6-exact-structured-editing", "2.1"],
+  ["story-2-1-ag1-component-codec", "2.1"],
+  ["story-2-1-accessibility", "2.1"],
+  ["story-2-1-privacy", "2.1"],
+  ["story-2-1-performance", "2.1"],
 ]);
 
 const requiredCsp = new Map([

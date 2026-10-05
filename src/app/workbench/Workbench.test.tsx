@@ -94,12 +94,12 @@ describe("URL Workbench", () => {
     await user.clear(search);
     await user.type(search, "mixedkey");
     expect(screen.getAllByRole("listitem")).toHaveLength(1);
-    expect(screen.getByLabelText("Key")).toHaveValue("MixedKey");
+    expect(screen.getByLabelText(/^Key, Query Parameter/)).toHaveValue("MixedKey");
 
     await user.clear(search);
     await user.type(search, "needle");
     expect(screen.getAllByRole("listitem")).toHaveLength(1);
-    expect(screen.getByLabelText("Value")).toHaveValue("Needle");
+    expect(screen.getByLabelText(/^Value, Query Parameter/)).toHaveValue("Needle");
   });
 
   it("filters presentation only and restores stable identity and source order", async () => {
@@ -133,7 +133,7 @@ describe("URL Workbench", () => {
     fireEvent.change(search, { target: { value: "a/b" } });
     expect(screen.queryAllByRole("listitem")).toHaveLength(0);
     fireEvent.change(search, { target: { value: "a%26b%3Dc" } });
-    expect(screen.getByLabelText("Value")).toHaveValue("a%26b%3Dc");
+    expect(screen.getByLabelText(/^Value, Query Parameter/)).toHaveValue("a%26b%3Dc");
     fireEvent.change(search, { target: { value: "a&b=c" } });
     expect(screen.queryAllByRole("listitem")).toHaveLength(0);
 
@@ -312,7 +312,7 @@ describe("URL Workbench", () => {
       target: { value: "https://example.com/a?dup=1&dup=2&flag" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
-    const values = screen.getAllByLabelText("Value");
+    const values = screen.getAllByLabelText(/^Value, Query Parameter/);
     const second = values[1] as HTMLInputElement;
     second.focus();
     fireEvent.change(second, { target: { value: "x&😀" } });
@@ -332,7 +332,7 @@ describe("URL Workbench", () => {
       { target: { value: "https://example.com/a?x=1" } },
     );
     fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
-    const value = screen.getByLabelText("Value");
+    const value = screen.getByLabelText(/^Value, Query Parameter/);
     value.focus();
     fireEvent.change(value, { target: { value: "%" } });
     expect(value).toHaveValue("%");
@@ -356,11 +356,113 @@ describe("URL Workbench", () => {
     const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
     fireEvent.change(editor, { target: { value: "https://example.com/a?x=long" } });
     fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
-    const value = screen.getByLabelText("Value");
+    const value = screen.getByLabelText(/^Value, Query Parameter/);
     fireEvent.compositionStart(value);
     fireEvent.change(value, { target: { value: "日本" } });
     expect(editor).toHaveValue("https://example.com/a?x=long");
     fireEvent.compositionEnd(value, { data: "日本" });
     expect(editor).toHaveValue("https://example.com/a?x=%E6%97%A5%E6%9C%AC");
+  });
+
+  it("disables structured editors while Full URL text is pending or invalid", () => {
+    render(<Workbench />);
+    const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
+    fireEvent.change(editor, { target: { value: "https://example.com/a?x=1" } });
+    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
+    const value = screen.getByLabelText(/^Value, Query Parameter/);
+    expect(value).toBeEnabled();
+
+    fireEvent.change(editor, {
+      target: { value: "https://example.com/a?x=unapplied" },
+    });
+    expect(value).toBeDisabled();
+    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
+    expect(screen.getByLabelText(/^Value, Query Parameter/)).toBeEnabled();
+
+    fireEvent.change(editor, { target: { value: "/invalid" } });
+    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
+    expect(screen.getByLabelText(/^Value, Query Parameter/)).toBeDisabled();
+    expect(editor).toHaveValue("/invalid");
+  });
+
+  it("clears active Search before editing and retains the edited control", () => {
+    render(<Workbench />);
+    fireEvent.change(
+      screen.getByLabelText("Complete HTTP or HTTPS Absolute URL"),
+      { target: { value: "https://example.com/a?dup=1&other=2" } },
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
+    const search = screen.getByLabelText("Search Managed Pieces");
+    fireEvent.change(search, { target: { value: "dup" } });
+    const key = screen.getByLabelText(
+      "Key, Query Parameter 1 of 2",
+    ) as HTMLInputElement;
+    key.focus();
+    fireEvent.change(key, { target: { value: "renamed" } });
+
+    expect(search).toHaveValue("");
+    expect(screen.getAllByRole("listitem")).toHaveLength(4);
+    expect(key).toHaveFocus();
+    expect(key).toHaveValue("renamed");
+    expect(
+      within(document.querySelector("#search-status") as HTMLElement).getByText(
+        "4 of 4 Managed Pieces shown.",
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("keeps percent triplets and Unicode code points atomic during deletion", () => {
+    render(<Workbench />);
+    fireEvent.change(
+      screen.getByLabelText("Complete HTTP or HTTPS Absolute URL"),
+      { target: { value: "https://example.com/a?x=%2F😀" } },
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
+    const value = screen.getByLabelText(/^Value, Query Parameter/) as HTMLInputElement;
+    value.focus();
+    fireEvent.change(value, { target: { value: "😀" } });
+    expect(value).toHaveValue("😀");
+
+    fireEvent.change(value, { target: { value: "" } });
+    expect(value).toHaveValue("");
+    expect(value).not.toHaveAttribute("aria-invalid");
+  });
+
+  it("preserves untouched raw Unicode in fallback and IME changes", () => {
+    render(<Workbench />);
+    const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
+    fireEvent.change(editor, {
+      target: { value: "https://example.com/a?x=café-tail" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
+    const value = screen.getByLabelText(/^Value, Query Parameter/);
+    fireEvent.change(value, { target: { value: "café-next" } });
+    expect(editor).toHaveValue("https://example.com/a?x=café-next");
+
+    fireEvent.compositionStart(value);
+    fireEvent.change(value, { target: { value: "café-日本" } });
+    fireEvent.compositionEnd(value, { data: "日本" });
+    expect(editor).toHaveValue(
+      "https://example.com/a?x=café-%E6%97%A5%E6%9C%AC",
+    );
+  });
+
+  it("gives duplicate query editors source-identifiable accessible names", () => {
+    render(<Workbench />);
+    fireEvent.change(
+      screen.getByLabelText("Complete HTTP or HTTPS Absolute URL"),
+      { target: { value: "https://example.com/?dup=1&dup=2" } },
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
+    expect(
+      screen.getByLabelText(
+        "Key, Query Parameter 2 of 2, occurrence 2 of 2",
+      ),
+    ).toBeVisible();
+    expect(
+      screen.getByLabelText(
+        "Value, Query Parameter 1 of 2, occurrence 1 of 2",
+      ),
+    ).toBeVisible();
   });
 });

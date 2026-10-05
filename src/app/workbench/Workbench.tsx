@@ -29,6 +29,7 @@ export function Workbench() {
   const announcementId = useRef(0);
   const announcementTimers = useRef(new Map<number, number>());
   const explicitClear = useRef(false);
+  const pendingStructuredRestore = useRef<string | null>(null);
   const previousSearchTerm = useRef("");
   const allPieces = useMemo(
     () => (state.snapshot ? buildManagedPieces(state.snapshot) : []),
@@ -103,7 +104,11 @@ export function Workbench() {
       window.clearTimeout(timer);
     }
     announcementTimers.current.clear();
-  }, [state.snapshot]);
+    if (pendingStructuredRestore.current) {
+      announce(pendingStructuredRestore.current);
+      pendingStructuredRestore.current = null;
+    }
+  }, [announce, state.snapshot]);
 
   useEffect(
     () => () => {
@@ -199,10 +204,20 @@ export function Workbench() {
         searchInputRef={searchInputRef}
         structuredDrafts={state.structuredDrafts}
         tokenRevisions={state.tokenRevisions}
-        onStructuredEdit={(command) =>
-          dispatch({ type: "structuredEdit", command })
-        }
+        onStructuredEdit={(command) => {
+          if (searchTerm !== "") {
+            explicitClear.current = true;
+            pendingStructuredRestore.current =
+              `${allPieces.length} of ${allPieces.length} Managed Pieces shown.`;
+            setSearchTerm("");
+          }
+          dispatch({ type: "structuredEdit", command });
+        }}
         structuredProblem={state.structuredProblem}
+        editorsDisabled={
+          state.phase !== "active" ||
+          state.input !== state.snapshot?.serialized
+        }
       />
       <div
         id="search-status"
