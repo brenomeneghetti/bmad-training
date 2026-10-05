@@ -43,6 +43,7 @@ interface DomainEditorProps {
   readonly draft: StructuredDraft | undefined;
   readonly tokenRevision: number;
   readonly onEdit: (command: StructuredCommand) => void;
+  readonly onCompositionChange: (field: DomainEditCommand["field"] | null) => void;
   readonly disabled: boolean;
 }
 
@@ -55,24 +56,35 @@ function DomainEditor({
   draft,
   tokenRevision,
   onEdit,
+  onCompositionChange,
   disabled,
 }: DomainEditorProps) {
   const [compositionValue, setCompositionValue] = useState<string | null>(null);
   const composing = useRef(false);
   const inputRef = useRef<HTMLInputElement>(null);
-  const pendingSuffixLength = useRef<number | null>(null);
+  const pendingCaret = useRef<{
+    readonly submittedValue: string;
+    readonly selectionStart: number;
+  } | null>(null);
   const caretFrame = useRef<number | null>(null);
   const ignorePostCompositionValue = useRef<string | null>(null);
-  const ignorePostCompositionTimer = useRef<number | null>(null);
   const value = compositionValue ?? draft?.value ?? committedValue;
   const errorId = `error-${pieceId}-${field}`;
   const helpId = `help-${pieceId}-domain`;
 
   useLayoutEffect(() => {
-    if (pendingSuffixLength.current === null || !inputRef.current) return;
-    const caret = Math.max(0, value.length - pendingSuffixLength.current);
+    if (pendingCaret.current === null || !inputRef.current) return;
+    const { submittedValue, selectionStart } = pendingCaret.current;
+    const normalizedPrefix =
+      field === "domain-unicode"
+        ? submittedValue.slice(0, selectionStart).normalize("NFC").toLowerCase()
+        : submittedValue.slice(0, selectionStart).toLowerCase();
+    const caret =
+      value === submittedValue
+        ? selectionStart
+        : Math.min(normalizedPrefix.length, value.length);
     inputRef.current.setSelectionRange(caret, caret);
-    pendingSuffixLength.current = null;
+    pendingCaret.current = null;
     if (caretFrame.current !== null) {
       window.cancelAnimationFrame(caretFrame.current);
     }
@@ -85,26 +97,33 @@ function DomainEditor({
   useEffect(
     () => () => {
       if (caretFrame.current !== null) window.cancelAnimationFrame(caretFrame.current);
-      if (ignorePostCompositionTimer.current !== null) {
-        window.clearTimeout(ignorePostCompositionTimer.current);
-      }
     },
     [],
   );
 
   const submit = (nextValue: string, selectionStart: number | null) => {
-    const suffixLength =
-      nextValue.length - (selectionStart ?? nextValue.length);
-    pendingSuffixLength.current = suffixLength;
+    pendingCaret.current = {
+      submittedValue: nextValue,
+      selectionStart: selectionStart ?? nextValue.length,
+    };
     onEdit({ pieceId, field, tokenRevision, value: nextValue });
     if (caretFrame.current !== null) {
       window.cancelAnimationFrame(caretFrame.current);
     }
     caretFrame.current = window.requestAnimationFrame(() => {
-      if (!inputRef.current) return;
-      const caret = Math.max(0, inputRef.current.value.length - suffixLength);
+      if (!inputRef.current || pendingCaret.current === null) return;
+      const { submittedValue, selectionStart: submittedCaret } =
+        pendingCaret.current;
+      const normalizedPrefix =
+        field === "domain-unicode"
+          ? submittedValue.slice(0, submittedCaret).normalize("NFC").toLowerCase()
+          : submittedValue.slice(0, submittedCaret).toLowerCase();
+      const caret =
+        inputRef.current.value === submittedValue
+          ? submittedCaret
+          : Math.min(normalizedPrefix.length, inputRef.current.value.length);
       inputRef.current.setSelectionRange(caret, caret);
-      pendingSuffixLength.current = null;
+      pendingCaret.current = null;
       caretFrame.current = null;
     });
   };
@@ -124,19 +143,14 @@ function DomainEditor({
         disabled={disabled}
         onCompositionStart={(event) => {
           composing.current = true;
+          onCompositionChange(field);
           setCompositionValue(event.currentTarget.value);
         }}
         onCompositionEnd={(event) => {
           composing.current = false;
+          onCompositionChange(null);
           setCompositionValue(null);
           ignorePostCompositionValue.current = event.currentTarget.value;
-          if (ignorePostCompositionTimer.current !== null) {
-            window.clearTimeout(ignorePostCompositionTimer.current);
-          }
-          ignorePostCompositionTimer.current = window.setTimeout(() => {
-            ignorePostCompositionValue.current = null;
-            ignorePostCompositionTimer.current = null;
-          }, 0);
           submit(event.currentTarget.value, event.currentTarget.selectionStart);
         }}
         onChange={(event) => {
@@ -147,10 +161,16 @@ function DomainEditor({
             setCompositionValue(event.currentTarget.value);
             return;
           }
-          if (ignorePostCompositionValue.current === event.currentTarget.value) {
+          const inputType = (event.nativeEvent as InputEvent).inputType;
+          if (
+            inputType === "insertFromComposition" &&
+            ignorePostCompositionValue.current === event.currentTarget.value
+          ) {
             ignorePostCompositionValue.current = null;
+            event.currentTarget.value = value;
             return;
           }
+          ignorePostCompositionValue.current = null;
           submit(event.currentTarget.value, event.currentTarget.selectionStart);
         }}
         autoComplete="off"
@@ -536,6 +556,9 @@ export function StructuredView({
   structuredSuccess,
   editorsDisabled,
 }: StructuredViewProps) {
+  const [composingDomainField, setComposingDomainField] = useState<
+    DomainEditCommand["field"] | null
+  >(null);
   const managedCount = snapshot ? 1 + snapshot.path.length + snapshot.query.length : 0;
   const visibleCount = pieces.length;
   const activeSearch = searchTerm !== "";
@@ -615,6 +638,7 @@ export function StructuredView({
                         ] ?? 0
                       }
                       onEdit={onStructuredEdit}
+                      onCompositionChange={setComposingDomainField}
                       disabled={editorsDisabled}
                     />
                     <DomainEditor
@@ -634,6 +658,7 @@ export function StructuredView({
                         ] ?? 0
                       }
                       onEdit={onStructuredEdit}
+                      onCompositionChange={setComposingDomainField}
                       disabled={editorsDisabled}
                     />
                     {!structuredDrafts[
@@ -641,7 +666,8 @@ export function StructuredView({
                     ] &&
                     !structuredDrafts[
                       structuredFieldKey(managedPiece.id, "domain-ascii")
-                    ] ? (
+                    ] &&
+                    composingDomainField === null ? (
                       <p className={styles.conversionStatus}>
                         Domain forms are synchronized.
                       </p>
@@ -756,7 +782,7 @@ export function StructuredView({
           {structuredProblem.message}
         </p>
       ) : null}
-      {structuredSuccess ? (
+      {structuredSuccess && composingDomainField === null ? (
         <p className={styles.conversionStatus} role="status" aria-live="polite">
           {structuredSuccess}
         </p>

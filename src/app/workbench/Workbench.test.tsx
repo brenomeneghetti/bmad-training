@@ -416,6 +416,9 @@ describe("URL Workbench", () => {
       document.getElementById(`help-${domainId}-domain`),
     ).toHaveTextContent("synchronizes both Domain forms and the Full URL");
     expect(screen.queryByText("Domain forms are synchronized.")).not.toBeInTheDocument();
+    expect(screen.getAllByText("Enter a valid ASCII or Punycode domain.")).toHaveLength(
+      1,
+    );
     expect(screen.getByLabelText("Unicode Domain")).toHaveValue("example.com");
     expect(editor).toHaveValue("https://example.com/a?x=1");
 
@@ -427,6 +430,12 @@ describe("URL Workbench", () => {
     expect(screen.getByText(/Domain synchronized at revision/)).toHaveTextContent(
       "Unicode Domain, ASCII/Punycode Domain, and Full URL updated",
     );
+    const status = screen.getByText(/Domain synchronized at revision/);
+    expect(status).toHaveAttribute("role", "status");
+    expect(status).toHaveAttribute("aria-live", "polite");
+
+    fireEvent.change(ascii, { target: { value: "xn--" } });
+    expect(screen.queryByText(/Domain synchronized at revision/)).not.toBeInTheDocument();
   });
 
   it("clears active Search when a Domain edit starts and retains Domain focus", () => {
@@ -448,20 +457,52 @@ describe("URL Workbench", () => {
     expect(screen.getAllByRole("listitem")).toHaveLength(3);
   });
 
-  it("suppresses Domain commits during IME composition", () => {
+  it("suppresses Domain commits and synchronization status during IME composition", async () => {
     render(<Workbench />);
     const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
     fireEvent.change(editor, { target: { value: "https://example.com/" } });
     fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
     const unicode = screen.getByLabelText("Unicode Domain");
     fireEvent.compositionStart(unicode);
-    fireEvent.change(unicode, { target: { value: "日本.jp" } });
+    fireEvent.change(unicode, { target: { value: "cafe\u0301.example" } });
     expect(editor).toHaveValue("https://example.com/");
+    expect(screen.queryByText("Domain forms are synchronized.")).not.toBeInTheDocument();
     fireEvent.compositionEnd(unicode, {
-      target: { value: "日本.jp" },
-      data: "日本",
+      target: { value: "cafe\u0301.example" },
+      data: "e\u0301",
     });
-    expect(editor).toHaveValue("https://xn--wgv71a.jp/");
+    expect(editor).toHaveValue("https://xn--caf-dma.example/");
+    expect(unicode).toHaveValue("café.example");
+    expect(screen.getByText(/Domain synchronized at revision/)).toBeInTheDocument();
+
+    await new Promise((resolve) => window.setTimeout(resolve, 0));
+    fireEvent.input(unicode, {
+      target: { value: "cafe\u0301.example" },
+      inputType: "insertFromComposition",
+      isComposing: false,
+    });
+    expect(unicode).toHaveValue("café.example");
+    expect(screen.getByText(/Domain synchronized at revision/)).toBeInTheDocument();
+  });
+
+  it("restores the Domain caret through normalization inside the raw suffix", () => {
+    render(<Workbench />);
+    const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
+    fireEvent.change(editor, { target: { value: "https://example.com/" } });
+    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
+    const unicode = screen.getByLabelText("Unicode Domain") as HTMLInputElement;
+
+    fireEvent.change(unicode, { target: { value: "cafe\u0301..example" } });
+    fireEvent.input(unicode, {
+      target: {
+        value: "cafe\u0301.example",
+        selectionStart: 6,
+        selectionEnd: 6,
+      },
+    });
+
+    expect(unicode).toHaveValue("café.example");
+    expect(unicode.selectionStart).toBe(5);
   });
 
   it("disables structured editors while Full URL text is pending or invalid", () => {

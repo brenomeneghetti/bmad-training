@@ -196,7 +196,11 @@ test("Domain editing is synchronized, correctable, IME-safe, and host-only", asy
     await expect(page.locator(`#${errorId}`)).toContainText(
       "valid ASCII or Punycode",
     );
+    await expect(
+      page.getByText("Enter a valid ASCII or Punycode domain."),
+    ).toHaveCount(1);
     await expect(page.getByText("Domain forms are synchronized.")).toHaveCount(0);
+    await expect(page.getByText(/Domain synchronized at revision/)).toHaveCount(0);
     await expect(unicode).toHaveValue("faß.de");
     await expect(fullUrl).toHaveValue(
       "https://User:Pass@xn--fa-hia.de:044/a%2fb//?dup=1&dup=2#Frag%2f",
@@ -206,9 +210,12 @@ test("Domain editing is synchronized, correctable, IME-safe, and host-only", asy
     await expect(ascii).toBeFocused();
     await expect(ascii).toHaveValue("example.com");
     await expect(unicode).toHaveValue("example.com");
-    await expect(page.getByText(/Domain synchronized at revision 3/)).toContainText(
+    const synchronized = page.getByText(/Domain synchronized at revision 3/);
+    await expect(synchronized).toContainText(
       "Unicode Domain, ASCII/Punycode Domain, and Full URL updated",
     );
+    await expect(synchronized).toHaveAttribute("role", "status");
+    await expect(synchronized).toHaveAttribute("aria-live", "polite");
     await ascii.evaluate((input) => {
       const field = input as HTMLInputElement;
       field.focus();
@@ -243,13 +250,14 @@ test("Domain editing is synchronized, correctable, IME-safe, and host-only", asy
     await expect(fullUrl).toHaveValue(
       "https://User:Pass@example.com:044/a%2fb//?dup=1&dup=2#Frag%2f",
     );
-    await unicode.evaluate((input) => {
+    await unicode.evaluate(async (input) => {
       input.dispatchEvent(
         new CompositionEvent("compositionend", {
           bubbles: true,
           data: "日本",
         }),
       );
+      await new Promise((resolve) => window.setTimeout(resolve, 0));
       input.dispatchEvent(
         new InputEvent("input", {
           bubbles: true,
@@ -265,6 +273,28 @@ test("Domain editing is synchronized, correctable, IME-safe, and host-only", asy
     await expect(page.getByText(/Domain synchronized at revision 4/)).toBeVisible();
     await expect(unicode).not.toHaveAttribute("aria-invalid");
     await expect(unicode).toHaveCSS("unicode-bidi", "isolate");
+
+    await unicode.fill("cafe\u0301..example");
+    await unicode.evaluate((input) => {
+      const field = input as HTMLInputElement;
+      const setter = Object.getOwnPropertyDescriptor(
+        HTMLInputElement.prototype,
+        "value",
+      )?.set;
+      setter?.call(field, "cafe\u0301.example");
+      field.setSelectionRange(6, 6);
+      field.dispatchEvent(
+        new InputEvent("input", {
+          bubbles: true,
+          data: null,
+          inputType: "deleteContentBackward",
+        }),
+      );
+    });
+    await expect(unicode).toHaveValue("café.example");
+    expect(
+      await unicode.evaluate((input) => (input as HTMLInputElement).selectionStart),
+    ).toBe(5);
 
     await fullUrl.fill("/invalid");
     await page.getByRole("button", { name: "Apply URL" }).click();

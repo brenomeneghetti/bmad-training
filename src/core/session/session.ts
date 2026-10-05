@@ -299,6 +299,7 @@ export const sessionReducer = (
             message:
               "Apply the current Full URL text before editing structured fields.",
           },
+          structuredSuccess: null,
         };
       }
       const key = structuredFieldKey(
@@ -310,15 +311,6 @@ export const sessionReducer = (
         action.command.field === "domain-unicode" ||
         action.command.field === "domain-ascii";
       if (isDomain) {
-        const domainDrafts = { ...state.structuredDrafts };
-        delete domainDrafts[
-          structuredFieldKey(
-            state.snapshot.domainId,
-            action.command.field === "domain-unicode"
-              ? "domain-ascii"
-              : "domain-unicode",
-          )
-        ];
         if (action.command.pieceId !== state.snapshot.domainId) {
           return {
             ...state,
@@ -346,7 +338,7 @@ export const sessionReducer = (
             structuredProblem,
             structuredSuccess: null,
             structuredDrafts: {
-              ...domainDrafts,
+              ...state.structuredDrafts,
               [key]: {
                 value: action.command.value,
                 problem: structuredProblem,
@@ -354,36 +346,46 @@ export const sessionReducer = (
             },
           };
         }
-        if (action.command.value.length > 20_000) {
+        if (Array.from(action.command.value).length > 20_000) {
+          const structuredProblem: UrlProblem = {
+            code: "url-capacity-exceeded",
+            field: "domain",
+            message: "This edit would exceed the 20,000-character URL limit.",
+          };
           return {
             ...state,
-            structuredProblem: {
-              code: "url-capacity-exceeded",
-              field: "domain",
-              message: "This edit would exceed the 20,000-character URL limit.",
-            },
+            structuredProblem,
             structuredSuccess: null,
             structuredDrafts: {
-              ...domainDrafts,
+              ...state.structuredDrafts,
               [key]: {
                 value: action.command.value,
-                problem: {
-                  code: "url-capacity-exceeded",
-                  field: "domain",
-                  message: "This edit would exceed the 20,000-character URL limit.",
-                },
+                problem: structuredProblem,
               },
             },
           };
         }
+        const domainDrafts = { ...state.structuredDrafts };
+        delete domainDrafts[
+          structuredFieldKey(
+            state.snapshot.domainId,
+            action.command.field === "domain-unicode"
+              ? "domain-ascii"
+              : "domain-unicode",
+          )
+        ];
         const result = replaceLosslessDomain(state.snapshot, action.command);
         if (!result.ok) {
+          const preservedDrafts =
+            result.error.code === "url-capacity-exceeded"
+              ? state.structuredDrafts
+              : domainDrafts;
           return {
             ...state,
             structuredProblem: result.error,
             structuredSuccess: null,
             structuredDrafts: {
-              ...domainDrafts,
+              ...preservedDrafts,
               [key]: { value: action.command.value, problem: result.error },
             },
           };
@@ -403,7 +405,13 @@ export const sessionReducer = (
             state.structuredDrafts[
               structuredFieldKey(state.snapshot.domainId, "domain-ascii")
             ] !== undefined;
-          if (!hadDomainDraft && state.structuredProblem === null) return state;
+          if (
+            !hadDomainDraft &&
+            state.structuredProblem === null &&
+            state.structuredSuccess === null
+          ) {
+            return state;
+          }
           return {
             ...state,
             structuredProblem: null,
@@ -454,7 +462,7 @@ export const sessionReducer = (
           message:
             "This URL piece is no longer available. Review the current URL and try again.",
         };
-        return { ...state, structuredProblem };
+        return { ...state, structuredProblem, structuredSuccess: null };
       }
       if (
         currentRevision === undefined ||
@@ -488,6 +496,7 @@ export const sessionReducer = (
             field: "component",
             message: "This edit would exceed the 20,000-character URL limit.",
           },
+          structuredSuccess: null,
         };
       }
       const editCommand = existingDraft

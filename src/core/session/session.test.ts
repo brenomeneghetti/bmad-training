@@ -300,6 +300,148 @@ describe("session authority", () => {
           `${capacity.snapshot.domainId}:domain-unicode`
         ]?.value,
       ).toBe("longer.example");
+      expect(
+        tooLong.structuredDrafts[
+          `${capacity.snapshot.domainId}:domain-unicode`
+        ]?.problem,
+      ).toBe(tooLong.structuredProblem);
+  });
+
+  it("preserves the opposite Domain draft across stale and capacity guards", () => {
+    const active = apply(initialSessionState, "https://example.com/a?x=1");
+    if (!active.snapshot) throw new Error("Missing active snapshot");
+    const asciiKey = `${active.snapshot.domainId}:domain-ascii`;
+    const unicodeKey = `${active.snapshot.domainId}:domain-unicode`;
+    const invalidAscii = sessionReducer(active, {
+      type: "structuredEdit",
+      command: {
+        pieceId: active.snapshot.domainId,
+        field: "domain-ascii",
+        tokenRevision: 0,
+        value: "xn--",
+      },
+    });
+    const staleUnicode = sessionReducer(invalidAscii, {
+      type: "structuredEdit",
+      command: {
+        pieceId: active.snapshot.domainId,
+        field: "domain-unicode",
+        tokenRevision: 9,
+        value: "faß.de",
+      },
+    });
+    expect(staleUnicode.structuredDrafts[asciiKey]?.value).toBe("xn--");
+    expect(staleUnicode.structuredDrafts[unicodeKey]?.value).toBe("faß.de");
+
+    const capacityUnicode = sessionReducer(invalidAscii, {
+      type: "structuredEdit",
+      command: {
+        pieceId: active.snapshot.domainId,
+        field: "domain-unicode",
+        tokenRevision: 0,
+        value: "a".repeat(20_001),
+      },
+    });
+    expect(capacityUnicode.structuredDrafts[asciiKey]?.value).toBe("xn--");
+    expect(capacityUnicode.structuredDrafts[unicodeKey]?.value).toHaveLength(20_001);
+    expect(capacityUnicode.structuredDrafts[unicodeKey]?.problem).toBe(
+      capacityUnicode.structuredProblem,
+    );
+
+    const nearLimit = apply(initialSessionState, createCapacityFixture());
+    if (!nearLimit.snapshot) throw new Error("Missing capacity snapshot");
+    const nearLimitAsciiKey = `${nearLimit.snapshot.domainId}:domain-ascii`;
+    const nearLimitUnicodeKey = `${nearLimit.snapshot.domainId}:domain-unicode`;
+    const nearLimitInvalidAscii = sessionReducer(nearLimit, {
+      type: "structuredEdit",
+      command: {
+        pieceId: nearLimit.snapshot.domainId,
+        field: "domain-ascii",
+        tokenRevision: 0,
+        value: "xn--",
+      },
+    });
+    const serializedCapacity = sessionReducer(nearLimitInvalidAscii, {
+      type: "structuredEdit",
+      command: {
+        pieceId: nearLimit.snapshot.domainId,
+        field: "domain-unicode",
+        tokenRevision: 0,
+        value: "longer.example",
+      },
+    });
+    expect(serializedCapacity.structuredProblem?.code).toBe(
+      "url-capacity-exceeded",
+    );
+    expect(serializedCapacity.structuredDrafts[nearLimitAsciiKey]?.value).toBe(
+      "xn--",
+    );
+    expect(
+      serializedCapacity.structuredDrafts[nearLimitUnicodeKey]?.value,
+    ).toBe("longer.example");
+  });
+
+  it("counts Domain capacity by Unicode code point instead of UTF-16 unit", () => {
+    const active = apply(initialSessionState, "https://example.com/");
+    if (!active.snapshot) throw new Error("Missing active snapshot");
+    const result = sessionReducer(active, {
+      type: "structuredEdit",
+      command: {
+        pieceId: active.snapshot.domainId,
+        field: "domain-unicode",
+        tokenRevision: 0,
+        value: "😀".repeat(10_001),
+      },
+    });
+    expect(result.structuredProblem?.code).not.toBe("url-capacity-exceeded");
+    expect(result.structuredDrafts[
+      `${active.snapshot.domainId}:domain-unicode`
+    ]?.problem.code).not.toBe("url-capacity-exceeded");
+  });
+
+  it("clears prior Domain success for no-op and disabled attempts", () => {
+    const active = apply(initialSessionState, "https://example.com/");
+    if (!active.snapshot) throw new Error("Missing active snapshot");
+    const committed = sessionReducer(active, {
+      type: "structuredEdit",
+      command: {
+        pieceId: active.snapshot.domainId,
+        field: "domain-unicode",
+        tokenRevision: 0,
+        value: "faß.de",
+      },
+    });
+    if (!committed.snapshot) throw new Error("Missing committed snapshot");
+    expect(committed.structuredSuccess).not.toBeNull();
+
+    const noOp = sessionReducer(committed, {
+      type: "structuredEdit",
+      command: {
+        pieceId: committed.snapshot.domainId,
+        field: "domain-ascii",
+        tokenRevision: 1,
+        value: "XN--FA-HIA.DE",
+      },
+    });
+    expect(noOp.structuredSuccess).toBeNull();
+    expect(noOp.snapshot).toBe(committed.snapshot);
+    expect(noOp.history).toBe(committed.history);
+
+    const disabled = sessionReducer(
+      { ...committed, input: `${committed.input}draft` },
+      {
+        type: "structuredEdit",
+        command: {
+          pieceId: committed.snapshot.domainId,
+          field: "domain-unicode",
+          tokenRevision: 1,
+          value: "example.com",
+        },
+      },
+    );
+    expect(disabled.structuredSuccess).toBeNull();
+    expect(disabled.snapshot).toBe(committed.snapshot);
+    expect(disabled.history).toBe(committed.history);
   });
 
   it.each([

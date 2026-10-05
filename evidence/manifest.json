@@ -5,7 +5,7 @@
   "evaluatorVersion": "1.0.0",
   "artifact": {
     "path": "dist",
-    "digest": "1ae633d626cba860e2eb0652a470606cc175250960e1d4968689df1b48c5d777",
+    "digest": "a71d62c6c701886f39a0bdced640eaa6524a1ef9d3ceee65e197e37dc8101ee4",
     "delivery": "deployment/static-delivery.json"
   },
   "toolVersions": {

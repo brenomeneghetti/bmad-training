@@ -4,7 +4,7 @@ type: 'feature'
 created: '2026-10-04'
 status: 'done'
 route: 'dispatch'
-review_loop_iteration: 1
+review_loop_iteration: 2
 baseline_commit: 'aaa2b4fab6fdcdf569c3853c5d23bf209d611ccc'
 context:
   - '{project-root}/_bmad-output/implementation-artifacts/epic-2-context.md'
@@ -42,8 +42,8 @@ context:
 
 - `src/core/idn/index.ts` -- reuse TR46 options, IP handling, and WHATWG validation; return typed bidirectional results without adding a homograph policy.
 - `src/core/url/model.ts`, `src/core/url/parser.ts` -- add Domain fields and host-only replacement using `authorityParts`, `rawHost`, `domainId`, and `serializeParts`.
-- `src/core/session/session.ts` -- extend ID/revision commands, focused-form drafts, guards, no-op/capacity rejection, Last Valid, journaling, and success feedback without losing an existing draft on rejection.
-- `src/app/pieces/StructuredView.tsx` -- replace read-only Domain controls with labeled bidi-isolated editors using exact stable error IDs, shared help, status, IME/caret restoration, focus, and associated-error behavior, not the percent codec.
+- `src/core/session/session.ts` -- extend ID/revision commands, focused-form drafts, guards, code-point capacity checks, Last Valid, journaling, and success feedback; validate before clearing the opposite draft and share one problem instance per rejection.
+- `src/app/pieces/StructuredView.tsx` -- replace read-only Domain controls with labeled bidi-isolated editors using exact stable error IDs, shared help, composition-aware status, delayed-event-safe IME fencing, normalization-aware caret restoration, focus, and associated-error behavior, not the percent codec.
 - `src/app/workbench/Workbench.tsx` -- wire Domain commands through existing availability, Search clearing, announcements, and reducer authority; success is polite and invalid field feedback is not duplicated.
 - `src/test/fixtures/semantic.ts`, `evidence/manifest.json` -- extend IDN fixtures and Story 2.2 evidence.
 
@@ -52,10 +52,10 @@ context:
 **Execution:**
 - [x] `src/core/idn/index.ts`, `src/core/idn/index.test.ts` -- add typed bidirectional conversion and prove ASCII-form Unicode rejection plus deviation, combining-equivalent, Arabic, Hebrew, valid confusable mixed-script, invalid Punycode, bidi/joiner, empty-label, and IP cases.
 - [x] `src/core/url/model.ts`, `src/core/url/parser.ts`, `src/core/url/parser.test.ts`, `src/core/contracts/problems.ts` -- implement exact Domain replacement/failures and prove unrelated bytes/IDs plus IPv6-with-port serialization stay exact.
-- [x] `src/core/session/session.ts`, `src/core/session/session.test.ts` -- add focused drafts, revisions, atomic commits/status, correction, no-op, and stale/missing/obsolete/capacity guards that preserve the current local draft and create no false success.
-- [x] `src/app/pieces/StructuredView.tsx`, `src/app/workbench/Workbench.tsx`, `src/app/workbench/Workbench.test.tsx` -- add exact `error-{itemId}-{field}` targets, shared help linkage, invalid-state-safe conversion text, changing polite success, canonicalization caret restoration, post-composition input fencing, focus safety, availability guards, and Domain editing under active Search.
-- [x] `src/test/fixtures/semantic.ts`, `tests/workbench.spec.ts` -- cover both directions and the full AG-2 host matrix, repeated correction, mid-string caret, browser IME ordering, Search clearing, bidi isolation, reflow, forced colors, privacy, and near-limit end-to-render timing.
-- [x] `evidence/manifest.json`, `evidence/schema.json`, `evidence/validation.mjs`, `evidence/validate.test.mjs` -- add independently mapped Story 2.2 conversion, exactness, accessibility/status, privacy, and capacity cells without weakening cumulative validation.
+- [x] `src/core/session/session.ts`, `src/core/session/session.test.ts` -- add focused drafts, revisions, atomic commits/status, correction, no-op, and stale/missing/obsolete/capacity guards; preserve either-form drafts, count capacity by code point, reuse one field problem, and leave no success for rejected/no-op attempts.
+- [x] `src/app/pieces/StructuredView.tsx`, `src/app/workbench/Workbench.tsx`, `src/app/workbench/Workbench.test.tsx` -- add exact error targets, shared help, composition/invalid-safe status, polite semantics, a fence lasting until a matching post-composition event, and caret mapping that handles canonicalization before or inside the raw suffix.
+- [x] `src/test/fixtures/semantic.ts`, `tests/workbench.spec.ts` -- cover the full AG-2 matrix plus repeated correction, opposite-form stale rejection, astral capacity, invalid duplicate feedback, prior-success clearing, live-region semantics, decomposed-suffix caret correction, later-task IME input, Search, bidi, reflow, forced colors, privacy, and near-limit timing.
+- [x] `evidence/manifest.json`, `evidence/schema.json`, `evidence/validation.mjs`, `evidence/validate.test.mjs` -- add independently mapped Story 2.2 conversion, exactness, accessibility/status, privacy, and capacity cells; accessibility evidence must exercise invalid state and the live-region lifecycle.
 
 **Acceptance Criteria:**
 - Given one form owns an unsettled/invalid draft, when it renders, then only that field shows it/error while the counterpart and committed state stay unchanged.
@@ -63,7 +63,7 @@ context:
 - Given a commit, when snapshots are compared, then only host/derived Domain representations differ; unrelated bytes, IDs, and positions stay exact.
 - Given a successful commit, when feedback settles, then visible and polite status identifies both Domain forms and the URL as synchronized without moving focus or the intended caret.
 - Given invalid input, when guidance renders, then the focused form uses shared help plus stable `error-{itemId}-{field}`, `aria-invalid`, and one associated validation channel while success status is absent.
-- Given a stale, missing-ID, obsolete-session, no-op, over-capacity, or disabled command, when evaluated, then the current local draft is not lost and committed state, revision, journal, success status, and unrelated focus do not change.
+- Given a stale, missing-ID, obsolete-session, no-op, over-capacity, or disabled command, when evaluated, then neither form's current local draft is lost, committed state/revision/journal/focus do not change, and no success status remains for that rejected or no-op attempt.
 - Given the AG-2 Unicode, ASCII/Punycode, combining, RTL, mixed-script, correction, Search, IME, accessibility, privacy, and capacity fixtures, when evidence runs, then editing is operable, responsive, associated, and free of URL-bearing sinks.
 
 ## Implementation Notes
@@ -73,11 +73,14 @@ context:
 - Replaced read-only Domain fields with accessible controlled editors that preserve focus, suppress IME commits, isolate invalid drafts, and reuse reducer availability.
 - Extended unit, component, browser, privacy, accessibility, performance, and cumulative evidence coverage through Story 2.2.
 - Review loop 1 reverted the implementation tree to baseline after feedback, rejected-draft, caret, and fixture gaps were verified; the expanded tasks now govern re-derivation.
+- Review loop 2 reverted the re-derived tree after opposite-form draft loss, duplicate capacity guidance, delayed IME, normalization-caret, and status-lifecycle gaps were verified.
+- Re-derived the implementation after review loop 2 with guarded draft preservation, code-point capacity checks, shared rejection problems, event-matched IME fencing, composition-safe status, normalization-aware caret restoration, and lifecycle evidence.
 
 ## Spec Change Log
 
 - 2026-10-04: Implemented Story 2.2 and completed all execution tasks.
 - 2026-10-04: Review found missing exact error/help/status contracts, draft loss on stale/capacity rejection, caret loss after canonicalization, and incomplete AG-2/Search/IME coverage. Code Map, tasks, and acceptance were expanded to avoid those states. KEEP host-only lossless serialization, reducer-owned atomic snapshots/history, focused-form draft exclusivity, dual revisions, existing Full URL guards, and cumulative evidence validation.
+- 2026-10-04: Review pass 2 found opposite-form draft deletion before guards, UTF-16 capacity drift, duplicate field/section errors, composition-time false status, timer-limited IME fencing, normalization-sensitive caret drift, and ambiguous rejected-success wording. Tasks and acceptance now require those exact corrections and evidence. KEEP exact error/help IDs, host-only mutation, full AG-2 fixtures, Search restoration, polite success, and the prior lossless/reducer/evidence invariants.
 ## Review Triage Log
 
 - No verified findings remained after the implementation diff and matrix coverage audit.
@@ -99,6 +102,29 @@ context:
 - `medium` → patch (blind B13): the browser IME scenario omits the post-`compositionend` input ordering used by some engines; a same-order Chromium reproduction passed, but the regression remains untested.
 - `false` (edge E1): noncanonical IP text is outside the story's editable Unicode/ASCII-Punycode Domain-form contract; rejecting alternate IP lexemes does not violate a documented Story 2.2 outcome.
 - `false` (edge E2): carried E1; the valid-input acceptance criterion concerns Unicode and ASCII/Punycode Domain forms, not canonicalizable IP spelling variants.
+- `medium` → patch (verification-gap R2-V1): invalid Domain coverage does not prove a preceding synchronization success is removed.
+- `medium` → patch (verification-gap R2-V2): Domain success tests assert visible text but not the required `role=status` and polite live-region semantics.
+- `medium` → patch (verification-gap R2-V3): a stale command for the opposite Domain form deletes the current draft before the revision guard; existing coverage uses only the same form.
+- `false` (blind R2-B1): carried B1; generated `node_modules` state predates the baseline and remains preserved, uncommitted environment data.
+- `medium` → patch (blind R2-B2): independently confirms R2-V3; opposite-form draft deletion occurs before stale rejection.
+- `medium` → patch (blind R2-B3): the early capacity guard counts UTF-16 code units while the URL limit uses Unicode code points, rejecting bounded astral input prematurely.
+- `medium` → patch (blind R2-B4): capacity rejection allocates two equivalent problem objects, defeating reference-based duplicate-message suppression.
+- `false` (blind R2-B5): Search clearing before dispatch is the inherited Story 2.1 contract for the first attempted structured edit, including rejected and no-op attempts.
+- `false` (blind R2-B6): entering the unavailable Full URL state goes through `inputChanged`/parse transitions that already clear prior structured success, so the claimed stale success state is unreachable.
+- `medium` → bad_spec (blind R2-B7): the static synchronized label remains visible during an incomplete IME composition because component-local composition state is not reflected in row status.
+- `medium` → bad_spec (blind R2-B8): a zero-delay composition fence can expire before a later-task `insertFromComposition`, causing a duplicate no-op that clears fresh success.
+- `medium` → bad_spec (blind R2-B9): suffix-length caret restoration fails when correcting an invalid draft causes TR46 normalization inside the suffix.
+- `medium` → patch (blind R2-B10): the accessibility evidence does not exercise invalid-state duplicate feedback or the Domain live-region lifecycle.
+- `low` → patch (blind R2-B11): the implementation note records the review-loop reversion but not the subsequent re-derivation, leaving chronology incomplete.
+- `false` (blind R2-B12): “No verified findings remained” records the earlier internal audit chronologically; later rows document the subsequent external findings and dispositions.
+- `medium` → patch (edge R2-E1): independently confirms R2-V3/R2-B2; stale opposite-form commands erase the active draft.
+- `false` (edge R2-E2): draft ownership transfers when the newly focused form begins editing, matching the story's combined focus-and-edit trigger; focus alone creates no draft.
+- `medium` → bad_spec (edge R2-E3): independently confirms R2-B9; suffix-only caret mapping breaks when successful correction normalizes the suffix.
+- `medium` → bad_spec (edge R2-E4): independently confirms R2-B8; later-task post-composition input escapes the timer fence.
+- `medium` → patch (edge R2-E5): independently confirms R2-B4; distinct capacity-problem instances duplicate guidance.
+- `medium` → bad_spec (edge R2-E6): the amended acceptance wording says guarded commands do not change success while source intent requires no success to remain for a rejected/no-op attempt; the spec must state the intended absence explicitly.
+- `medium` → patch (direct R3-D1): serialized near-limit capacity rejection occurred after opposite-draft clearing; capacity failures now preserve both current drafts before adding the rejected focused value.
+- `medium` → patch (direct R3-D2): a delayed normalized `insertFromComposition` event could restore the raw DOM value while its duplicate reducer command was fenced; the fence now restores the current controlled canonical value.
 
 ## Design Notes
 
@@ -113,7 +139,7 @@ Domain edits bypass the component insertion codec: convert the complete focused 
 - `pnpm run evidence:validate` -- expected: cumulative Epic 2 manifest including distinct Story 2.2 cells validates.
 
 **Results:**
-- `pnpm test --run` -- passed: 117 Vitest tests and 4 evidence-validator tests.
+- `pnpm test --run` -- passed: 121 Vitest tests and 4 evidence-validator tests.
 - `pnpm run typecheck && pnpm run lint && pnpm run build` -- passed without diagnostics; Vite production build completed.
 - `pnpm exec playwright test tests/workbench.spec.ts --reporter=line` -- passed: 8 Chromium tests.
 - `pnpm run evidence:validate` -- passed: 16 mandatory cells through Story 2.2.
