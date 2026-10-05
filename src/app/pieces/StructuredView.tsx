@@ -65,14 +65,24 @@ const percentTripletAt = (value: string, index: number) => {
 const previousCodePointStart = (value: string, index: number) => {
   if (index <= 0) return 0;
   const last = value.charCodeAt(index - 1);
-  return last >= 0xdc00 && last <= 0xdfff ? Math.max(0, index - 2) : index - 1;
+  const previous = index > 1 ? value.charCodeAt(index - 2) : 0;
+  return last >= 0xdc00 &&
+    last <= 0xdfff &&
+    previous >= 0xd800 &&
+    previous <= 0xdbff
+    ? index - 2
+    : index - 1;
 };
 
 const nextCodePointEnd = (value: string, index: number) => {
   if (index >= value.length) return value.length;
   const first = value.charCodeAt(index);
-  return first >= 0xd800 && first <= 0xdbff
-    ? Math.min(value.length, index + 2)
+  const next = index + 1 < value.length ? value.charCodeAt(index + 1) : 0;
+  return first >= 0xd800 &&
+    first <= 0xdbff &&
+    next >= 0xdc00 &&
+    next <= 0xdfff
+    ? index + 2
     : index + 1;
 };
 
@@ -95,13 +105,17 @@ const expandAtomicRange = (
     expandedStart > 0 &&
     expandedStart < value.length &&
     value.charCodeAt(expandedStart - 1) >= 0xd800 &&
-    value.charCodeAt(expandedStart - 1) <= 0xdbff
+    value.charCodeAt(expandedStart - 1) <= 0xdbff &&
+    value.charCodeAt(expandedStart) >= 0xdc00 &&
+    value.charCodeAt(expandedStart) <= 0xdfff
   ) {
     expandedStart -= 1;
   }
   if (
     expandedEnd > 0 &&
     expandedEnd < value.length &&
+    value.charCodeAt(expandedEnd - 1) >= 0xd800 &&
+    value.charCodeAt(expandedEnd - 1) <= 0xdbff &&
     value.charCodeAt(expandedEnd) >= 0xdc00 &&
     value.charCodeAt(expandedEnd) <= 0xdfff
   ) {
@@ -235,15 +249,11 @@ function EditableToken({
     } else if (start === end && inputType === "deleteContentForward") {
       if (end === value.length) return;
       end = nextCodePointEnd(value, end);
-    } else if (start === end && inputType === "deleteWordBackward") {
-      if (start === 0) return;
-      const prefix = value.slice(0, start);
-      start = prefix.search(/[\p{L}\p{N}_]+$/u);
-      if (start < 0) start = 0;
-    } else if (start === end && inputType === "deleteWordForward") {
-      if (end === value.length) return;
-      const match = value.slice(end).match(/^[\p{L}\p{N}_]+/u);
-      end += match?.[0].length ?? value.length - end;
+    } else if (
+      inputType === "deleteWordBackward" ||
+      inputType === "deleteWordForward"
+    ) {
+      return;
     } else if (inputType.startsWith("insert") && native.data === null) {
       return;
     }

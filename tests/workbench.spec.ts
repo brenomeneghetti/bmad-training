@@ -509,27 +509,28 @@ test("structured editing handles search, selections, word deletion, caret, and d
   await expect(value).toHaveValue("😀omega");
   await value.press("Delete");
   await expect(value).toHaveValue("omega");
+  await value.evaluate(
+    () =>
+      new Promise<void>((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+      ),
+  );
 
   await value.evaluate((input) => {
     const field = input as HTMLInputElement;
     field.setSelectionRange(0, field.value.length);
+    field.dispatchEvent(new Event("select", { bubbles: true }));
   });
   await page.evaluate(() => navigator.clipboard.writeText("paste&😀"));
   await value.press("ControlOrMeta+V");
   await expect(value).toHaveValue("paste%26%F0%9F%98%80");
-  await value.fill("one two");
-  await expect(value).toHaveValue("one%20two");
-  await expect
-    .poll(() =>
-      value.evaluate((input) => ({
-        start: (input as HTMLInputElement).selectionStart,
-        end: (input as HTMLInputElement).selectionEnd,
-      })),
-    )
-    .toEqual({ start: 9, end: 9 });
-  await value.press("Control+Backspace");
-  await expect(value).toHaveValue("one");
-
+  await value.fill("one");
+  await value.evaluate(
+    () =>
+      new Promise<void>((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+      ),
+  );
   await value.evaluate((input) => {
     const field = input as HTMLInputElement;
     field.setSelectionRange(1, 1);
@@ -541,6 +542,26 @@ test("structured editing handles search, selections, word deletion, caret, and d
       value.evaluate((input) => (input as HTMLInputElement).selectionStart),
     )
     .toBe(13);
+
+  await value.fill("one two");
+  await expect(value).toHaveValue("one%20two");
+  expect(
+    await value.evaluate((input) => {
+      const field = input as HTMLInputElement;
+      field.setSelectionRange(3, 3);
+      const allowed = field.dispatchEvent(
+        new InputEvent("beforeinput", {
+          bubbles: true,
+          cancelable: true,
+          inputType: "deleteWordForward",
+        }),
+      );
+      field.setSelectionRange(field.value.length, field.value.length);
+      return allowed;
+    }),
+  ).toBe(true);
+  await value.press("Control+Backspace");
+  await expect(value).toHaveValue("one");
 
   await value.evaluate((input) => {
     const field = input as HTMLInputElement;

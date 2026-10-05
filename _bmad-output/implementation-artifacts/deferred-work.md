@@ -19,3 +19,9 @@
 - source_spec: `/media/breno/Novo volume/Projetos/bmad-training/_bmad-output/implementation-artifacts/spec-2-1-edit-path-and-query-text-without-rewriting-untouched-content.md`
   summary: Verify 400% browser zoom directly in a portable release evidence strategy.
   evidence: The existing automated scenario combines a 320 CSS-pixel viewport with DPR 4; direct browser zoom behavior remains outside the current portable test infrastructure.
+- source_spec: `/media/breno/Novo volume/Projetos/bmad-training/_bmad-output/implementation-artifacts/spec-2-1-edit-path-and-query-text-without-rewriting-untouched-content.md`
+  summary: Profile long structured-edit sessions with accumulated exact snapshot history.
+  evidence: Snapshot history grows per accepted edit, but a realistic sustained-session memory and latency run is needed to determine whether the proposed user-visible slowdown occurs.
+- source_spec: `/media/breno/Novo volume/Projetos/bmad-training/_bmad-output/implementation-artifacts/spec-2-1-edit-path-and-query-text-without-rewriting-untouched-content.md`
+  summary: Verify composition cancellation and immediate post-composition input with real IMEs across supported engines.
+  evidence: Synthetic Chromium coverage passes, but it cannot settle whether browser-specific ordering can retain composition state and suppress later reducer edits.

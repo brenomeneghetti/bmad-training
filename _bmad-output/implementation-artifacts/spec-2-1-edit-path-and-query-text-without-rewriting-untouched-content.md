@@ -4,7 +4,7 @@ type: 'feature'
 created: '2026-10-04'
 status: 'done'
 route: 'dispatch'
-review_loop_iteration: 1
+review_loop_iteration: 2
 baseline_commit: '8716db16edf048bd76ed07e00435dc78d135729a'
 context:
   - '{project-root}/_bmad-output/implementation-artifacts/epic-2-context.md'
@@ -134,6 +134,37 @@ context:
 - `medium` → patch (blind R2-B11): the Search scenario covers only successful Cut, leaving rejected and serialized no-op edits unable to catch the restored-count announcement defect in R2-B1.
 - `medium` → defer (blind R2-B12): carried by R2-V3; source-file existence alone cannot prove that each evidence claim passed for the recorded artifact.
 - `false` (blind R2-B13): carried prior B13; the two generated `node_modules` metadata files predate the implementation baseline and remain preserved user/environment changes rather than deliverable content.
+- `medium` → patch (edge R3-E1): collapsed word deletion beside punctuation or whitespace uses a field-boundary fallback, so `deleteWordBackward` or `deleteWordForward` can remove unrelated text instead of the browser-selected span.
+- `false` (edge R3-E2): native Undo/Redo is explicitly excluded by the frozen intent; the intercepted history input therefore does not establish a defect this story is allowed to implement.
+- `medium` → patch (edge R3-E3): structured paste encodes the complete inserted string before the 20,000-character result guard, so obviously over-limit input can consume unbounded main-thread work before rejection.
+- `medium` → patch (edge R3-E4): when a filtered structured edit is rejected or is a serialized no-op, the prior filtered-count live status remains eligible beside the restored-count announcement.
+- `medium` → patch (edge R3-E5): Search-restoration statuses use a snapshot-independent sentinel and can remain visible after a later Full URL session replaces the snapshot.
+- `medium` → defer (edge R3-E6): carried R2-B8; the 400% claim still uses DPR 4 rather than direct browser zoom, pending a portable release-evidence strategy.
+- `medium` → defer (edge R3-E7): carried R2-V3/R2-B12; evidence cells still prove source existence rather than immutable passing-run binding.
+- `false` (blind R3-B1): carried B13/R2-B13; the generated `node_modules` metadata changes predate the baseline and remain untouched environment changes, not deliverable files.
+- `false` (blind R3-B2): the frozen intent excludes Undo behavior, so allowing or implementing native history input is not a permitted Story 2.1 correction.
+- `maybe-false` → defer (blind R3-B3): React may flush `setCompositionValue(null)` between native composition and input events; an exact same-order real-browser reproduction is needed to prove that later edits remain trapped in composition state.
+- `medium` → patch (blind R3-B4): independently confirms R3-E1; regex-derived word deletion can fall back to the whole prefix or suffix at punctuation boundaries.
+- `maybe-false` → defer (blind R3-B5): complete snapshot history can grow with a long edit session, but no realistic edit-count stress run establishes user-visible memory or latency harm; sustained-session profiling would settle it.
+- `maybe-false` → defer (blind R3-B6): independently carries R3-B5; the single-edit timing test does not establish whether accumulated history causes the proposed quadratic slowdown.
+- `medium` → patch (blind R3-B7): independently confirms R3-E5; snapshot-independent restoration statuses can leak into a newer applied URL until their timer expires.
+- `medium` → defer (blind R3-B8): carried R2-V2/R2-B7; Chromium-only infrastructure cannot establish cross-engine native input ordering.
+- `medium` → defer (blind R3-B9): carried R2-B8/R3-E6; DPR emulation is not direct browser-zoom evidence.
+- `medium` → defer (blind R3-B10): carried R2-V3/R2-B12/R3-E7; source paths do not bind evidence claims to immutable passing runs.
+- `false` (blind R3-B11): invalid draft association and disabled-editor behavior have component coverage, while the browser suite separately exercises forced colors and text spacing; the claimed absence of all of these checks is disproved.
+- `maybe-false` → defer (blind R3-B12): synthetic IME coverage passes, but a real IME cancellation and immediate post-composition ordering run is needed to settle browser-specific state trapping.
+- `medium` → patch (blind R3-B13): browser coverage omits punctuation-boundary word deletion, which is the verified interaction defect in R3-E1; its Undo subclaim is excluded and its composition subclaim remains unverified.
+- `medium` → patched (final adversarial): restoring Full URL text byte-for-byte left the session in editing and allowed unchanged Apply to reparse; exact restoration now returns to active immediately and preserves Piece IDs, drafts, revisions, and History.
+- `medium` → patched (final adversarial): over-capacity programmatic insertion could be copied into a local draft after the codec rejected it; the reducer now rejects obviously oversized inserted text before draft construction.
+- `medium` → patched (final adversarial): unpaired surrogate code units were treated as complete pairs by deletion-range helpers; range expansion now verifies both high and low halves and regressions cover Backspace and Cut.
+- `low` → patched (final adversarial): the Actions note described the whole product as inspection-only after structured editing shipped; it now names only the unavailable actions.
+- `medium` → false (final edge-case): current word-deletion handling deliberately permits native behavior and applies the resulting minimal atomic fallback; browser coverage verifies the event remains uncancelled and the intended word is removed.
+- `medium` → false (final edge-case): current Search restoration clears prior announcements before publishing one restored count and binds it to the current epoch, so filtered and stale-session statuses do not coexist.
+- `medium` → defer (final adversarial): complete before/after snapshots may increase memory during sustained large-URL sessions; settle with the existing long-session profiling deferred item before changing the exact History contract.
+- `medium` → defer (final adversarial/verification-gap): Firefox/WebKit native input ordering and real-IME completion remain unverified under the existing Chromium-only infrastructure; carried by the consolidated cross-engine and real-IME deferred items.
+- `medium` → defer (final adversarial/verification-gap): direct 400% browser zoom and immutable passing-run evidence binding remain repository-level evidence infrastructure gaps; carried by their consolidated deferred items.
+- `false` (final adversarial): generated `node_modules` metadata was dirty before the Story 2.1 baseline and remains preserved, uncommitted environment state.
+- `low` → patched (final adversarial): duplicate deferred entries for cross-engine input, direct zoom, and immutable evidence were consolidated into one actionable record per gap.
 
 ## Design Notes
 
@@ -146,7 +177,7 @@ Fallback DOM changes and IME completion derive one minimal replacement from the 
 ## Verification
 
 **Commands:**
-- `pnpm test --run` -- all core, reducer, and component tests pass.
+- `pnpm test --run` -- 89 core, reducer, and component tests plus 4 evidence-validator tests pass.
 - `pnpm run typecheck && pnpm run lint && pnpm run build` -- static checks and production build pass.
-- `pnpm exec playwright test tests/workbench.spec.ts` -- focused browser, accessibility, privacy, and capacity scenarios pass.
+- `pnpm exec playwright test tests/workbench.spec.ts` -- 7 focused browser, accessibility, privacy, and capacity scenarios pass.
 - `pnpm run evidence:validate` -- distinct Story 2.1 evidence cells and the rebuilt artifact digest validate.

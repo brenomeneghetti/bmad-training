@@ -459,6 +459,58 @@ describe("URL Workbench", () => {
     ).toEqual(before);
   });
 
+  it("restores active state without reparsing when Full URL text returns unchanged", () => {
+    render(<Workbench />);
+    const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
+    fireEvent.change(editor, { target: { value: "https://example.com/a?x=1" } });
+    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
+    const value = screen.getByLabelText(/^Value, Query Parameter/);
+    const beforeId = value.closest("li")?.getAttribute("data-piece-id");
+
+    fireEvent.change(editor, {
+      target: { value: "https://example.com/a?x=draft" },
+    });
+    expect(value).toBeDisabled();
+    fireEvent.change(editor, { target: { value: "https://example.com/a?x=1" } });
+    expect(value).toBeEnabled();
+    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
+    expect(
+      screen
+        .getByLabelText(/^Value, Query Parameter/)
+        .closest("li")
+        ?.getAttribute("data-piece-id"),
+    ).toBe(beforeId);
+  });
+
+  it("does not expand deletion across unpaired surrogate code units", () => {
+    render(<Workbench />);
+    const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
+    fireEvent.change(editor, {
+      target: { value: "https://example.com/a?x=a\uDC00x" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
+    const value = screen.getByLabelText(
+      /^Value, Query Parameter/,
+    ) as HTMLInputElement;
+    value.focus();
+    value.setSelectionRange(2, 2);
+    fireEvent.keyDown(value, { key: "Backspace" });
+    expect(value).toHaveValue("ax");
+
+    fireEvent.change(editor, {
+      target: { value: "https://example.com/a?x=a\uD800x" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
+    const nextValue = screen.getByLabelText(
+      /^Value, Query Parameter/,
+    ) as HTMLInputElement;
+    nextValue.setSelectionRange(2, 3);
+    fireEvent.cut(nextValue, {
+      clipboardData: { setData: vi.fn() },
+    });
+    expect(nextValue).toHaveValue("a\uD800");
+  });
+
   it("announces Search restoration even when a structured edit is rejected", () => {
     render(<Workbench />);
     fireEvent.change(
@@ -478,6 +530,22 @@ describe("URL Workbench", () => {
         "3 of 3 Managed Pieces shown.",
       ),
     ).toBeInTheDocument();
+    expect(
+      within(document.querySelector("#search-status") as HTMLElement).queryByText(
+        "1 of 3 Managed Pieces shown.",
+      ),
+    ).not.toBeInTheDocument();
+
+    fireEvent.change(
+      screen.getByLabelText("Complete HTTP or HTTPS Absolute URL"),
+      { target: { value: "https://example.com/b?y=2" } },
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
+    expect(
+      within(document.querySelector("#search-status") as HTMLElement).queryByText(
+        "3 of 3 Managed Pieces shown.",
+      ),
+    ).not.toBeInTheDocument();
   });
 
   it("preserves untouched raw Unicode in fallback and IME changes", () => {

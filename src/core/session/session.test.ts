@@ -353,6 +353,26 @@ describe("session authority", () => {
     expect(rejected.structuredProblem?.code).toBe("url-capacity-exceeded");
   });
 
+  it("does not retain an oversized insertion as a structured draft", () => {
+    const active = apply(initialSessionState, "https://example.com/a?x=1");
+    const target = active.snapshot?.query[0];
+    if (!target) throw new Error("Missing fixture query piece");
+    const rejected = sessionReducer(active, {
+      type: "structuredEdit",
+      command: {
+        pieceId: target.id,
+        field: "query-value",
+        tokenRevision: 0,
+        start: 0,
+        end: 1,
+        insertedText: "x".repeat(20_001),
+      },
+    });
+    expect(rejected.snapshot).toBe(active.snapshot);
+    expect(rejected.structuredProblem?.code).toBe("url-capacity-exceeded");
+    expect(rejected.structuredDrafts).toEqual({});
+  });
+
   it("edits a 250+ parameter URL within the local response target", () => {
     const input = createCapacityFixture();
     expect(input).toHaveLength(20_000);

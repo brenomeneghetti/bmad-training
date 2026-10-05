@@ -24,6 +24,7 @@ export function Workbench() {
     readonly id: number;
     readonly message: string;
     readonly snapshot: LosslessUrl | null;
+    readonly epoch: number | null;
   }[]>([]);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const announcementId = useRef(0);
@@ -57,7 +58,12 @@ export function Workbench() {
     const id = announcementId.current;
     setSearchStatuses((statuses) => [
       ...statuses,
-      { id, message, snapshot: preserveAcrossSnapshot ? null : state.snapshot },
+      {
+        id,
+        message,
+        snapshot: preserveAcrossSnapshot ? null : state.snapshot,
+        epoch: preserveAcrossSnapshot ? state.epoch : null,
+      },
     ]);
     announcementTimers.current.set(
       id,
@@ -68,7 +74,15 @@ export function Workbench() {
         announcementTimers.current.delete(id);
       }, 2_100),
     );
-  }, [state.snapshot]);
+  }, [state.epoch, state.snapshot]);
+
+  const clearAnnouncements = () => {
+    setSearchStatuses([]);
+    for (const timer of announcementTimers.current.values()) {
+      window.clearTimeout(timer);
+    }
+    announcementTimers.current.clear();
+  };
 
   const clearSearch = () => {
     if (searchTerm === "") return;
@@ -174,8 +188,7 @@ export function Workbench() {
           Add Query Parameter
         </button>
         <p id="actions-note">
-          URL-changing actions and Copy are unavailable in this inspection-only
-          version.
+          Undo, Copy, Add, Remove, and Reorder are not available yet.
         </p>
         <div role="status" aria-live="polite" aria-atomic="true">
           {state.phase === "active"
@@ -202,6 +215,7 @@ export function Workbench() {
           if (searchTerm !== "") {
             explicitClear.current = true;
             setSearchTerm("");
+            clearAnnouncements();
             announce(
               `${allPieces.length} of ${allPieces.length} Managed Pieces shown.`,
               true,
@@ -221,7 +235,9 @@ export function Workbench() {
       >
         {searchStatuses
           .filter(
-            (status) => status.snapshot === null || status.snapshot === state.snapshot,
+            (status) =>
+              status.snapshot === state.snapshot ||
+              (status.snapshot === null && status.epoch === state.epoch),
           )
           .map((status) => (
             <span

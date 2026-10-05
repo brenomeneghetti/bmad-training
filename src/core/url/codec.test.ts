@@ -78,4 +78,16 @@ describe("raw component insertion codec", () => {
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.error.code).toBe("invalid-edit-range");
   });
+
+  it("rejects obviously over-capacity insertion before encoding", () => {
+    const result = insertRawComponent({
+      raw: "",
+      start: 0,
+      end: 0,
+      insertedText: "x".repeat(20_001),
+      profile: "query-value",
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error.code).toBe("url-capacity-exceeded");
+  });
 });

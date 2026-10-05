@@ -135,6 +135,14 @@ export const insertRawComponent = ({
       ),
     );
   }
+  if (insertedText.length > 20_000) {
+    return err(
+      problem(
+        "url-capacity-exceeded",
+        "This edit would exceed the 20,000-character URL limit.",
+      ),
+    );
+  }
   const encoded = encodeInsertedText(insertedText, profile);
   if (!encoded.ok) return encoded;
   return ok(`${raw.slice(0, start)}${encoded.value}${raw.slice(end)}`);

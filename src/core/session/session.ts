@@ -202,7 +202,12 @@ export const sessionReducer = (
     case "inputChanged":
       return {
         ...state,
-        phase: state.snapshot ? "editing" : "no-session",
+        phase:
+          state.snapshot && action.value === state.snapshot.serialized
+            ? "active"
+            : state.snapshot
+              ? "editing"
+              : "no-session",
         input: action.value,
         generation: state.generation + 1,
         pendingInput: null,
@@ -315,6 +320,16 @@ export const sessionReducer = (
       }
 
       const existingDraft = state.structuredDrafts[key];
+      if (action.command.insertedText.length > 20_000) {
+        return {
+          ...state,
+          structuredProblem: {
+            code: "url-capacity-exceeded",
+            field: "component",
+            message: "This edit would exceed the 20,000-character URL limit.",
+          },
+        };
+      }
       const editCommand = existingDraft
         ? correctionFromDraft(
             raw,
