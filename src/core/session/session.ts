@@ -2,10 +2,12 @@ import { createIdAllocator, type UrlProblem } from "../contracts";
 import {
   editLosslessToken,
   parseLosslessUrl,
+  removeLosslessPiece,
   replaceLosslessDomain,
   type DomainFieldKind,
   type EditableFieldKind,
   type LosslessUrl,
+  type ManagedPieceRemoval,
   type TokenEdit,
 } from "../url";
 
@@ -31,7 +33,7 @@ export interface MutationEntry {
   readonly before: LosslessUrl;
   readonly after: LosslessUrl;
   readonly pieceId: StructuredCommand["pieceId"];
-  readonly field: EditableFieldKind;
+  readonly field: EditableFieldKind | "remove-path" | "remove-query";
 }
 
 export type SessionPhase =
@@ -70,7 +72,8 @@ export type SessionAction =
       readonly revision: number;
       readonly result: ReturnType<typeof parseLosslessUrl>;
     }
-  | { readonly type: "structuredEdit"; readonly command: StructuredCommand };
+  | { readonly type: "structuredEdit"; readonly command: StructuredCommand }
+  | { readonly type: "removePiece"; readonly removal: ManagedPieceRemoval };
 
 export const initialSessionState: SessionState = {
   phase: "no-session",
@@ -283,6 +286,80 @@ export const sessionReducer = (
           1 +
           action.result.value.path.length +
           action.result.value.query.length,
+      };
+    }
+    case "removePiece": {
+      if (!state.snapshot) return state;
+      if (
+        state.phase !== "active" ||
+        state.input !== state.snapshot.serialized
+      ) {
+        return {
+          ...state,
+          structuredProblem: {
+            code: "structured-edit-unavailable",
+            field: "component",
+            message:
+              "Apply the current Full URL text before editing structured fields.",
+          },
+          structuredSuccess: null,
+        };
+      }
+
+      const sourceIndex =
+        action.removal.kind === "path"
+          ? state.snapshot.path.findIndex(
+              (piece) => piece.id === action.removal.pieceId,
+            )
+          : state.snapshot.query.findIndex(
+              (piece) => piece.id === action.removal.pieceId,
+            );
+      const result = removeLosslessPiece(state.snapshot, action.removal);
+      if (!result.ok) {
+        return {
+          ...state,
+          structuredProblem: result.error,
+          structuredSuccess: null,
+        };
+      }
+
+      const field =
+        action.removal.kind === "path" ? "remove-path" : "remove-query";
+      const structuredDrafts = { ...state.structuredDrafts };
+      const tokenRevisions = { ...state.tokenRevisions };
+      const fields =
+        action.removal.kind === "path"
+          ? (["path"] as const)
+          : (["query-key", "query-value"] as const);
+      for (const editableField of fields) {
+        const key = structuredFieldKey(action.removal.pieceId, editableField);
+        delete structuredDrafts[key];
+        delete tokenRevisions[key];
+      }
+      const label =
+        action.removal.kind === "path" ? "Path Segment" : "Query Parameter";
+
+      return {
+        ...state,
+        phase: "active",
+        input: result.value.serialized,
+        snapshot: result.value,
+        lastValidSnapshot: result.value,
+        problem: null,
+        structuredProblem: null,
+        structuredSuccess: `${label} ${sourceIndex + 1} removed. Full URL and Structured View updated.`,
+        structuredDrafts,
+        tokenRevisions,
+        revision: state.revision + 1,
+        history: [
+          ...state.history,
+          {
+            before: state.snapshot,
+            after: result.value,
+            pieceId: action.removal.pieceId,
+            field,
+          },
+        ],
       };
     }
     case "structuredEdit": {

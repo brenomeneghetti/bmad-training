@@ -74,6 +74,10 @@ const createFixture = async (context) => {
       ["story-2-2-accessibility-status", "2.2"],
       ["story-2-2-privacy", "2.2"],
       ["story-2-2-capacity", "2.2"],
+      ["story-2-3-identity-exact-removal", "2.3"],
+      ["story-2-3-guard-drafts-history", "2.3"],
+      ["story-2-3-accessibility-focus", "2.3"],
+      ["story-2-3-privacy-capacity", "2.3"],
     ].map(([id, story]) => ({
       id,
       story,
@@ -95,7 +99,34 @@ const writeManifest = (root, manifest) =>
 
 test("accepts a complete valid evidence fixture", async (context) => {
   const { root } = await createFixture(context);
-  assert.equal((await validateEvidence(root)).cellCount, 16);
+  assert.equal((await validateEvidence(root)).cellCount, 20);
+});
+
+test("requires every Story 2.3 cell to remain mandatory and passing", async (context) => {
+  const missingFixture = await createFixture(context);
+  missingFixture.manifest.cells.splice(
+    missingFixture.manifest.cells.findIndex(
+      (cell) => cell.id === "story-2-3-accessibility-focus",
+    ),
+    1,
+  );
+  await writeManifest(missingFixture.root, missingFixture.manifest);
+  await assert.rejects(
+    validateEvidence(missingFixture.root),
+    /Invalid evidence manifest/,
+  );
+
+  const statusFixture = await createFixture(context);
+  const statusCell = statusFixture.manifest.cells.find(
+    (cell) => cell.id === "story-2-3-accessibility-focus",
+  );
+  if (!statusCell) throw new Error("Missing Story 2.3 accessibility cell");
+  statusCell.status = "incomplete";
+  await writeManifest(statusFixture.root, statusFixture.manifest);
+  await assert.rejects(
+    validateEvidence(statusFixture.root),
+    /Invalid evidence manifest/,
+  );
 });
 
 test("rejects schema and fixed-cell violations", async (context) => {

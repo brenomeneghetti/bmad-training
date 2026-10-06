@@ -8,7 +8,7 @@ import {
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { semanticFixture } from "../../test/fixtures/semantic";
+import { removalFixtures, semanticFixture } from "../../test/fixtures/semantic";
 import { Workbench } from "./Workbench";
 
 describe("URL Workbench", () => {
@@ -725,5 +725,142 @@ describe("URL Workbench", () => {
         "Value, Query Parameter 1 of 2, occurrence 1 of 2",
       ),
     ).toBeVisible();
+  });
+
+  it("removes one duplicate under Search and focuses the next visible Remove control", async () => {
+    const user = userEvent.setup();
+    render(<Workbench />);
+    const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
+    fireEvent.change(editor, { target: { value: removalFixtures.duplicateQuery } });
+    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
+    const beforeIds = screen
+      .getAllByRole("listitem")
+      .map((row) => row.getAttribute("data-piece-id"));
+    const search = screen.getByLabelText("Search Managed Pieces");
+    fireEvent.change(search, { target: { value: "dup" } });
+    const target = screen.getByRole("button", {
+      name: /Remove Query Parameter at position 1 of 3/,
+    });
+    expect(screen.queryByRole("button", { name: /Remove Domain/ })).toBeNull();
+
+    await user.click(target);
+
+    expect(editor).toHaveValue("https://example.com/a?dup=&dup=3#Frag%2f");
+    expect(search).toHaveValue("dup");
+    expect(screen.getAllByRole("listitem")).toHaveLength(2);
+    expect(
+      screen
+        .getAllByRole("listitem")
+        .map((row) => row.getAttribute("data-piece-id")),
+    ).toEqual([beforeIds[3], beforeIds[4]]);
+    expect(
+      screen.getByRole("button", { name: /Remove Query Parameter at position 1 of 2/ }),
+    ).toHaveFocus();
+    expect(
+      screen.getByText("Query Parameter 1 removed. Full URL and Structured View updated."),
+    ).toHaveAttribute("role", "status");
+    expect(screen.getByLabelText(/^Value, Query Parameter 1 of 2/)).toHaveValue("");
+  });
+
+  it("does not commit or move focus on pointer-down and pointer cancellation", () => {
+    render(<Workbench />);
+    const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
+    fireEvent.change(editor, { target: { value: removalFixtures.mixedQuery } });
+    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
+    const search = screen.getByLabelText("Search Managed Pieces");
+    search.focus();
+    const remove = screen.getByRole("button", {
+      name: /Remove Query Parameter at position 1 of 5/,
+    });
+
+    fireEvent.pointerDown(remove);
+    expect(search).toHaveFocus();
+    fireEvent.pointerCancel(remove);
+
+    expect(search).toHaveFocus();
+    expect(editor).toHaveValue(removalFixtures.mixedQuery);
+    expect(screen.queryByText(/Query Parameter 1 removed/)).toBeNull();
+  });
+
+  it("uses Clear Search or the Structured View heading as the removal focus fallback", async () => {
+    const user = userEvent.setup();
+    const { rerender } = render(<Workbench />);
+    const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
+    fireEvent.change(editor, {
+      target: { value: removalFixtures.clearSearchFallback },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
+    const search = screen.getByLabelText("Search Managed Pieces");
+    fireEvent.change(search, { target: { value: "example.com" } });
+    expect(screen.getAllByRole("listitem")).toHaveLength(2);
+    await user.click(
+      screen.getByRole("button", { name: /Remove Query Parameter at position 1 of 1/ }),
+    );
+    expect(search).toHaveValue("example.com");
+    expect(screen.getByRole("button", { name: "Clear Search" })).toHaveFocus();
+
+    rerender(<Workbench />);
+    fireEvent.change(editor, { target: { value: removalFixtures.headingFallback } });
+    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
+    fireEvent.change(search, { target: { value: "needle" } });
+    const remove = screen.getByRole("button", {
+      name: /Remove Query Parameter at position 1 of 2/,
+    });
+    remove.focus();
+    await user.keyboard("{Enter}");
+    expect(editor).toHaveValue("https://example.com/a?other=2");
+    expect(search).toHaveValue("needle");
+    expect(screen.queryAllByRole("listitem")).toHaveLength(0);
+    expect(screen.getByRole("heading", { name: "Structured View" })).toHaveFocus();
+  });
+
+  it("focuses the nearest previous visible Remove control when the last row is removed", async () => {
+    const user = userEvent.setup();
+    render(<Workbench />);
+    const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
+    fireEvent.change(editor, {
+      target: { value: "https://example.com/?needle=1&needle=2" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
+    fireEvent.change(screen.getByLabelText("Search Managed Pieces"), {
+      target: { value: "needle" },
+    });
+
+    await user.click(
+      screen.getByRole("button", {
+        name: /Remove Query Parameter at position 2 of 2/,
+      }),
+    );
+
+    expect(editor).toHaveValue("https://example.com/?needle=1");
+    expect(
+      screen.getByRole("button", {
+        name: /Remove Query Parameter at position 1 of 1/,
+      }),
+    ).toHaveFocus();
+  });
+
+  it("announces the original source position when Search isolates a later piece", async () => {
+    const user = userEvent.setup();
+    render(<Workbench />);
+    const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
+    fireEvent.change(editor, {
+      target: { value: "https://example.com/?first=1&target=2&third=3" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
+    fireEvent.change(screen.getByLabelText("Search Managed Pieces"), {
+      target: { value: "target" },
+    });
+
+    await user.click(
+      screen.getByRole("button", {
+        name: /Remove Query Parameter at position 2 of 3/,
+      }),
+    );
+
+    expect(editor).toHaveValue("https://example.com/?first=1&third=3");
+    expect(
+      screen.getByText("Query Parameter 2 removed. Full URL and Structured View updated."),
+    ).toHaveAttribute("role", "status");
   });
 });

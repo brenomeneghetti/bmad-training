@@ -1,6 +1,7 @@
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useReducer,
   useRef,
@@ -11,7 +12,7 @@ import {
   prepareParse,
   sessionReducer,
 } from "../../core/session";
-import type { LosslessUrl } from "../../core/url";
+import type { LosslessUrl, ManagedPieceRemoval } from "../../core/url";
 import { ValidationMessage } from "../feedback/ValidationMessage";
 import { StructuredView } from "../pieces/StructuredView";
 import { buildManagedPieces, filterManagedPieces } from "../pieces/search";
@@ -27,6 +28,13 @@ export function Workbench() {
     readonly epoch: number | null;
   }[]>([]);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const pendingRemovalFocus = useRef<{
+    readonly revision: number;
+    readonly pieceId: string;
+    readonly candidates: readonly string[];
+    readonly hasFilteredSurvivors: boolean;
+    readonly successMessage: string;
+  } | null>(null);
   const announcementId = useRef(0);
   const announcementTimers = useRef(new Map<number, number>());
   const explicitClear = useRef(false);
@@ -39,6 +47,62 @@ export function Workbench() {
     () => filterManagedPieces(allPieces, searchTerm),
     [allPieces, searchTerm],
   );
+
+  useLayoutEffect(() => {
+    const pending = pendingRemovalFocus.current;
+    if (!pending) return;
+    pendingRemovalFocus.current = null;
+    if (
+      state.revision <= pending.revision ||
+      state.structuredSuccess !== pending.successMessage ||
+      allPieces.some((piece) => piece.id === pending.pieceId)
+    ) {
+      return;
+    }
+
+    for (const pieceId of pending.candidates) {
+      const button = document.getElementById(`remove-${pieceId}`);
+      if (button instanceof HTMLButtonElement && !button.disabled) {
+        button.focus();
+        return;
+      }
+    }
+    const fallbackId = pending.hasFilteredSurvivors
+      ? "clear-managed-piece-search"
+      : "structured-heading";
+    document.getElementById(fallbackId)?.focus();
+  }, [allPieces, state]);
+
+  const removePiece = (removal: ManagedPieceRemoval) => {
+    const target = allPieces.find((piece) => piece.id === removal.pieceId);
+    if (target && target.kind === removal.kind) {
+      const visibleIndex = visiblePieces.findIndex(
+        (piece) => piece.id === removal.pieceId,
+      );
+      const removable = (piece: (typeof visiblePieces)[number]) =>
+        piece.kind !== "domain";
+      const candidates =
+        visibleIndex >= 0
+          ? [
+              ...visiblePieces.slice(visibleIndex + 1).filter(removable),
+              ...visiblePieces.slice(0, visibleIndex).reverse().filter(removable),
+            ].map((piece) => piece.id)
+          : [];
+      const label = removal.kind === "path" ? "Path Segment" : "Query Parameter";
+      pendingRemovalFocus.current = {
+        revision: state.revision,
+        pieceId: removal.pieceId,
+        candidates,
+        hasFilteredSurvivors: visiblePieces.some(
+          (piece) => piece.id !== removal.pieceId,
+        ),
+        successMessage: `${label} ${target.sourcePosition} removed. Full URL and Structured View updated.`,
+      };
+    } else {
+      pendingRemovalFocus.current = null;
+    }
+    dispatch({ type: "removePiece", removal });
+  };
 
   const apply = () => {
     if (
@@ -188,7 +252,7 @@ export function Workbench() {
           Add Query Parameter
         </button>
         <p id="actions-note">
-          Undo, Copy, Add, Remove, and Reorder are not available yet.
+          Undo, Copy, Add, and Reorder are not available yet.
         </p>
         <div role="status" aria-live="polite" aria-atomic="true">
           {state.phase === "active"
@@ -223,6 +287,7 @@ export function Workbench() {
           }
           dispatch({ type: "structuredEdit", command });
         }}
+        onRemovePiece={removePiece}
         structuredProblem={state.structuredProblem}
         structuredSuccess={state.structuredSuccess}
         editorsDisabled={

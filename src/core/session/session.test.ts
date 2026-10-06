@@ -122,6 +122,233 @@ describe("session authority", () => {
     expect(edited.tokenRevisions[`${target.id}:query-key`]).toBe(1);
   });
 
+  it("removes exactly one piece and atomically records its original position", () => {
+    const active = apply(
+      initialSessionState,
+      "https://example.com/a%2fb?dup=1&dup=2#Frag%2f",
+    );
+    const target = active.snapshot?.query[0];
+    const survivor = active.snapshot?.query[1];
+    if (!target || !survivor) throw new Error("Missing duplicate query pieces");
+
+    const removed = sessionReducer(active, {
+      type: "removePiece",
+      removal: { kind: "query", pieceId: target.id },
+    });
+    expect(removed.input).toBe(
+      "https://example.com/a%2fb?dup=2#Frag%2f",
+    );
+    expect(removed.snapshot).toBe(removed.lastValidSnapshot);
+    expect(removed.snapshot?.query).toMatchObject([
+      { ...survivor, separatorBefore: "" },
+    ]);
+    expect(removed.history).toHaveLength(1);
+    expect(removed.history[0]).toEqual({
+      before: active.snapshot,
+      after: removed.snapshot,
+      pieceId: target.id,
+      field: "remove-query",
+    });
+    expect(removed.revision).toBe(active.revision + 1);
+    expect(removed.structuredSuccess).toContain("Query Parameter 1 removed");
+  });
+
+  it("clears only the removed piece drafts and preserves survivor drafts", () => {
+    const active = apply(
+      initialSessionState,
+      "https://example.com/?dup=1&dup=2",
+    );
+    const target = active.snapshot?.query[0];
+    const survivor = active.snapshot?.query[1];
+    if (!target || !survivor) throw new Error("Missing duplicate query pieces");
+    const targetDraft = sessionReducer(active, {
+      type: "structuredEdit",
+      command: {
+        pieceId: target.id,
+        field: "query-value",
+        tokenRevision: 0,
+        start: 0,
+        end: 1,
+        insertedText: "%",
+      },
+    });
+    const survivorDraft = sessionReducer(targetDraft, {
+      type: "structuredEdit",
+      command: {
+        pieceId: survivor.id,
+        field: "query-value",
+        tokenRevision: 0,
+        start: 0,
+        end: 1,
+        insertedText: "%",
+      },
+    });
+
+    const removed = sessionReducer(survivorDraft, {
+      type: "removePiece",
+      removal: { kind: "query", pieceId: target.id },
+    });
+    expect(removed.structuredDrafts[`${target.id}:query-value`]).toBeUndefined();
+    expect(removed.structuredDrafts[`${survivor.id}:query-value`]?.value).toBe("%");
+    expect(removed.snapshot?.query[0]?.id).toBe(survivor.id);
+  });
+
+  it("clears only the removed path draft and records a remove-path mutation", () => {
+    const active = apply(initialSessionState, "https://example.com/one/two?x=1");
+    const target = active.snapshot?.path[0];
+    const survivor = active.snapshot?.path[1];
+    if (!target || !survivor) throw new Error("Missing path pieces");
+    const targetDraft = sessionReducer(active, {
+      type: "structuredEdit",
+      command: {
+        pieceId: target.id,
+        field: "path",
+        tokenRevision: 0,
+        start: 0,
+        end: 0,
+        insertedText: "%",
+      },
+    });
+    const survivorDraft = sessionReducer(targetDraft, {
+      type: "structuredEdit",
+      command: {
+        pieceId: survivor.id,
+        field: "path",
+        tokenRevision: 0,
+        start: 0,
+        end: 0,
+        insertedText: "%",
+      },
+    });
+
+    const removed = sessionReducer(survivorDraft, {
+      type: "removePiece",
+      removal: { kind: "path", pieceId: target.id },
+    });
+
+    expect(removed.structuredDrafts[`${target.id}:path`]).toBeUndefined();
+    expect(removed.structuredDrafts[`${survivor.id}:path`]?.value).toBe("%two");
+    expect(removed.snapshot?.path.map((piece) => piece.id)).toEqual([survivor.id]);
+    expect(removed.history).toHaveLength(1);
+    expect(removed.history[0]).toEqual({
+      before: active.snapshot,
+      after: removed.snapshot,
+      pieceId: target.id,
+      field: "remove-path",
+    });
+  });
+
+  it("rejects removal while Full URL text is unapplied or the ID is stale", () => {
+    const active = apply(initialSessionState, "https://example.com/a?x=1");
+    const pathPiece = active.snapshot?.path[0];
+    const queryPiece = active.snapshot?.query[0];
+    if (!pathPiece || !queryPiece) throw new Error("Missing fixture pieces");
+    const editing = sessionReducer(active, {
+      type: "inputChanged",
+      value: "https://example.com/a?x=draft",
+    });
+    const unavailable = sessionReducer(editing, {
+      type: "removePiece",
+      removal: { kind: "path", pieceId: pathPiece.id },
+    });
+    expect(unavailable.input).toBe(editing.input);
+    expect(unavailable.snapshot).toBe(active.snapshot);
+    expect(unavailable.history).toBe(active.history);
+    expect(unavailable.structuredSuccess).toBeNull();
+    expect(unavailable.structuredProblem?.code).toBe(
+      "structured-edit-unavailable",
+    );
+
+    const invalid = apply(active, "/relative");
+    const invalidRemoval = sessionReducer(invalid, {
+      type: "removePiece",
+      removal: { kind: "query", pieceId: queryPiece.id },
+    });
+    expect(invalidRemoval.input).toBe(invalid.input);
+    expect(invalidRemoval.snapshot).toBe(active.snapshot);
+    expect(invalidRemoval.history).toBe(invalid.history);
+    expect(invalidRemoval.structuredSuccess).toBeNull();
+    expect(invalidRemoval.structuredProblem?.code).toBe(
+      "structured-edit-unavailable",
+    );
+
+    const stale = sessionReducer(active, {
+      type: "removePiece",
+      removal: { kind: "path", pieceId: queryPiece.id },
+    });
+    expect(stale.snapshot).toBe(active.snapshot);
+    expect(stale.input).toBe(active.input);
+    expect(stale.history).toBe(active.history);
+    expect(stale.revision).toBe(active.revision);
+    expect(stale.structuredSuccess).toBeNull();
+    expect(stale.structuredProblem?.code).toBe("missing-piece");
+  });
+
+  it("preserves existing drafts when a stale removal is rejected", () => {
+    const active = apply(initialSessionState, "https://example.com/one?x=1");
+    const pathPiece = active.snapshot?.path[0];
+    if (!pathPiece) throw new Error("Missing path piece");
+    const drafted = sessionReducer(active, {
+      type: "structuredEdit",
+      command: {
+        pieceId: pathPiece.id,
+        field: "path",
+        tokenRevision: 0,
+        start: 0,
+        end: 0,
+        insertedText: "%",
+      },
+    });
+    const rejected = sessionReducer(drafted, {
+      type: "removePiece",
+      removal: { kind: "query", pieceId: pathPiece.id },
+    });
+
+    expect(rejected.snapshot).toBe(drafted.snapshot);
+    expect(rejected.history).toBe(drafted.history);
+    expect(rejected.structuredDrafts).toBe(drafted.structuredDrafts);
+    expect(rejected.structuredDrafts[`${pathPiece.id}:path`]?.value).toBe("%one");
+  });
+
+  it("rejects removal while a replacement URL is still parsing", () => {
+    const active = apply(initialSessionState, "https://example.com/a?x=1");
+    const target = active.snapshot?.query[0];
+    if (!target) throw new Error("Missing query piece");
+    const changed = sessionReducer(active, {
+      type: "inputChanged",
+      value: "https://example.com/b?x=1",
+    });
+    const parse = prepareParse(changed);
+    const parsing = sessionReducer(changed, parse.start);
+    const rejected = sessionReducer(parsing, {
+      type: "removePiece",
+      removal: { kind: "query", pieceId: target.id },
+    });
+
+    expect(parsing.phase).toBe("parsing");
+    expect(rejected.phase).toBe("parsing");
+    expect(rejected.input).toBe(changed.input);
+    expect(rejected.snapshot).toBe(active.snapshot);
+    expect(rejected.history).toBe(active.history);
+    expect(rejected.structuredSuccess).toBeNull();
+  });
+
+  it("removes from a 250+ parameter URL within the local response target", () => {
+    const active = apply(initialSessionState, createCapacityFixture());
+    const target = active.snapshot?.query[259];
+    if (!target) throw new Error("Missing capacity target");
+    const start = performance.now();
+    const removed = sessionReducer(active, {
+      type: "removePiece",
+      removal: { kind: "query", pieceId: target.id },
+    });
+    expect(performance.now() - start).toBeLessThan(100);
+    expect(removed.snapshot?.query).toHaveLength(259);
+    expect(removed.snapshot?.query.some((piece) => piece.id === target.id)).toBe(
+      false,
+    );
+  });
+
   it("commits a Unicode Domain edit atomically across both forms and snapshots", () => {
       const active = apply(
         initialSessionState,

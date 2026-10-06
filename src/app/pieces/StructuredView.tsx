@@ -1,4 +1,4 @@
-import type { LosslessUrl } from "../../core/url";
+import type { LosslessUrl, ManagedPieceRemoval } from "../../core/url";
 import type {
   ChangeEvent,
   ClipboardEvent,
@@ -29,6 +29,7 @@ interface StructuredViewProps {
   readonly structuredDrafts: Readonly<Record<string, StructuredDraft>>;
   readonly tokenRevisions: Readonly<Record<string, number>>;
   readonly onStructuredEdit: (command: StructuredCommand) => void;
+  readonly onRemovePiece: (removal: ManagedPieceRemoval) => void;
   readonly structuredProblem: UrlProblem | null;
   readonly structuredSuccess: string | null;
   readonly editorsDisabled: boolean;
@@ -552,6 +553,7 @@ export function StructuredView({
   structuredDrafts,
   tokenRevisions,
   onStructuredEdit,
+  onRemovePiece,
   structuredProblem,
   structuredSuccess,
   editorsDisabled,
@@ -583,7 +585,12 @@ export function StructuredView({
           disabled={!snapshot}
           autoComplete="off"
         />
-        <button type="button" onClick={onClearSearch} disabled={!activeSearch}>
+        <button
+          id="clear-managed-piece-search"
+          type="button"
+          onClick={onClearSearch}
+          disabled={!activeSearch}
+        >
           Clear Search
         </button>
       </div>
@@ -700,6 +707,19 @@ export function StructuredView({
                       onEdit={onStructuredEdit}
                       disabled={editorsDisabled}
                     />
+                    <button
+                      id={`remove-${managedPiece.id}`}
+                      className={styles.removeButton}
+                      type="button"
+                      aria-label={`Remove Path Segment at position ${managedPiece.sourcePosition} of ${managedPiece.sourceTotal}, piece ${managedPiece.id}`}
+                      disabled={editorsDisabled}
+                      onPointerDown={(event) => event.preventDefault()}
+                      onClick={() =>
+                        onRemovePiece({ kind: "path", pieceId: managedPiece.id })
+                      }
+                    >
+                      Remove
+                    </button>
                   </li>
                 );
               }
@@ -762,6 +782,19 @@ export function StructuredView({
                     onEdit={onStructuredEdit}
                     disabled={editorsDisabled}
                   />
+                  <button
+                    id={`remove-${managedPiece.id}`}
+                    className={styles.removeButton}
+                    type="button"
+                    aria-label={`Remove Query Parameter at position ${managedPiece.sourcePosition} of ${managedPiece.sourceTotal}, piece ${managedPiece.id}`}
+                    disabled={editorsDisabled}
+                    onPointerDown={(event) => event.preventDefault()}
+                    onClick={() =>
+                      onRemovePiece({ kind: "query", pieceId: managedPiece.id })
+                    }
+                  >
+                    Remove
+                  </button>
                 </li>
               );
               })}

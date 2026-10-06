@@ -5,18 +5,18 @@
   "evaluatorVersion": "1.0.0",
   "artifact": {
     "path": "dist",
-    "digest": "a71d62c6c701886f39a0bdced640eaa6524a1ef9d3ceee65e197e37dc8101ee4",
+    "digest": "d6ce1922ddb53d454dd69527062067de7eef9af99a2783f56ae993cd6b1ca505",
     "delivery": "deployment/static-delivery.json"
   },
   "toolVersions": {
-    "node": "24.13.1",
+    "node": "24.21.0",
     "pnpm": "12.5.1",
     "vitest": "5.0.1",
     "playwright": "1.63.0"
   },
   "signOff": {
     "owner": "automated-verification",
-    "recordedAt": "2026-10-05T02:04:03.000Z"
+    "recordedAt": "2026-10-06T15:38:52.000Z"
   },
   "cells": [
     {
@@ -183,6 +183,49 @@
         "src/test/fixtures/semantic.ts",
         "src/core/session/session.test.ts",
         "tests/workbench.spec.ts"
+      ]
+    },
+    {
+      "id": "story-2-3-identity-exact-removal",
+      "story": "2.3",
+      "status": "pass",
+      "owner": "automated",
+      "evidence": [
+        "src/core/url/parser.test.ts",
+        "src/core/session/session.test.ts",
+        "src/test/fixtures/semantic.ts"
+      ]
+    },
+    {
+      "id": "story-2-3-guard-drafts-history",
+      "story": "2.3",
+      "status": "pass",
+      "owner": "automated",
+      "evidence": [
+        "src/core/session/session.test.ts",
+        "src/app/workbench/Workbench.test.tsx"
+      ]
+    },
+    {
+      "id": "story-2-3-accessibility-focus",
+      "story": "2.3",
+      "status": "pass",
+      "owner": "automated",
+      "evidence": [
+        "src/app/workbench/Workbench.test.tsx",
+        "tests/workbench.spec.ts"
+      ]
+    },
+    {
+      "id": "story-2-3-privacy-capacity",
+      "story": "2.3",
+      "status": "pass",
+      "owner": "automated",
+      "evidence": [
+        "src/test/fixtures/semantic.ts",
+        "src/core/session/session.test.ts",
+        "tests/workbench.spec.ts",
+        "deployment/static-delivery.json"
       ]
     }
   ]

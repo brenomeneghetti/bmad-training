@@ -3,6 +3,7 @@ import AxeBuilder from "@axe-core/playwright";
 
 import {
   createCapacityFixture,
+  removalFixtures,
   semanticFixture,
   structuredEditFixture,
 } from "../src/test/fixtures/semantic";
@@ -502,6 +503,99 @@ test("capacity view renders every row and stays usable at 320px", async ({ page 
     320,
   );
   await expect(lastKey).toHaveValue("last%2Fkey");
+
+  const removeLast = page.getByRole("button", {
+    name: /Remove Query Parameter at position 260 of 260/,
+  });
+  const removalDuration = await removeLast.evaluate(async (button) => {
+    const started = performance.now();
+    await new Promise<void>((resolve) => {
+      const observer = new MutationObserver(() => {
+        if (!document.getElementById((button as HTMLButtonElement).id)) {
+          observer.disconnect();
+          requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+        }
+      });
+      observer.observe(document.body, { childList: true, subtree: true });
+      (button as HTMLButtonElement).click();
+    });
+    return performance.now() - started;
+  });
+  expect(removalDuration).toBeLessThan(100);
+  await expect(page.locator("#managed-pieces > li")).toHaveCount(262);
+  await expect(page.getByRole("button", { name: /Remove Query Parameter/ })).toHaveCount(
+    259,
+  );
+  await expect(
+    page.getByLabel("Complete HTTP or HTTPS Absolute URL"),
+  ).not.toHaveValue(/last%2Fkey/);
+});
+
+test("removal preserves exact survivors, Search, focus, accessibility, and privacy", async ({
+  page,
+}) => {
+  await page.goto("/");
+  const requests: string[] = [];
+  page.on("request", (request) => requests.push(request.url()));
+  const fullUrl = page.getByLabel("Complete HTTP or HTTPS Absolute URL");
+  await fullUrl.fill(removalFixtures.pathAndDuplicates);
+  await page.getByRole("button", { name: "Apply URL" }).click();
+  const rows = page.locator("#managed-pieces > li");
+  const originalIds = await rows.evaluateAll((items) =>
+    items.map((item) => (item as HTMLElement).dataset.pieceId),
+  );
+  const search = page.getByLabel("Search Managed Pieces");
+  await search.fill("dup");
+  await expect(rows).toHaveCount(3);
+  await expect(page.getByRole("button", { name: /Remove Domain/ })).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: /Remove Query Parameter at position 1 of 3/ }),
+  ).toBeVisible();
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+
+  await page.getByRole("button", { name: /Remove Query Parameter at position 1 of 3/ }).click();
+  await expect(fullUrl).toHaveValue(
+    "https://example.com/a%2fb//tail/?dup=&dup=3#Frag%2f",
+  );
+  await expect(search).toHaveValue("dup");
+  await expect(rows).toHaveCount(2);
+  expect(
+    await rows.evaluateAll((items) =>
+      items.map((item) => (item as HTMLElement).dataset.pieceId),
+    ),
+  ).toEqual(originalIds.slice(-2));
+  const nextRemove = page.getByRole("button", {
+    name: /Remove Query Parameter at position 1 of 2/,
+  });
+  await expect(nextRemove).toBeFocused();
+  await expect(
+    page.getByRole("status").filter({
+      hasText: "Query Parameter 1 removed. Full URL and Structured View updated.",
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("textbox", {
+      name: "Value, Query Parameter 1 of 2, occurrence 1 of 2",
+    }),
+  ).toHaveValue("");
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+
+  await page.getByRole("button", { name: "Clear Search" }).click();
+  await page.getByRole("button", { name: /Remove Path Segment at position 2 of 4/ }).click();
+  await expect(fullUrl).toHaveValue(
+    "https://example.com/a%2fb/tail/?dup=&dup=3#Frag%2f",
+  );
+  await expect(
+    page.getByRole("button", { name: /Remove Path Segment at position 2 of 3/ }),
+  ).toBeFocused();
+  expect(requests).toEqual([]);
+  expect(
+    await page.evaluate(() => ({
+      local: localStorage.length,
+      session: sessionStorage.length,
+      cookies: document.cookie,
+    })),
+  ).toEqual({ local: 0, session: 0, cookies: "" });
 });
 
 test("initial and populated workbench pass automated accessibility checks", async ({

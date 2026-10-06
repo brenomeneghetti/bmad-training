@@ -7,6 +7,7 @@ import {
 import {
   editLosslessToken,
   parseLosslessUrl,
+  removeLosslessPiece,
   replaceLosslessDomain,
   serializeLosslessUrl,
 } from ".";
@@ -286,6 +287,157 @@ describe("lossless URL parser", () => {
     expect(edited.value.query[0]).toBe(parsed.value.query[0]);
     expect(edited.value.query[1]?.id).toBe(target.id);
     expect(edited.value.domainId).toBe(parsed.value.domainId);
+  });
+
+  it.each([
+    [0, "https://example.com//tail/?x=%2f#Frag%2f"],
+    [1, "https://example.com/a%2fb/tail/?x=%2f#Frag%2f"],
+    [2, "https://example.com/a%2fb//?x=%2f#Frag%2f"],
+    [3, "https://example.com/a%2fb//tail?x=%2f#Frag%2f"],
+  ])("removes only the addressed path segment at index %i", (index, expected) => {
+    const parsed = parseLosslessUrl(
+      "https://example.com/a%2fb//tail/?x=%2f#Frag%2f",
+    );
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    const target = parsed.value.path[index];
+    if (!target) throw new Error("Missing fixture path piece");
+
+    const removed = removeLosslessPiece(parsed.value, {
+      kind: "path",
+      pieceId: target.id,
+    });
+    expect(removed.ok).toBe(true);
+    if (!removed.ok) return;
+    expect(removed.value.serialized).toBe(expected);
+    expect(removed.value.path.map((piece) => piece.id)).toEqual(
+      parsed.value.path.filter((piece) => piece.id !== target.id).map((piece) => piece.id),
+    );
+    expect(removed.value.query).toBe(parsed.value.query);
+  });
+
+  it("removes the final non-empty path segment without retaining its delimiter", () => {
+    const parsed = parseLosslessUrl("https://example.com/one/two/three?x=1#Frag");
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    const target = parsed.value.path.at(-1);
+    if (!target) throw new Error("Missing final path piece");
+
+    const removed = removeLosslessPiece(parsed.value, {
+      kind: "path",
+      pieceId: target.id,
+    });
+    expect(removed.ok && removed.value.serialized).toBe(
+      "https://example.com/one/two?x=1#Frag",
+    );
+  });
+
+  it("removes the sole empty root path segment without changing authority", () => {
+    const parsed = parseLosslessUrl("https://example.com/");
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    const target = parsed.value.path[0];
+    if (!target) throw new Error("Missing root path segment");
+
+    const removed = removeLosslessPiece(parsed.value, {
+      kind: "path",
+      pieceId: target.id,
+    });
+
+    expect(removed.ok && removed.value.serialized).toBe("https://example.com");
+    if (removed.ok) expect(removed.value.path).toEqual([]);
+  });
+
+  it("removes one exact query entry and resets only the first surviving separator", () => {
+    const parsed = parseLosslessUrl(
+      "https://example.com/a?dup=1&dup=2&&flag=&absent#Frag%2f",
+    );
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    const target = parsed.value.query[0];
+    if (!target) throw new Error("Missing fixture query piece");
+
+    const removed = removeLosslessPiece(parsed.value, {
+      kind: "query",
+      pieceId: target.id,
+    });
+    expect(removed.ok).toBe(true);
+    if (!removed.ok) return;
+    expect(removed.value.serialized).toBe(
+      "https://example.com/a?dup=2&&flag=&absent#Frag%2f",
+    );
+    expect(removed.value.query.map((piece) => piece.id)).toEqual(
+      parsed.value.query.slice(1).map((piece) => piece.id),
+    );
+    expect(removed.value.path).toBe(parsed.value.path);
+  });
+
+  it.each([
+    [1, "https://example.com/a?dup=1&&flag=&absent#Frag%2f"],
+    [2, "https://example.com/a?dup=1&dup=2&flag=&absent#Frag%2f"],
+    [3, "https://example.com/a?dup=1&dup=2&&absent#Frag%2f"],
+    [4, "https://example.com/a?dup=1&dup=2&&flag=#Frag%2f"],
+  ])("removes query entry index %i without rewriting survivors", (index, expected) => {
+    const parsed = parseLosslessUrl(
+      "https://example.com/a?dup=1&dup=2&&flag=&absent#Frag%2f",
+    );
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    const target = parsed.value.query[index];
+    if (!target) throw new Error("Missing fixture query piece");
+
+    const removed = removeLosslessPiece(parsed.value, {
+      kind: "query",
+      pieceId: target.id,
+    });
+    expect(removed.ok).toBe(true);
+    if (!removed.ok) return;
+    expect(removed.value.serialized).toBe(expected);
+    expect(removed.value.query.map((piece) => piece.id)).toEqual(
+      parsed.value.query.filter((piece) => piece.id !== target.id).map((piece) => piece.id),
+    );
+  });
+
+  it("removes the query marker with the last query entry", () => {
+    const parsed = parseLosslessUrl("https://example.com/a?only=#Frag");
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    const target = parsed.value.query[0];
+    if (!target) throw new Error("Missing fixture query piece");
+
+    const removed = removeLosslessPiece(parsed.value, {
+      kind: "query",
+      pieceId: target.id,
+    });
+    expect(removed.ok && removed.value.serialized).toBe(
+      "https://example.com/a#Frag",
+    );
+    if (removed.ok) {
+      expect(removed.value.queryPresent).toBe(false);
+      expect(removed.value.query).toEqual([]);
+    }
+  });
+
+  it("rejects missing and wrong-kind removal IDs", () => {
+    const parsed = parseLosslessUrl("https://example.com/a?x=1");
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    const pathPiece = parsed.value.path[0];
+    const queryPiece = parsed.value.query[0];
+    if (!pathPiece || !queryPiece) throw new Error("Missing fixture pieces");
+
+    expect(
+      removeLosslessPiece(parsed.value, {
+        kind: "path",
+        pieceId: "missing" as typeof pathPiece.id,
+      }),
+    ).toMatchObject({ ok: false, error: { code: "missing-piece" } });
+    expect(
+      removeLosslessPiece(parsed.value, {
+        kind: "query",
+        pieceId: pathPiece.id,
+      }),
+    ).toMatchObject({ ok: false, error: { code: "missing-piece" } });
   });
 
   it("keeps an absent query value absent for an empty no-op", () => {

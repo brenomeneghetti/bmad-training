@@ -51,3 +51,7 @@ export interface DomainEdit {
   readonly field: DomainFieldKind;
   readonly value: string;
 }
+
+export type ManagedPieceRemoval =
+  | { readonly kind: "path"; readonly pieceId: PathPiece["id"] }
+  | { readonly kind: "query"; readonly pieceId: QueryPiece["id"] };

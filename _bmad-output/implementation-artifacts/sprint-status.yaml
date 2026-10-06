@@ -29,7 +29,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 # - Retrospective appends its action items to action_items; the status view surfaces open ones
 generated: 09-29-2026 20:17
-last_updated: 10-06-2026 11:47
+last_updated: 10-06-2026 12:38
 project: bmad-training
 project_key: NOKEY
 tracking_system: file-system
@@ -48,7 +48,7 @@ development_status:
   2-1-edit-path-and-query-text-without-rewriting-untouched-content: done
   # Independent review waived by user on 2026-10-06; automated verification passed.
   2-2-edit-either-internationalized-domain-form-safely: done
-  2-3-remove-one-specific-managed-piece: backlog
+  2-3-remove-one-specific-managed-piece: review
   2-4-add-a-query-parameter-from-either-list-boundary: backlog
   2-5-reorder-query-parameters-by-keyboard: backlog
   2-6-edit-the-full-url-as-one-continuous-intent: backlog

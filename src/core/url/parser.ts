@@ -8,7 +8,13 @@ import {
   type UrlProblem,
 } from "../contracts";
 import { convertDomain, convertDomainEdit } from "../idn";
-import type { DomainEdit, LosslessUrl, PathPiece, QueryPiece } from "./model";
+import type {
+  DomainEdit,
+  LosslessUrl,
+  ManagedPieceRemoval,
+  PathPiece,
+  QueryPiece,
+} from "./model";
 import { insertRawComponent, type ComponentProfile } from "./codec";
 import type { TokenEdit } from "./model";
 
@@ -314,6 +320,62 @@ export const editLosslessToken = (
       message: "This edit would exceed the 20,000-character URL limit.",
     });
   }
+  return ok({
+    ...nextWithoutSerialization,
+    serialized,
+    problems: scanMalformedPercent(serialized),
+  });
+};
+
+export const removeLosslessPiece = (
+  url: LosslessUrl,
+  removal: ManagedPieceRemoval,
+): Result<LosslessUrl, UrlProblem> => {
+  const index =
+    removal.kind === "path"
+      ? url.path.findIndex((piece) => piece.id === removal.pieceId)
+      : url.query.findIndex((piece) => piece.id === removal.pieceId);
+  if (index < 0) {
+    return err({
+      code: "missing-piece",
+      field: "component",
+      message:
+        "This URL piece is no longer available. Review the current URL and try again.",
+    });
+  }
+
+  const path =
+    removal.kind === "path"
+      ? url.path.filter((piece) => piece.id !== removal.pieceId)
+      : url.path;
+  const query =
+    removal.kind === "query"
+      ? url.query
+          .filter((piece) => piece.id !== removal.pieceId)
+          .map((piece, pieceIndex) =>
+            pieceIndex === 0 && piece.separatorBefore !== ""
+              ? { ...piece, separatorBefore: "" as const }
+              : piece,
+          )
+      : url.query;
+  const nextWithoutSerialization = {
+    ...url,
+    path,
+    pathRaw: path
+      .map((piece) => `${piece.separatorBefore}${piece.rawSegment}`)
+      .join(""),
+    queryPresent: removal.kind === "query" ? query.length > 0 : url.queryPresent,
+    query,
+    queryRaw: query
+      .map(
+        (piece) =>
+          `${piece.separatorBefore}${piece.rawKey}${
+            piece.equalsPresent ? `=${piece.rawValue}` : ""
+          }`,
+      )
+      .join(""),
+  };
+  const serialized = serializeParts(nextWithoutSerialization);
   return ok({
     ...nextWithoutSerialization,
     serialized,

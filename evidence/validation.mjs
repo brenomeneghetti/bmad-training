@@ -21,6 +21,10 @@ const requiredCells = new Map([
   ["story-2-2-accessibility-status", "2.2"],
   ["story-2-2-privacy", "2.2"],
   ["story-2-2-capacity", "2.2"],
+  ["story-2-3-identity-exact-removal", "2.3"],
+  ["story-2-3-guard-drafts-history", "2.3"],
+  ["story-2-3-accessibility-focus", "2.3"],
+  ["story-2-3-privacy-capacity", "2.3"],
 ]);
 
 const requiredCsp = new Map([

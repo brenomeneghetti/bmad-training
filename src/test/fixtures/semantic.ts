@@ -13,6 +13,17 @@ export const structuredEditExpected = {
     "https://User@example.com:044/a%2fb//tail?dup=1&dup=2&flag=&empty=#Frag%2f",
 } as const;
 
+export const removalFixtures = {
+  duplicateQuery:
+    "https://example.com/a?dup=1&dup=&dup=3#Frag%2f",
+  pathAndDuplicates:
+    "https://example.com/a%2fb//tail/?dup=1&dup=&dup=3#Frag%2f",
+  mixedQuery:
+    "https://example.com/a?dup=1&dup=2&&flag=&absent#Frag%2f",
+  clearSearchFallback: "https://example.com/a?example.com=1",
+  headingFallback: "https://example.com/a?needle=1&other=2",
+} as const;
+
 export const idnFixtures = [
   ["faß.de", "xn--fa-hia.de", "faß.de"],
   ["XN--FA-HIA.DE", "xn--fa-hia.de", "faß.de"],
