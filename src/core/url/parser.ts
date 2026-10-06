@@ -423,6 +423,59 @@ export const addLosslessQueryPiece = (
   });
 };
 
+export const moveLosslessQueryPiece = (
+  url: LosslessUrl,
+  pieceId: QueryPiece["id"],
+  direction: "up" | "down",
+): Result<LosslessUrl, UrlProblem> => {
+  const index = url.query.findIndex((piece) => piece.id === pieceId);
+  if (index < 0) {
+    return err({
+      code: "missing-piece",
+      field: "component",
+      message:
+        "This URL piece is no longer available. Review the current URL and try again.",
+    });
+  }
+
+  const neighborIndex = direction === "up" ? index - 1 : index + 1;
+  if (neighborIndex < 0 || neighborIndex >= url.query.length) {
+    return ok(url);
+  }
+
+  const query = url.query.slice();
+  [query[index], query[neighborIndex]] = [query[neighborIndex], query[index]];
+  const withSeparator = (position: number): QueryPiece => {
+    const piece = query[position]!;
+    const separatorBefore: QueryPiece["separatorBefore"] =
+      position === 0 ? "" : "&";
+    return piece.separatorBefore === separatorBefore
+      ? piece
+      : { ...piece, separatorBefore };
+  };
+  query[index] = withSeparator(index);
+  query[neighborIndex] = withSeparator(neighborIndex);
+
+  const nextWithoutSerialization = {
+    ...url,
+    query,
+    queryRaw: query
+      .map(
+        (piece) =>
+          `${piece.separatorBefore}${piece.rawKey}${
+            piece.equalsPresent ? `=${piece.rawValue}` : ""
+          }`,
+      )
+      .join(""),
+  };
+  const serialized = serializeParts(nextWithoutSerialization);
+  return ok({
+    ...nextWithoutSerialization,
+    serialized,
+    problems: scanMalformedPercent(serialized),
+  });
+};
+
 export const replaceLosslessDomain = (
   url: LosslessUrl,
   edit: DomainEdit,

@@ -5,7 +5,7 @@
   "evaluatorVersion": "1.0.0",
   "artifact": {
     "path": "dist",
-    "digest": "a7014dfa6b74b9e43a16f6abf8e90484050d878c16036379bdd49fed7bff0571",
+    "digest": "4409057915e138f47b930a642e511285eaf25d02e7936253730835a65abcf6bd",
     "delivery": "deployment/static-delivery.json"
   },
   "toolVersions": {
@@ -261,6 +261,47 @@
     {
       "id": "story-2-4-privacy-capacity",
       "story": "2.4",
+      "status": "pass",
+      "owner": "automated",
+      "evidence": [
+        "src/core/session/session.test.ts",
+        "tests/workbench.spec.ts",
+        "deployment/static-delivery.json"
+      ]
+    },
+    {
+      "id": "story-2-5-identity-adjacent-swap",
+      "story": "2.5",
+      "status": "pass",
+      "owner": "automated",
+      "evidence": [
+        "src/core/url/parser.test.ts",
+        "src/core/session/session.test.ts"
+      ]
+    },
+    {
+      "id": "story-2-5-atomic-history-guard",
+      "story": "2.5",
+      "status": "pass",
+      "owner": "automated",
+      "evidence": [
+        "src/core/session/session.test.ts",
+        "src/app/workbench/Workbench.test.tsx"
+      ]
+    },
+    {
+      "id": "story-2-5-accessibility-focus-boundary",
+      "story": "2.5",
+      "status": "pass",
+      "owner": "automated",
+      "evidence": [
+        "src/app/workbench/Workbench.test.tsx",
+        "tests/workbench.spec.ts"
+      ]
+    },
+    {
+      "id": "story-2-5-privacy-capacity",
+      "story": "2.5",
       "status": "pass",
       "owner": "automated",
       "evidence": [

@@ -200,6 +200,14 @@ h2 {
   justify-self: start;
 }
 
+.rowActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-block-start: 0.5rem;
+  justify-self: start;
+}
+
 .addAfterButton {
   margin-block-start: 1rem;
 }

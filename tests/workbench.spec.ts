@@ -699,6 +699,90 @@ test("Add Query Parameter remains reachable and performant at 250+ entries", asy
   await expect(page.locator("#managed-pieces > li")).toHaveCount(264);
 });
 
+test("reorders Query Parameters by keyboard and pointer activation, honoring boundaries, Search, duplicates, and capacity", async ({
+  page,
+}) => {
+  await page.goto("/");
+  const requests: string[] = [];
+  page.on("request", (request) => requests.push(request.url()));
+  const fullUrl = page.getByLabel("Complete HTTP or HTTPS Absolute URL");
+  await fullUrl.fill("https://example.com/a?dup=1&dup=2&z=3");
+  await page.getByRole("button", { name: "Apply URL" }).click();
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+
+  const firstUp = page.getByRole("button", {
+    name: /Move Query Parameter at position 1 of 3 up/,
+  });
+  const lastDown = page.getByRole("button", {
+    name: /Move Query Parameter at position 3 of 3 down/,
+  });
+  await expect(firstUp).toBeDisabled();
+  await expect(lastDown).toBeDisabled();
+
+  const middleDown = page.getByRole("button", {
+    name: /Move Query Parameter at position 2 of 3 down/,
+  });
+  await middleDown.focus();
+  await page.keyboard.press("Enter");
+  await expect(fullUrl).toHaveValue("https://example.com/a?dup=1&z=3&dup=2");
+  await expect(
+    page.getByRole("status").filter({ hasText: /moved from position 2 to position 3 of 3/ }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: /Move Query Parameter at position 3 of 3 up/ }),
+  ).toBeFocused();
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+
+  const search = page.getByLabel("Search Managed Pieces");
+  await search.fill("dup");
+  await expect(page.locator("#managed-pieces > li")).toHaveCount(2);
+  await page
+    .getByRole("button", { name: /Move Query Parameter at position 1 of 3 down/ })
+    .click();
+  await expect(fullUrl).toHaveValue("https://example.com/a?z=3&dup=1&dup=2");
+  await expect(search).toHaveValue("dup");
+
+  expect(requests).toEqual([]);
+  expect(
+    await page.evaluate(() => ({
+      local: localStorage.length,
+      session: sessionStorage.length,
+      cookies: document.cookie,
+    })),
+  ).toEqual({ local: 0, session: 0, cookies: "" });
+});
+
+test("reorders within a 250+ parameter list, keeping boundaries reachable and performant", async ({
+  page,
+}) => {
+  await page.goto("/");
+  const entries = Array.from(
+    { length: 260 },
+    (_, index) => `parameter-${index}=value-${index}`,
+  );
+  await page
+    .getByLabel("Complete HTTP or HTTPS Absolute URL")
+    .fill(`https://example.com/deep/path?${entries.join("&")}`);
+  await page.getByRole("button", { name: "Apply URL" }).click();
+  await expect(page.locator("#managed-pieces > li")).toHaveCount(263);
+
+  const moveDown = page.getByRole("button", {
+    name: /Move Query Parameter at position 101 of 260 down/,
+  });
+  await moveDown.scrollIntoViewIfNeeded();
+  const duration = await moveDown.evaluate(async (button) => {
+    const started = performance.now();
+    (button as HTMLButtonElement).click();
+    await new Promise<void>((resolve) =>
+      requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+    );
+    return performance.now() - started;
+  });
+  expect(duration).toBeLessThan(100);
+  const fullUrl = page.getByLabel("Complete HTTP or HTTPS Absolute URL");
+  await expect(fullUrl).toHaveValue(/parameter-101=value-101&parameter-100=value-100/);
+});
+
 test("initial and populated workbench pass automated accessibility checks", async ({
   page,
 }) => {

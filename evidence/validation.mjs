@@ -29,6 +29,10 @@ const requiredCells = new Map([
   ["story-2-4-atomic-history-guard", "2.4"],
   ["story-2-4-accessibility-focus-skip-link", "2.4"],
   ["story-2-4-privacy-capacity", "2.4"],
+  ["story-2-5-identity-adjacent-swap", "2.5"],
+  ["story-2-5-atomic-history-guard", "2.5"],
+  ["story-2-5-accessibility-focus-boundary", "2.5"],
+  ["story-2-5-privacy-capacity", "2.5"],
 ]);
 
 const requiredCsp = new Map([

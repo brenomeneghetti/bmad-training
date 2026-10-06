@@ -7,6 +7,7 @@ import {
 import {
   addLosslessQueryPiece,
   editLosslessToken,
+  moveLosslessQueryPiece,
   parseLosslessUrl,
   removeLosslessPiece,
   replaceLosslessDomain,
@@ -572,5 +573,111 @@ describe("lossless URL parser", () => {
     });
     expect(edited.ok).toBe(true);
     if (edited.ok) expect(edited.value.problems).toEqual([]);
+  });
+
+  it("swaps two adjacent query entries and recomputes only the affected separators", () => {
+    const parsed = parseLosslessUrl(
+      "https://example.com/a?dup=1&dup=2&&flag=&absent#Frag%2f",
+    );
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    const [first, second, third, fourth, fifth] = parsed.value.query;
+    if (!first || !second || !third || !fourth || !fifth) {
+      throw new Error("Missing fixture query pieces");
+    }
+
+    const moved = moveLosslessQueryPiece(parsed.value, second.id, "up");
+    expect(moved.ok).toBe(true);
+    if (!moved.ok) return;
+    expect(moved.value.serialized).toBe(
+      "https://example.com/a?dup=2&dup=1&&flag=&absent#Frag%2f",
+    );
+    expect(moved.value.query.map((piece) => piece.id)).toEqual([
+      second.id,
+      first.id,
+      third.id,
+      fourth.id,
+      fifth.id,
+    ]);
+    expect(moved.value.query[0]).toEqual({ ...second, separatorBefore: "" });
+    expect(moved.value.query[1]).toEqual({ ...first, separatorBefore: "&" });
+    expect(moved.value.query[2]).toBe(third);
+    expect(moved.value.query[3]).toBe(fourth);
+    expect(moved.value.query[4]).toBe(fifth);
+    expect(moved.value.path).toBe(parsed.value.path);
+  });
+
+  it("moves a non-boundary pair down without disturbing untouched entries", () => {
+    const parsed = parseLosslessUrl("https://example.com/a?a=1&b=2&c=3&d=4");
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    const [first, second, third, fourth] = parsed.value.query;
+    if (!first || !second || !third || !fourth) {
+      throw new Error("Missing fixture query pieces");
+    }
+
+    const moved = moveLosslessQueryPiece(parsed.value, second.id, "down");
+    expect(moved.ok).toBe(true);
+    if (!moved.ok) return;
+    expect(moved.value.serialized).toBe(
+      "https://example.com/a?a=1&c=3&b=2&d=4",
+    );
+    expect(moved.value.query[0]).toBe(first);
+    expect(moved.value.query[1]).toBe(third);
+    expect(moved.value.query[2]).toBe(second);
+    expect(moved.value.query[3]).toBe(fourth);
+  });
+
+  it("no-ops at the first-row up boundary and last-row down boundary", () => {
+    const parsed = parseLosslessUrl("https://example.com/a?a=1&b=2");
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    const [first, second] = parsed.value.query;
+    if (!first || !second) throw new Error("Missing fixture query pieces");
+
+    const movedUp = moveLosslessQueryPiece(parsed.value, first.id, "up");
+    expect(movedUp).toEqual({ ok: true, value: parsed.value });
+
+    const movedDown = moveLosslessQueryPiece(parsed.value, second.id, "down");
+    expect(movedDown).toEqual({ ok: true, value: parsed.value });
+  });
+
+  it("rejects a move for a piece ID that is no longer present", () => {
+    const parsed = parseLosslessUrl("https://example.com/a?x=1");
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    const target = parsed.value.query[0];
+    if (!target) throw new Error("Missing fixture query piece");
+
+    expect(
+      moveLosslessQueryPiece(
+        parsed.value,
+        "missing" as typeof target.id,
+        "up",
+      ),
+    ).toMatchObject({ ok: false, error: { code: "missing-piece" } });
+  });
+
+  it("preserves identity and byte-for-byte content at 250+ entry capacity within 100 ms", () => {
+    const parsed = parseLosslessUrl(createCapacityFixture());
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    expect(parsed.value.query.length).toBeGreaterThanOrEqual(250);
+    const target = parsed.value.query[100];
+    if (!target) throw new Error("Missing fixture query piece");
+
+    const start = performance.now();
+    const moved = moveLosslessQueryPiece(parsed.value, target.id, "down");
+    const elapsed = performance.now() - start;
+    expect(moved.ok).toBe(true);
+    expect(elapsed).toBeLessThan(100);
+    if (!moved.ok) return;
+    expect(moved.value.query).toHaveLength(parsed.value.query.length);
+    expect(new Set(moved.value.query.map((piece) => piece.id)).size).toBe(
+      parsed.value.query.length,
+    );
+    expect(moved.value.query[100]).toEqual(parsed.value.query[101]);
+    expect(moved.value.query[101]?.rawKey).toBe(target.rawKey);
+    expect(moved.value.query[101]?.rawValue).toBe(target.rawValue);
   });
 });

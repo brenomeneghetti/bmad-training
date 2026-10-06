@@ -2,6 +2,7 @@ import { createIdAllocator, type UrlProblem } from "../contracts";
 import {
   addLosslessQueryPiece,
   editLosslessToken,
+  moveLosslessQueryPiece,
   parseLosslessUrl,
   removeLosslessPiece,
   replaceLosslessDomain,
@@ -9,6 +10,7 @@ import {
   type EditableFieldKind,
   type LosslessUrl,
   type ManagedPieceRemoval,
+  type QueryPiece,
   type TokenEdit,
 } from "../url";
 
@@ -34,7 +36,12 @@ export interface MutationEntry {
   readonly before: LosslessUrl;
   readonly after: LosslessUrl;
   readonly pieceId: StructuredCommand["pieceId"];
-  readonly field: EditableFieldKind | "remove-path" | "remove-query" | "add-query";
+  readonly field:
+    | EditableFieldKind
+    | "remove-path"
+    | "remove-query"
+    | "add-query"
+    | "reorder-query";
 }
 
 export type SessionPhase =
@@ -75,7 +82,12 @@ export type SessionAction =
     }
   | { readonly type: "structuredEdit"; readonly command: StructuredCommand }
   | { readonly type: "removePiece"; readonly removal: ManagedPieceRemoval }
-  | { readonly type: "addQueryPiece" };
+  | { readonly type: "addQueryPiece" }
+  | {
+      readonly type: "moveQueryPiece";
+      readonly pieceId: QueryPiece["id"];
+      readonly direction: "up" | "down";
+    };
 
 export const initialSessionState: SessionState = {
   phase: "no-session",
@@ -417,6 +429,75 @@ export const sessionReducer = (
             after: result.value,
             pieceId,
             field: "add-query",
+          },
+        ],
+      };
+    }
+    case "moveQueryPiece": {
+      if (!state.snapshot) return state;
+      if (
+        state.phase !== "active" ||
+        state.input !== state.snapshot.serialized
+      ) {
+        return {
+          ...state,
+          structuredProblem: {
+            code: "structured-edit-unavailable",
+            field: "component",
+            message:
+              "Apply the current Full URL text before editing structured fields.",
+          },
+          structuredSuccess: null,
+        };
+      }
+
+      const sourceIndex = state.snapshot.query.findIndex(
+        (piece) => piece.id === action.pieceId,
+      );
+      const result = moveLosslessQueryPiece(
+        state.snapshot,
+        action.pieceId,
+        action.direction,
+      );
+      if (!result.ok) {
+        return {
+          ...state,
+          structuredProblem: result.error,
+          structuredSuccess: null,
+        };
+      }
+      if (result.value === state.snapshot) {
+        return state;
+      }
+
+      const destinationIndex =
+        action.direction === "up" ? sourceIndex - 1 : sourceIndex + 1;
+      const moved = result.value.query[destinationIndex];
+      const total = result.value.query.length;
+      const identity =
+        moved && moved.equalsPresent
+          ? `${moved.rawKey}=${moved.rawValue}`
+          : (moved?.rawKey ?? "");
+
+      return {
+        ...state,
+        phase: "active",
+        input: result.value.serialized,
+        snapshot: result.value,
+        lastValidSnapshot: result.value,
+        problem: null,
+        structuredProblem: null,
+        structuredSuccess: `Query Parameter "${identity}" moved from position ${
+          sourceIndex + 1
+        } to position ${destinationIndex + 1} of ${total}. Full URL and Structured View updated.`,
+        revision: state.revision + 1,
+        history: [
+          ...state.history,
+          {
+            before: state.snapshot,
+            after: result.value,
+            pieceId: action.pieceId,
+            field: "reorder-query",
           },
         ],
       };

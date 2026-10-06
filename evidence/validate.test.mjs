@@ -82,6 +82,10 @@ const createFixture = async (context) => {
       ["story-2-4-atomic-history-guard", "2.4"],
       ["story-2-4-accessibility-focus-skip-link", "2.4"],
       ["story-2-4-privacy-capacity", "2.4"],
+      ["story-2-5-identity-adjacent-swap", "2.5"],
+      ["story-2-5-atomic-history-guard", "2.5"],
+      ["story-2-5-accessibility-focus-boundary", "2.5"],
+      ["story-2-5-privacy-capacity", "2.5"],
     ].map(([id, story]) => ({
       id,
       story,
@@ -103,7 +107,7 @@ const writeManifest = (root, manifest) =>
 
 test("accepts a complete valid evidence fixture", async (context) => {
   const { root } = await createFixture(context);
-  assert.equal((await validateEvidence(root)).cellCount, 24);
+  assert.equal((await validateEvidence(root)).cellCount, 28);
 });
 
 test("requires every Story 2.4 cell to remain mandatory and passing", async (context) => {
@@ -125,6 +129,33 @@ test("requires every Story 2.4 cell to remain mandatory and passing", async (con
     (cell) => cell.id === "story-2-4-accessibility-focus-skip-link",
   );
   if (!statusCell) throw new Error("Missing Story 2.4 accessibility cell");
+  statusCell.status = "incomplete";
+  await writeManifest(statusFixture.root, statusFixture.manifest);
+  await assert.rejects(
+    validateEvidence(statusFixture.root),
+    /Invalid evidence manifest/,
+  );
+});
+
+test("requires every Story 2.5 cell to remain mandatory and passing", async (context) => {
+  const missingFixture = await createFixture(context);
+  missingFixture.manifest.cells.splice(
+    missingFixture.manifest.cells.findIndex(
+      (cell) => cell.id === "story-2-5-accessibility-focus-boundary",
+    ),
+    1,
+  );
+  await writeManifest(missingFixture.root, missingFixture.manifest);
+  await assert.rejects(
+    validateEvidence(missingFixture.root),
+    /Invalid evidence manifest/,
+  );
+
+  const statusFixture = await createFixture(context);
+  const statusCell = statusFixture.manifest.cells.find(
+    (cell) => cell.id === "story-2-5-accessibility-focus-boundary",
+  );
+  if (!statusCell) throw new Error("Missing Story 2.5 accessibility cell");
   statusCell.status = "incomplete";
   await writeManifest(statusFixture.root, statusFixture.manifest);
   await assert.rejects(

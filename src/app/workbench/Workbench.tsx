@@ -13,7 +13,7 @@ import {
   prepareParse,
   sessionReducer,
 } from "../../core/session";
-import type { LosslessUrl, ManagedPieceRemoval } from "../../core/url";
+import type { LosslessUrl, ManagedPieceRemoval, QueryPiece } from "../../core/url";
 import { ValidationMessage } from "../feedback/ValidationMessage";
 import { StructuredView } from "../pieces/StructuredView";
 import { buildManagedPieces, filterManagedPieces } from "../pieces/search";
@@ -41,6 +41,12 @@ export function Workbench() {
     readonly pieceId: string;
     readonly successMessage: string;
     readonly shouldClearSearch: boolean;
+  } | null>(null);
+  const pendingMoveFocus = useRef<{
+    readonly revision: number;
+    readonly pieceId: string;
+    readonly direction: "up" | "down";
+    readonly successMessage: string;
   } | null>(null);
   const pendingFocusAfterSearchClear = useRef<string | null>(null);
   const announcementId = useRef(0);
@@ -108,6 +114,34 @@ export function Workbench() {
         true,
       );
       pendingFocusAfterSearchClear.current = pending.pieceId;
+      return;
+    }
+    document.getElementById(`query-key-${pending.pieceId}`)?.focus();
+  }, [allPieces, state]);
+
+  useLayoutEffect(() => {
+    const pending = pendingMoveFocus.current;
+    if (!pending) return;
+    pendingMoveFocus.current = null;
+    if (
+      state.revision <= pending.revision ||
+      state.structuredSuccess !== pending.successMessage
+    ) {
+      return;
+    }
+    const activatedButton = document.getElementById(
+      `move-${pending.direction}-${pending.pieceId}`,
+    );
+    if (activatedButton instanceof HTMLButtonElement && !activatedButton.disabled) {
+      activatedButton.focus();
+      return;
+    }
+    const oppositeDirection = pending.direction === "up" ? "down" : "up";
+    const oppositeButton = document.getElementById(
+      `move-${oppositeDirection}-${pending.pieceId}`,
+    );
+    if (oppositeButton instanceof HTMLButtonElement && !oppositeButton.disabled) {
+      oppositeButton.focus();
       return;
     }
     document.getElementById(`query-key-${pending.pieceId}`)?.focus();
@@ -223,6 +257,32 @@ export function Workbench() {
     dispatch({ type: "addQueryPiece" });
   };
 
+  const moveQueryPiece = (pieceId: QueryPiece["id"], direction: "up" | "down") => {
+    const target = allPieces.find(
+      (piece) => piece.id === pieceId && piece.kind === "query",
+    );
+    if (target && target.kind === "query") {
+      const destinationPosition =
+        direction === "up" ? target.sourcePosition - 1 : target.sourcePosition + 1;
+      if (destinationPosition >= 1 && destinationPosition <= target.sourceTotal) {
+        const identity = target.piece.equalsPresent
+          ? `${target.piece.rawKey}=${target.piece.rawValue}`
+          : target.piece.rawKey;
+        pendingMoveFocus.current = {
+          revision: state.revision,
+          pieceId,
+          direction,
+          successMessage: `Query Parameter "${identity}" moved from position ${target.sourcePosition} to position ${destinationPosition} of ${target.sourceTotal}. Full URL and Structured View updated.`,
+        };
+      } else {
+        pendingMoveFocus.current = null;
+      }
+    } else {
+      pendingMoveFocus.current = null;
+    }
+    dispatch({ type: "moveQueryPiece", pieceId, direction });
+  };
+
   useEffect(() => {
     if (!state.snapshot) return;
     if (searchTerm === "") {
@@ -331,7 +391,7 @@ export function Workbench() {
           Add Query Parameter
         </button>
         <p id="actions-note">
-          Undo, Copy, and Reorder are not available yet.
+          Undo and Copy are not available yet.
         </p>
         <div role="status" aria-live="polite" aria-atomic="true">
           {state.phase === "active"
@@ -368,6 +428,7 @@ export function Workbench() {
         }}
         onRemovePiece={removePiece}
         onAddQueryPiece={addQueryPiece}
+        onMoveQueryPiece={moveQueryPiece}
         structuredProblem={state.structuredProblem}
         structuredSuccess={state.structuredSuccess}
         editorsDisabled={editorsDisabled}

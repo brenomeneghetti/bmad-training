@@ -1010,5 +1010,156 @@ describe("URL Workbench", () => {
     ).toBe(true);
     expect(screen.getAllByRole("listitem")).toHaveLength(3);
   });
+
+  it("exposes boundary-disabled Move Up/Move Down controls on every row", async () => {
+    const user = userEvent.setup();
+    render(<Workbench />);
+    const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
+    await user.type(editor, "https://example.com/a?x=1&y=2&z=3");
+    await user.click(screen.getByRole("button", { name: "Apply URL" }));
+
+    const firstUp = screen.getByRole("button", {
+      name: /Move Query Parameter at position 1 of 3 up/,
+    });
+    const firstDown = screen.getByRole("button", {
+      name: /Move Query Parameter at position 1 of 3 down/,
+    });
+    const lastUp = screen.getByRole("button", {
+      name: /Move Query Parameter at position 3 of 3 up/,
+    });
+    const lastDown = screen.getByRole("button", {
+      name: /Move Query Parameter at position 3 of 3 down/,
+    });
+
+    expect(firstUp).toBeDisabled();
+    expect(firstDown).not.toBeDisabled();
+    expect(lastUp).not.toBeDisabled();
+    expect(lastDown).toBeDisabled();
+  });
+
+  it("moves a middle row down by one source position, keeping focus and announcing the outcome", async () => {
+    const user = userEvent.setup();
+    render(<Workbench />);
+    const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
+    await user.type(editor, "https://example.com/a?x=1&y=2&z=3");
+    await user.click(screen.getByRole("button", { name: "Apply URL" }));
+
+    const moveDown = screen.getByRole("button", {
+      name: /Move Query Parameter at position 2 of 3 down/,
+    });
+    await user.click(moveDown);
+
+    expect(editor).toHaveValue("https://example.com/a?x=1&z=3&y=2");
+    expect(
+      screen.getByRole("button", {
+        name: /Move Query Parameter at position 3 of 3 up/,
+      }),
+    ).toHaveFocus();
+    expect(
+      screen.getByText(/"y=2" moved from position 2 to position 3 of 3/),
+    ).toHaveAttribute("role", "status");
+  });
+
+  it("moves focus to the enabled opposite control when a move lands on a boundary", async () => {
+    const user = userEvent.setup();
+    render(<Workbench />);
+    const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
+    await user.type(editor, "https://example.com/a?x=1&y=2&z=3");
+    await user.click(screen.getByRole("button", { name: "Apply URL" }));
+
+    const moveUp = screen.getByRole("button", {
+      name: /Move Query Parameter at position 2 of 3 up/,
+    });
+    await user.click(moveUp);
+
+    expect(editor).toHaveValue("https://example.com/a?y=2&x=1&z=3");
+    expect(
+      screen.getByRole("button", {
+        name: /Move Query Parameter at position 1 of 3 down/,
+      }),
+    ).toHaveFocus();
+  });
+
+  it("resolves moves against full source order while Search filters rows", async () => {
+    const user = userEvent.setup();
+    render(<Workbench />);
+    const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
+    await user.type(editor, "https://example.com/a?x=1&needle=2&z=3");
+    await user.click(screen.getByRole("button", { name: "Apply URL" }));
+    const search = screen.getByLabelText("Search Managed Pieces");
+    fireEvent.change(search, { target: { value: "needle" } });
+    expect(screen.getAllByRole("listitem")).toHaveLength(1);
+
+    await user.click(
+      screen.getByRole("button", {
+        name: /Move Query Parameter at position 2 of 3 down/,
+      }),
+    );
+
+    expect(editor).toHaveValue("https://example.com/a?x=1&z=3&needle=2");
+    expect(search).toHaveValue("needle");
+    expect(
+      screen.getByRole("button", {
+        name: /Move Query Parameter at position 3 of 3 up/,
+      }),
+    ).toHaveFocus();
+  });
+
+  it("does not commit or move focus on pointer-down and pointer cancellation for Move", () => {
+    render(<Workbench />);
+    const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
+    fireEvent.change(editor, { target: { value: "https://example.com/a?x=1&y=2" } });
+    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
+    const search = screen.getByLabelText("Search Managed Pieces");
+    search.focus();
+    const moveDown = screen.getByRole("button", {
+      name: /Move Query Parameter at position 1 of 2 down/,
+    });
+
+    fireEvent.pointerDown(moveDown);
+    expect(search).toHaveFocus();
+    fireEvent.pointerCancel(moveDown);
+
+    expect(search).toHaveFocus();
+    expect(editor).toHaveValue("https://example.com/a?x=1&y=2");
+    expect(screen.queryByText(/moved from position/)).toBeNull();
+  });
+
+  it("rejects Move while Full URL text is unapplied, producing no mutation, history, or focus change", async () => {
+    const user = userEvent.setup();
+    render(<Workbench />);
+    const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
+    fireEvent.change(editor, { target: { value: "https://example.com/a?x=1&y=2" } });
+    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
+    await user.type(editor, "&draft");
+
+    const moveButtons = screen.getAllByRole("button", { name: /Move Query Parameter/ });
+    expect(moveButtons.every((button) => (button as HTMLButtonElement).disabled)).toBe(
+      true,
+    );
+    expect(editor).toHaveValue("https://example.com/a?x=1&y=2&draft");
+  });
+
+  it("moves within a 250+ parameter list, preserving correctness at capacity", async () => {
+    render(<Workbench />);
+    const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
+    const entries = Array.from(
+      { length: 260 },
+      (_, index) => `parameter-${index}=value-${index}`,
+    );
+    fireEvent.change(editor, {
+      target: { value: `https://example.com/deep/path?${entries.join("&")}` },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
+
+    const moveDown = screen.getByRole("button", {
+      name: /Move Query Parameter at position 101 of 260 down/,
+    });
+    fireEvent.click(moveDown);
+    expect((editor as HTMLTextAreaElement).value).toContain(
+      "parameter-101=value-101&parameter-100=value-100",
+    );
+  }, 20_000);
 });
+
 

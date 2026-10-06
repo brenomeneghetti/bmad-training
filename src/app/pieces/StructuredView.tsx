@@ -1,4 +1,8 @@
-import type { LosslessUrl, ManagedPieceRemoval } from "../../core/url";
+import type {
+  LosslessUrl,
+  ManagedPieceRemoval,
+  QueryPiece,
+} from "../../core/url";
 import type {
   ChangeEvent,
   ClipboardEvent,
@@ -31,6 +35,10 @@ interface StructuredViewProps {
   readonly onStructuredEdit: (command: StructuredCommand) => void;
   readonly onRemovePiece: (removal: ManagedPieceRemoval) => void;
   readonly onAddQueryPiece: () => void;
+  readonly onMoveQueryPiece: (
+    pieceId: QueryPiece["id"],
+    direction: "up" | "down",
+  ) => void;
   readonly structuredProblem: UrlProblem | null;
   readonly structuredSuccess: string | null;
   readonly editorsDisabled: boolean;
@@ -556,6 +564,7 @@ export function StructuredView({
   onStructuredEdit,
   onRemovePiece,
   onAddQueryPiece,
+  onMoveQueryPiece,
   structuredProblem,
   structuredSuccess,
   editorsDisabled,
@@ -784,19 +793,44 @@ export function StructuredView({
                     onEdit={onStructuredEdit}
                     disabled={editorsDisabled}
                   />
-                  <button
-                    id={`remove-${managedPiece.id}`}
-                    className={styles.removeButton}
-                    type="button"
-                    aria-label={`Remove Query Parameter at position ${managedPiece.sourcePosition} of ${managedPiece.sourceTotal}, piece ${managedPiece.id}`}
-                    disabled={editorsDisabled}
-                    onPointerDown={(event) => event.preventDefault()}
-                    onClick={() =>
-                      onRemovePiece({ kind: "query", pieceId: managedPiece.id })
-                    }
-                  >
-                    Remove
-                  </button>
+                  <div className={styles.rowActions}>
+                    <button
+                      id={`move-up-${managedPiece.id}`}
+                      type="button"
+                      aria-label={`Move Query Parameter at position ${managedPiece.sourcePosition} of ${managedPiece.sourceTotal} up, piece ${managedPiece.id}`}
+                      disabled={editorsDisabled || managedPiece.sourcePosition === 1}
+                      onPointerDown={(event) => event.preventDefault()}
+                      onClick={() => onMoveQueryPiece(managedPiece.id, "up")}
+                    >
+                      Move Up
+                    </button>
+                    <button
+                      id={`move-down-${managedPiece.id}`}
+                      type="button"
+                      aria-label={`Move Query Parameter at position ${managedPiece.sourcePosition} of ${managedPiece.sourceTotal} down, piece ${managedPiece.id}`}
+                      disabled={
+                        editorsDisabled ||
+                        managedPiece.sourcePosition === managedPiece.sourceTotal
+                      }
+                      onPointerDown={(event) => event.preventDefault()}
+                      onClick={() => onMoveQueryPiece(managedPiece.id, "down")}
+                    >
+                      Move Down
+                    </button>
+                    <button
+                      id={`remove-${managedPiece.id}`}
+                      className={styles.removeButton}
+                      type="button"
+                      aria-label={`Remove Query Parameter at position ${managedPiece.sourcePosition} of ${managedPiece.sourceTotal}, piece ${managedPiece.id}`}
+                      disabled={editorsDisabled}
+                      onPointerDown={(event) => event.preventDefault()}
+                      onClick={() =>
+                        onRemovePiece({ kind: "query", pieceId: managedPiece.id })
+                      }
+                    >
+                      Remove
+                    </button>
+                  </div>
                 </li>
               );
               })}

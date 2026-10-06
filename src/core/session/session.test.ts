@@ -1070,4 +1070,141 @@ describe("session authority", () => {
     expect(edited.snapshot?.query).toHaveLength(260);
     expect(edited.snapshot?.query[259]?.rawValue.startsWith("y")).toBe(true);
   });
+
+  it("swaps a Query Parameter with its next neighbor and records one history entry", () => {
+    const active = apply(
+      initialSessionState,
+      "https://example.com/a?x=1&y=2&z=3",
+    );
+    const target = active.snapshot?.query[1];
+    if (!target) throw new Error("Missing fixture query piece");
+
+    const moved = sessionReducer(active, {
+      type: "moveQueryPiece",
+      pieceId: target.id,
+      direction: "down",
+    });
+
+    expect(moved.input).toBe("https://example.com/a?x=1&z=3&y=2");
+    expect(moved.snapshot).toBe(moved.lastValidSnapshot);
+    expect(moved.snapshot?.query.map((piece) => piece.id)).toEqual([
+      active.snapshot?.query[0]?.id,
+      active.snapshot?.query[2]?.id,
+      target.id,
+    ]);
+    expect(moved.history).toHaveLength(1);
+    expect(moved.history[0]).toEqual({
+      before: active.snapshot,
+      after: moved.snapshot,
+      pieceId: target.id,
+      field: "reorder-query",
+    });
+    expect(moved.revision).toBe(active.revision + 1);
+    expect(moved.structuredSuccess).toContain('"y=2" moved from position 2 to position 3 of 3');
+  });
+
+  it("swaps a Query Parameter with its previous neighbor", () => {
+    const active = apply(
+      initialSessionState,
+      "https://example.com/a?x=1&y=2&z=3",
+    );
+    const target = active.snapshot?.query[2];
+    if (!target) throw new Error("Missing fixture query piece");
+
+    const moved = sessionReducer(active, {
+      type: "moveQueryPiece",
+      pieceId: target.id,
+      direction: "up",
+    });
+
+    expect(moved.input).toBe("https://example.com/a?x=1&z=3&y=2");
+    expect(moved.structuredSuccess).toContain('"z=3" moved from position 3 to position 2 of 3');
+  });
+
+  it("creates no mutation, history, or announcement for a boundary no-op", () => {
+    const active = apply(
+      initialSessionState,
+      "https://example.com/a?x=1&y=2",
+    );
+    const first = active.snapshot?.query[0];
+    const last = active.snapshot?.query[1];
+    if (!first || !last) throw new Error("Missing fixture query pieces");
+
+    const upAtTop = sessionReducer(active, {
+      type: "moveQueryPiece",
+      pieceId: first.id,
+      direction: "up",
+    });
+    expect(upAtTop).toBe(active);
+
+    const downAtBottom = sessionReducer(active, {
+      type: "moveQueryPiece",
+      pieceId: last.id,
+      direction: "down",
+    });
+    expect(downAtBottom).toBe(active);
+  });
+
+  it("rejects a move while Full URL text is unapplied, stale, or still parsing", () => {
+    const active = apply(initialSessionState, "https://example.com/a?x=1&y=2");
+    const target = active.snapshot?.query[0];
+    if (!target) throw new Error("Missing fixture query piece");
+
+    const editing = sessionReducer(active, {
+      type: "inputChanged",
+      value: "https://example.com/a?x=1&y=draft",
+    });
+    const unavailable = sessionReducer(editing, {
+      type: "moveQueryPiece",
+      pieceId: target.id,
+      direction: "down",
+    });
+    expect(unavailable.snapshot).toBe(active.snapshot);
+    expect(unavailable.history).toBe(active.history);
+    expect(unavailable.structuredSuccess).toBeNull();
+    expect(unavailable.structuredProblem?.code).toBe(
+      "structured-edit-unavailable",
+    );
+
+    const stale = sessionReducer(active, {
+      type: "moveQueryPiece",
+      pieceId: "missing" as typeof target.id,
+      direction: "down",
+    });
+    expect(stale.snapshot).toBe(active.snapshot);
+    expect(stale.history).toBe(active.history);
+    expect(stale.structuredSuccess).toBeNull();
+    expect(stale.structuredProblem?.code).toBe("missing-piece");
+
+    const changed = sessionReducer(active, {
+      type: "inputChanged",
+      value: "https://example.com/b?x=1&y=2",
+    });
+    const parse = prepareParse(changed);
+    const parsing = sessionReducer(changed, parse.start);
+    const rejected = sessionReducer(parsing, {
+      type: "moveQueryPiece",
+      pieceId: target.id,
+      direction: "down",
+    });
+    expect(rejected.phase).toBe("parsing");
+    expect(rejected.snapshot).toBe(active.snapshot);
+    expect(rejected.history).toBe(active.history);
+    expect(rejected.structuredSuccess).toBeNull();
+  });
+
+  it("moves within a 250+ parameter URL within the local response target", () => {
+    const active = apply(initialSessionState, createCapacityFixture());
+    const target = active.snapshot?.query[100];
+    if (!target) throw new Error("Missing capacity target");
+    const start = performance.now();
+    const moved = sessionReducer(active, {
+      type: "moveQueryPiece",
+      pieceId: target.id,
+      direction: "down",
+    });
+    expect(performance.now() - start).toBeLessThan(100);
+    expect(moved.snapshot?.query).toHaveLength(260);
+    expect(moved.snapshot?.query[101]?.id).toBe(target.id);
+  });
 });
