@@ -5,6 +5,7 @@ import {
   unsupportedFixtures,
 } from "../../test/fixtures/semantic";
 import {
+  addLosslessQueryPiece,
   editLosslessToken,
   parseLosslessUrl,
   removeLosslessPiece,
@@ -438,6 +439,86 @@ describe("lossless URL parser", () => {
         pieceId: pathPiece.id,
       }),
     ).toMatchObject({ ok: false, error: { code: "missing-piece" } });
+  });
+
+  it("appends an empty Query Parameter with a `?` marker when none is present", () => {
+    const parsed = parseLosslessUrl("https://example.com/a");
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+
+    const added = addLosslessQueryPiece(
+      parsed.value,
+      "piece-new" as (typeof parsed.value.query)[number]["id"],
+    );
+    expect(added.ok).toBe(true);
+    if (!added.ok) return;
+    expect(added.value.serialized).toBe("https://example.com/a?");
+    expect(added.value.queryPresent).toBe(true);
+    expect(added.value.query).toEqual([
+      {
+        id: "piece-new",
+        separatorBefore: "",
+        rawKey: "",
+        equalsPresent: false,
+        rawValue: "",
+      },
+    ]);
+  });
+
+  it("reuses an existing empty `?` marker when appending", () => {
+    const parsed = parseLosslessUrl("https://example.com/a?");
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+
+    const added = addLosslessQueryPiece(
+      parsed.value,
+      "piece-new" as (typeof parsed.value.query)[number]["id"],
+    );
+    expect(added.ok).toBe(true);
+    if (!added.ok) return;
+    expect(added.value.serialized).toBe("https://example.com/a?");
+    expect(added.value.query).toHaveLength(1);
+    expect(added.value.query[0]?.separatorBefore).toBe("");
+  });
+
+  it("appends after existing Query Parameters with an `&` separator and preserves identity", () => {
+    const parsed = parseLosslessUrl("https://example.com/a?x=1");
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    const existing = parsed.value.query[0];
+    if (!existing) throw new Error("Missing fixture query piece");
+
+    const added = addLosslessQueryPiece(
+      parsed.value,
+      "piece-new" as typeof existing.id,
+    );
+    expect(added.ok).toBe(true);
+    if (!added.ok) return;
+    expect(added.value.serialized).toBe("https://example.com/a?x=1&");
+    expect(added.value.query[0]).toBe(existing);
+    expect(added.value.query[1]).toEqual({
+      id: "piece-new",
+      separatorBefore: "&",
+      rawKey: "",
+      equalsPresent: false,
+      rawValue: "",
+    });
+    expect(added.value.path).toBe(parsed.value.path);
+  });
+
+  it("rejects an append that would exceed the 20,000-character URL limit", () => {
+    const parsed = parseLosslessUrl(createCapacityFixture());
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+
+    const added = addLosslessQueryPiece(
+      parsed.value,
+      "piece-new" as (typeof parsed.value.query)[number]["id"],
+    );
+    expect(added).toMatchObject({
+      ok: false,
+      error: { code: "url-capacity-exceeded" },
+    });
   });
 
   it("keeps an absent query value absent for an empty no-op", () => {

@@ -598,6 +598,107 @@ test("removal preserves exact survivors, Search, focus, accessibility, and priva
   ).toEqual({ local: 0, session: 0, cookies: "" });
 });
 
+test("Add Query Parameter appends from either control, synchronizes Search, keeps focus, and stays private at capacity", async ({
+  page,
+}) => {
+  await page.goto("/");
+  const requests: string[] = [];
+  page.on("request", (request) => requests.push(request.url()));
+  const fullUrl = page.getByLabel("Complete HTTP or HTTPS Absolute URL");
+  await fullUrl.fill("https://example.com/a");
+  await page.getByRole("button", { name: "Apply URL" }).click();
+  await expect(
+    page.getByRole("link", { name: "Skip to Add Query Parameter" }),
+  ).toHaveAttribute("href", "#add-query-after");
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+
+  const addBefore = page.locator("#add-query-before");
+  const addAfter = page.locator("#add-query-after");
+  const rows = page.locator("#managed-pieces > li");
+  await expect(rows).toHaveCount(2);
+
+  await addBefore.click();
+  await expect(fullUrl).toHaveValue("https://example.com/a?");
+  await expect(rows).toHaveCount(3);
+  await expect(
+    page.getByRole("textbox", { name: /^Key, Query Parameter 1 of 1/ }),
+  ).toBeFocused();
+  await expect(
+    page.getByRole("status").filter({
+      hasText: "Query Parameter 1 added. Full URL and Structured View updated.",
+    }),
+  ).toBeVisible();
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+
+  await page.keyboard.type("newKey");
+  await expect(fullUrl).toHaveValue("https://example.com/a?newKey");
+
+  await addAfter.click();
+  await expect(fullUrl).toHaveValue("https://example.com/a?newKey&");
+  await expect(rows).toHaveCount(4);
+  await expect(
+    page.getByRole("textbox", { name: /^Key, Query Parameter 2 of 2/ }),
+  ).toBeFocused();
+
+  const search = page.getByLabel("Search Managed Pieces");
+  await search.fill("newKey");
+  await expect(rows).toHaveCount(1);
+  await addAfter.click();
+  await expect(search).toHaveValue("");
+  await expect(rows).toHaveCount(5);
+  await expect(
+    page.getByRole("textbox", { name: /^Key, Query Parameter 3 of 3/ }),
+  ).toBeFocused();
+
+  await page.keyboard.press("Tab");
+  await addBefore.focus();
+  await page.keyboard.press("Enter");
+  await expect(rows).toHaveCount(6);
+
+  expect(requests).toEqual([]);
+  expect(
+    await page.evaluate(() => ({
+      local: localStorage.length,
+      session: sessionStorage.length,
+      cookies: document.cookie,
+    })),
+  ).toEqual({ local: 0, session: 0, cookies: "" });
+});
+
+test("Add Query Parameter remains reachable and performant at 250+ entries", async ({
+  page,
+}) => {
+  await page.goto("/");
+  const entries = Array.from(
+    { length: 260 },
+    (_, index) => `parameter-${index}=value-${index}`,
+  );
+  await page
+    .getByLabel("Complete HTTP or HTTPS Absolute URL")
+    .fill(`https://example.com/deep/path?${entries.join("&")}`);
+  await page.getByRole("button", { name: "Apply URL" }).click();
+  await expect(page.locator("#managed-pieces > li")).toHaveCount(263);
+
+  const addAfter = page.locator("#add-query-after");
+  await addAfter.scrollIntoViewIfNeeded();
+  const duration = await addAfter.evaluate(async (button) => {
+    const started = performance.now();
+    await new Promise<void>((resolve) => {
+      const observer = new MutationObserver(() => {
+        if (document.querySelectorAll("#managed-pieces > li").length === 264) {
+          observer.disconnect();
+          requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+        }
+      });
+      observer.observe(document.body, { childList: true, subtree: true });
+      (button as HTMLButtonElement).click();
+    });
+    return performance.now() - started;
+  });
+  expect(duration).toBeLessThan(100);
+  await expect(page.locator("#managed-pieces > li")).toHaveCount(264);
+});
+
 test("initial and populated workbench pass automated accessibility checks", async ({
   page,
 }) => {

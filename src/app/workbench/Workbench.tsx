@@ -7,6 +7,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { createIdAllocator } from "../../core/contracts";
 import {
   initialSessionState,
   prepareParse,
@@ -35,6 +36,13 @@ export function Workbench() {
     readonly hasFilteredSurvivors: boolean;
     readonly successMessage: string;
   } | null>(null);
+  const pendingAddFocus = useRef<{
+    readonly revision: number;
+    readonly pieceId: string;
+    readonly successMessage: string;
+    readonly shouldClearSearch: boolean;
+  } | null>(null);
+  const pendingFocusAfterSearchClear = useRef<string | null>(null);
   const announcementId = useRef(0);
   const announcementTimers = useRef(new Map<number, number>());
   const explicitClear = useRef(false);
@@ -47,6 +55,8 @@ export function Workbench() {
     () => filterManagedPieces(allPieces, searchTerm),
     [allPieces, searchTerm],
   );
+  const editorsDisabled =
+    state.phase !== "active" || state.input !== state.snapshot?.serialized;
 
   useLayoutEffect(() => {
     const pending = pendingRemovalFocus.current;
@@ -67,11 +77,48 @@ export function Workbench() {
         return;
       }
     }
-    const fallbackId = pending.hasFilteredSurvivors
-      ? "clear-managed-piece-search"
-      : "structured-heading";
-    document.getElementById(fallbackId)?.focus();
+    if (pending.hasFilteredSurvivors) {
+      document.getElementById("clear-managed-piece-search")?.focus();
+      return;
+    }
+    const addButton = document.getElementById("add-query-after");
+    if (addButton instanceof HTMLButtonElement && !addButton.disabled) {
+      addButton.focus();
+      return;
+    }
+    document.getElementById("structured-heading")?.focus();
   }, [allPieces, state]);
+
+  useLayoutEffect(() => {
+    const pending = pendingAddFocus.current;
+    if (!pending) return;
+    pendingAddFocus.current = null;
+    if (
+      state.revision <= pending.revision ||
+      state.structuredSuccess !== pending.successMessage
+    ) {
+      return;
+    }
+    if (pending.shouldClearSearch) {
+      explicitClear.current = true;
+      setSearchTerm("");
+      clearAnnouncements();
+      announce(
+        `${allPieces.length} of ${allPieces.length} Managed Pieces shown.`,
+        true,
+      );
+      pendingFocusAfterSearchClear.current = pending.pieceId;
+      return;
+    }
+    document.getElementById(`query-key-${pending.pieceId}`)?.focus();
+  }, [allPieces, state]);
+
+  useLayoutEffect(() => {
+    const pieceId = pendingFocusAfterSearchClear.current;
+    if (!pieceId || searchTerm !== "") return;
+    pendingFocusAfterSearchClear.current = null;
+    document.getElementById(`query-key-${pieceId}`)?.focus();
+  }, [searchTerm, visiblePieces]);
 
   const removePiece = (removal: ManagedPieceRemoval) => {
     const target = allPieces.find((piece) => piece.id === removal.pieceId);
@@ -156,6 +203,26 @@ export function Workbench() {
     announce(`${allPieces.length} of ${allPieces.length} Managed Pieces shown.`);
   };
 
+  const addQueryPiece = () => {
+    if (
+      !state.snapshot ||
+      state.phase !== "active" ||
+      state.input !== state.snapshot.serialized
+    ) {
+      dispatch({ type: "addQueryPiece" });
+      return;
+    }
+    const pieceId = createIdAllocator(state.nextPieceId).next();
+    const position = state.snapshot.query.length + 1;
+    pendingAddFocus.current = {
+      revision: state.revision,
+      pieceId,
+      successMessage: `Query Parameter ${position} added. Full URL and Structured View updated.`,
+      shouldClearSearch: searchTerm !== "",
+    };
+    dispatch({ type: "addQueryPiece" });
+  };
+
   useEffect(() => {
     if (!state.snapshot) return;
     if (searchTerm === "") {
@@ -203,6 +270,11 @@ export function Workbench() {
           Skip to Structured View results
         </a>
       ) : null}
+      {state.snapshot ? (
+        <a className={styles.skipLink} href="#add-query-after">
+          Skip to Add Query Parameter
+        </a>
+      ) : null}
 
       <section aria-labelledby="full-url-heading" className={styles.panel}>
         <h2 id="full-url-heading">Full URL</h2>
@@ -248,11 +320,18 @@ export function Workbench() {
         <button type="button" disabled>
           Copy
         </button>
-        <button type="button" disabled>
+        <button
+          id="add-query-before"
+          type="button"
+          aria-label="Add Query Parameter before the list"
+          disabled={editorsDisabled}
+          onPointerDown={(event) => event.preventDefault()}
+          onClick={addQueryPiece}
+        >
           Add Query Parameter
         </button>
         <p id="actions-note">
-          Undo, Copy, Add, and Reorder are not available yet.
+          Undo, Copy, and Reorder are not available yet.
         </p>
         <div role="status" aria-live="polite" aria-atomic="true">
           {state.phase === "active"
@@ -288,12 +367,10 @@ export function Workbench() {
           dispatch({ type: "structuredEdit", command });
         }}
         onRemovePiece={removePiece}
+        onAddQueryPiece={addQueryPiece}
         structuredProblem={state.structuredProblem}
         structuredSuccess={state.structuredSuccess}
-        editorsDisabled={
-          state.phase !== "active" ||
-          state.input !== state.snapshot?.serialized
-        }
+        editorsDisabled={editorsDisabled}
       />
       <div
         id="search-status"

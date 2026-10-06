@@ -1,5 +1,6 @@
 import { createIdAllocator, type UrlProblem } from "../contracts";
 import {
+  addLosslessQueryPiece,
   editLosslessToken,
   parseLosslessUrl,
   removeLosslessPiece,
@@ -33,7 +34,7 @@ export interface MutationEntry {
   readonly before: LosslessUrl;
   readonly after: LosslessUrl;
   readonly pieceId: StructuredCommand["pieceId"];
-  readonly field: EditableFieldKind | "remove-path" | "remove-query";
+  readonly field: EditableFieldKind | "remove-path" | "remove-query" | "add-query";
 }
 
 export type SessionPhase =
@@ -73,7 +74,8 @@ export type SessionAction =
       readonly result: ReturnType<typeof parseLosslessUrl>;
     }
   | { readonly type: "structuredEdit"; readonly command: StructuredCommand }
-  | { readonly type: "removePiece"; readonly removal: ManagedPieceRemoval };
+  | { readonly type: "removePiece"; readonly removal: ManagedPieceRemoval }
+  | { readonly type: "addQueryPiece" };
 
 export const initialSessionState: SessionState = {
   phase: "no-session",
@@ -358,6 +360,63 @@ export const sessionReducer = (
             after: result.value,
             pieceId: action.removal.pieceId,
             field,
+          },
+        ],
+      };
+    }
+    case "addQueryPiece": {
+      if (!state.snapshot) return state;
+      if (
+        state.phase !== "active" ||
+        state.input !== state.snapshot.serialized
+      ) {
+        return {
+          ...state,
+          structuredProblem: {
+            code: "structured-edit-unavailable",
+            field: "component",
+            message:
+              "Apply the current Full URL text before editing structured fields.",
+          },
+          structuredSuccess: null,
+        };
+      }
+
+      const pieceId = createIdAllocator(state.nextPieceId).next();
+      const result = addLosslessQueryPiece(state.snapshot, pieceId);
+      if (!result.ok) {
+        return {
+          ...state,
+          structuredProblem: result.error,
+          structuredSuccess: null,
+        };
+      }
+
+      const position = state.snapshot.query.length + 1;
+
+      return {
+        ...state,
+        phase: "active",
+        input: result.value.serialized,
+        snapshot: result.value,
+        lastValidSnapshot: result.value,
+        problem: null,
+        structuredProblem: null,
+        structuredSuccess: `Query Parameter ${position} added. Full URL and Structured View updated.`,
+        tokenRevisions: {
+          ...state.tokenRevisions,
+          [structuredFieldKey(pieceId, "query-key")]: 0,
+          [structuredFieldKey(pieceId, "query-value")]: 0,
+        },
+        nextPieceId: state.nextPieceId + 1,
+        revision: state.revision + 1,
+        history: [
+          ...state.history,
+          {
+            before: state.snapshot,
+            after: result.value,
+            pieceId,
+            field: "add-query",
           },
         ],
       };

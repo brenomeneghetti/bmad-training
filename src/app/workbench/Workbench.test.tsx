@@ -782,7 +782,7 @@ describe("URL Workbench", () => {
     expect(screen.queryByText(/Query Parameter 1 removed/)).toBeNull();
   });
 
-  it("uses Clear Search or the Structured View heading as the removal focus fallback", async () => {
+  it("uses Clear Search, the after-list Add control, or the Structured View heading as the removal focus fallback", async () => {
     const user = userEvent.setup();
     const { rerender } = render(<Workbench />);
     const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
@@ -811,7 +811,7 @@ describe("URL Workbench", () => {
     expect(editor).toHaveValue("https://example.com/a?other=2");
     expect(search).toHaveValue("needle");
     expect(screen.queryAllByRole("listitem")).toHaveLength(0);
-    expect(screen.getByRole("heading", { name: "Structured View" })).toHaveFocus();
+    expect(document.getElementById("add-query-after")).toHaveFocus();
   });
 
   it("focuses the nearest previous visible Remove control when the last row is removed", async () => {
@@ -863,4 +863,152 @@ describe("URL Workbench", () => {
       screen.getByText("Query Parameter 2 removed. Full URL and Structured View updated."),
     ).toHaveAttribute("role", "status");
   });
+
+  it("offers a skip link to the after-list Add Query Parameter control", async () => {
+    const user = userEvent.setup();
+    render(<Workbench />);
+    await user.type(
+      screen.getByLabelText("Complete HTTP or HTTPS Absolute URL"),
+      "https://example.com/a?x=1",
+    );
+    await user.click(screen.getByRole("button", { name: "Apply URL" }));
+    expect(
+      screen.getByRole("link", { name: "Skip to Add Query Parameter" }),
+    ).toHaveAttribute("href", "#add-query-after");
+    expect(document.getElementById("add-query-after")).toBeInTheDocument();
+  });
+
+  it("appends exactly one fresh Query Parameter from the before-list Add control with no query present", async () => {
+    const user = userEvent.setup();
+    render(<Workbench />);
+    const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
+    await user.type(editor, "https://example.com/a");
+    await user.click(screen.getByRole("button", { name: "Apply URL" }));
+    expect(screen.getAllByRole("listitem")).toHaveLength(2);
+
+    await user.click(screen.getByRole("button", { name: "Add Query Parameter before the list" }));
+
+    expect(editor).toHaveValue("https://example.com/a?");
+    expect(screen.getAllByRole("listitem")).toHaveLength(3);
+    expect(
+      screen.getByText("Query Parameter 1 added. Full URL and Structured View updated."),
+    ).toHaveAttribute("role", "status");
+  });
+
+  it("appends exactly one fresh Query Parameter from the after-list Add control after existing entries and focuses the new key", async () => {
+    const user = userEvent.setup();
+    render(<Workbench />);
+    const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
+    fireEvent.change(editor, { target: { value: "https://example.com/a?x=1" } });
+    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
+    const beforeIds = screen
+      .getAllByRole("listitem")
+      .map((row) => row.getAttribute("data-piece-id"));
+
+    const addAfter = document.getElementById("add-query-after");
+    if (!(addAfter instanceof HTMLButtonElement)) {
+      throw new Error("Missing after-list Add control");
+    }
+    await user.click(addAfter);
+
+    expect(editor).toHaveValue("https://example.com/a?x=1&");
+    const rows = screen.getAllByRole("listitem");
+    expect(rows).toHaveLength(4);
+    const newId = rows[3]?.getAttribute("data-piece-id");
+    expect(newId).not.toBeNull();
+    expect(beforeIds.includes(newId)).toBe(false);
+    expect(
+      screen.getByLabelText(/^Key, Query Parameter 2 of 2/),
+    ).toHaveFocus();
+    expect(screen.getByLabelText(/^Key, Query Parameter 2 of 2/)).toHaveValue("");
+    expect(
+      screen.getByLabelText(/^Value absent, Query Parameter 2 of 2/),
+    ).toHaveValue("");
+  });
+
+  it("clears an active Search and adds the row as one operation, keeping the new key focused", async () => {
+    const user = userEvent.setup();
+    render(<Workbench />);
+    const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
+    fireEvent.change(editor, {
+      target: { value: "https://example.com/a?dup=1&dup=2" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
+    const search = screen.getByLabelText("Search Managed Pieces");
+    fireEvent.change(search, { target: { value: "dup" } });
+    expect(screen.getAllByRole("listitem")).toHaveLength(2);
+
+    const addAfter = document.getElementById("add-query-after");
+    if (!(addAfter instanceof HTMLButtonElement)) {
+      throw new Error("Missing after-list Add control");
+    }
+    await user.click(addAfter);
+
+    expect(search).toHaveValue("");
+    expect(editor).toHaveValue("https://example.com/a?dup=1&dup=2&");
+    expect(screen.getAllByRole("listitem")).toHaveLength(5);
+    expect(
+      screen.getByLabelText(/^Key, Query Parameter 3 of 3/),
+    ).toHaveFocus();
+  });
+
+  it("leaves an active Search unchanged when Add is rejected for exceeding URL capacity", () => {
+    render(<Workbench />);
+    const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
+    const prefix = "https://example.com/a?big=";
+    const atCapacity = `${prefix}${"x".repeat(20_000 - prefix.length)}`;
+    fireEvent.change(editor, { target: { value: atCapacity } });
+    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
+    const search = screen.getByLabelText("Search Managed Pieces");
+    fireEvent.change(search, { target: { value: "no-match-term" } });
+    expect(screen.queryAllByRole("listitem")).toHaveLength(0);
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Add Query Parameter after the list" }),
+    );
+
+    expect(search).toHaveValue("no-match-term");
+    expect(screen.queryAllByRole("listitem")).toHaveLength(0);
+    expect(screen.queryByText(/Query Parameter \d+ added/)).toBeNull();
+  });
+
+  it("does not commit or move focus on pointer-down and pointer cancellation for Add", () => {
+    render(<Workbench />);
+    const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
+    fireEvent.change(editor, { target: { value: "https://example.com/a?x=1" } });
+    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
+    const search = screen.getByLabelText("Search Managed Pieces");
+    search.focus();
+    const addAfter = document.getElementById("add-query-after");
+    if (!(addAfter instanceof HTMLButtonElement)) {
+      throw new Error("Missing after-list Add control");
+    }
+
+    fireEvent.pointerDown(addAfter);
+    expect(search).toHaveFocus();
+    fireEvent.pointerCancel(addAfter);
+
+    expect(search).toHaveFocus();
+    expect(editor).toHaveValue("https://example.com/a?x=1");
+    expect(screen.getAllByRole("listitem")).toHaveLength(3);
+    expect(screen.queryByText(/Query Parameter 2 added/)).toBeNull();
+  });
+
+  it("rejects Add while Full URL text is unapplied, producing no row, mutation, history, Search change, or focus change", async () => {
+    const user = userEvent.setup();
+    render(<Workbench />);
+    const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
+    fireEvent.change(editor, { target: { value: "https://example.com/a?x=1" } });
+    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
+    await user.type(editor, "&draft");
+
+    expect(
+      [
+        screen.getByRole("button", { name: "Add Query Parameter before the list" }),
+        screen.getByRole("button", { name: "Add Query Parameter after the list" }),
+      ].every((button) => (button as HTMLButtonElement).disabled),
+    ).toBe(true);
+    expect(screen.getAllByRole("listitem")).toHaveLength(3);
+  });
 });
+

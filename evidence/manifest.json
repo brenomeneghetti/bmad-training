@@ -5,7 +5,7 @@
   "evaluatorVersion": "1.0.0",
   "artifact": {
     "path": "dist",
-    "digest": "d6ce1922ddb53d454dd69527062067de7eef9af99a2783f56ae993cd6b1ca505",
+    "digest": "a7014dfa6b74b9e43a16f6abf8e90484050d878c16036379bdd49fed7bff0571",
     "delivery": "deployment/static-delivery.json"
   },
   "toolVersions": {
@@ -16,7 +16,7 @@
   },
   "signOff": {
     "owner": "automated-verification",
-    "recordedAt": "2026-10-06T15:38:52.000Z"
+    "recordedAt": "2026-10-06T18:16:05.000Z"
   },
   "cells": [
     {
@@ -223,6 +223,47 @@
       "owner": "automated",
       "evidence": [
         "src/test/fixtures/semantic.ts",
+        "src/core/session/session.test.ts",
+        "tests/workbench.spec.ts",
+        "deployment/static-delivery.json"
+      ]
+    },
+    {
+      "id": "story-2-4-identity-exact-append",
+      "story": "2.4",
+      "status": "pass",
+      "owner": "automated",
+      "evidence": [
+        "src/core/url/parser.test.ts",
+        "src/core/session/session.test.ts"
+      ]
+    },
+    {
+      "id": "story-2-4-atomic-history-guard",
+      "story": "2.4",
+      "status": "pass",
+      "owner": "automated",
+      "evidence": [
+        "src/core/session/session.test.ts",
+        "src/app/workbench/Workbench.test.tsx"
+      ]
+    },
+    {
+      "id": "story-2-4-accessibility-focus-skip-link",
+      "story": "2.4",
+      "status": "pass",
+      "owner": "automated",
+      "evidence": [
+        "src/app/workbench/Workbench.test.tsx",
+        "tests/workbench.spec.ts"
+      ]
+    },
+    {
+      "id": "story-2-4-privacy-capacity",
+      "story": "2.4",
+      "status": "pass",
+      "owner": "automated",
+      "evidence": [
         "src/core/session/session.test.ts",
         "tests/workbench.spec.ts",
         "deployment/static-delivery.json"

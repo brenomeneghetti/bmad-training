@@ -200,6 +200,10 @@ h2 {
   justify-self: start;
 }
 
+.addAfterButton {
+  margin-block-start: 1rem;
+}
+
 .typeLabel {
   justify-self: start;
   padding: 0.25rem 0.5rem;

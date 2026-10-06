@@ -383,6 +383,46 @@ export const removeLosslessPiece = (
   });
 };
 
+export const addLosslessQueryPiece = (
+  url: LosslessUrl,
+  pieceId: QueryPiece["id"],
+): Result<LosslessUrl, UrlProblem> => {
+  const piece: QueryPiece = {
+    id: pieceId,
+    separatorBefore: url.query.length === 0 ? "" : "&",
+    rawKey: "",
+    equalsPresent: false,
+    rawValue: "",
+  };
+  const query = [...url.query, piece];
+  const nextWithoutSerialization = {
+    ...url,
+    queryPresent: true,
+    query,
+    queryRaw: query
+      .map(
+        (queryPiece) =>
+          `${queryPiece.separatorBefore}${queryPiece.rawKey}${
+            queryPiece.equalsPresent ? `=${queryPiece.rawValue}` : ""
+          }`,
+      )
+      .join(""),
+  };
+  const serialized = serializeParts(nextWithoutSerialization);
+  if (Array.from(serialized).length > 20_000) {
+    return err({
+      code: "url-capacity-exceeded",
+      field: "component",
+      message: "This edit would exceed the 20,000-character URL limit.",
+    });
+  }
+  return ok({
+    ...nextWithoutSerialization,
+    serialized,
+    problems: scanMalformedPercent(serialized),
+  });
+};
+
 export const replaceLosslessDomain = (
   url: LosslessUrl,
   edit: DomainEdit,

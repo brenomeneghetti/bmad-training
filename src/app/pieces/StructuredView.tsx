@@ -30,6 +30,7 @@ interface StructuredViewProps {
   readonly tokenRevisions: Readonly<Record<string, number>>;
   readonly onStructuredEdit: (command: StructuredCommand) => void;
   readonly onRemovePiece: (removal: ManagedPieceRemoval) => void;
+  readonly onAddQueryPiece: () => void;
   readonly structuredProblem: UrlProblem | null;
   readonly structuredSuccess: string | null;
   readonly editorsDisabled: boolean;
@@ -554,6 +555,7 @@ export function StructuredView({
   tokenRevisions,
   onStructuredEdit,
   onRemovePiece,
+  onAddQueryPiece,
   structuredProblem,
   structuredSuccess,
   editorsDisabled,
@@ -799,6 +801,17 @@ export function StructuredView({
               );
               })}
             </ol>
+            <button
+              id="add-query-after"
+              type="button"
+              aria-label="Add Query Parameter after the list"
+              className={styles.addAfterButton}
+              disabled={editorsDisabled}
+              onPointerDown={(event) => event.preventDefault()}
+              onClick={onAddQueryPiece}
+            >
+              Add Query Parameter
+            </button>
           </>
         )}
       </div>

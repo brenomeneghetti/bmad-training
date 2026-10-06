@@ -349,6 +349,107 @@ describe("session authority", () => {
     );
   });
 
+  it("appends one Query Parameter with a fresh non-recycled ID and one history entry", () => {
+    const active = apply(initialSessionState, "https://example.com/a?x=1");
+    const existingIds = new Set([
+      active.snapshot?.domainId,
+      ...(active.snapshot?.path.map((piece) => piece.id) ?? []),
+      ...(active.snapshot?.query.map((piece) => piece.id) ?? []),
+    ]);
+
+    const added = sessionReducer(active, { type: "addQueryPiece" });
+
+    expect(added.input).toBe("https://example.com/a?x=1&");
+    expect(added.snapshot).toBe(added.lastValidSnapshot);
+    expect(added.snapshot?.query).toHaveLength(2);
+    const newPiece = added.snapshot?.query[1];
+    if (!newPiece) throw new Error("Missing appended query piece");
+    expect(existingIds.has(newPiece.id)).toBe(false);
+    expect(newPiece).toEqual({
+      id: newPiece.id,
+      separatorBefore: "&",
+      rawKey: "",
+      equalsPresent: false,
+      rawValue: "",
+    });
+    expect(added.snapshot?.query[0]).toBe(active.snapshot?.query[0]);
+    expect(added.history).toHaveLength(1);
+    expect(added.history[0]).toEqual({
+      before: active.snapshot,
+      after: added.snapshot,
+      pieceId: newPiece.id,
+      field: "add-query",
+    });
+    expect(added.revision).toBe(active.revision + 1);
+    expect(added.nextPieceId).toBe(active.nextPieceId + 1);
+    expect(added.structuredSuccess).toContain("Query Parameter 2 added");
+    expect(added.tokenRevisions[`${newPiece.id}:query-key`]).toBe(0);
+    expect(added.tokenRevisions[`${newPiece.id}:query-value`]).toBe(0);
+  });
+
+  it("appends a Query Parameter with no existing query and an empty `?` marker", () => {
+    const active = apply(initialSessionState, "https://example.com/a");
+    const added = sessionReducer(active, { type: "addQueryPiece" });
+    expect(added.input).toBe("https://example.com/a?");
+    expect(added.snapshot?.query).toHaveLength(1);
+    expect(added.snapshot?.query[0]?.separatorBefore).toBe("");
+  });
+
+  it("rejects an add while Full URL text is unapplied or parsing", () => {
+    const active = apply(initialSessionState, "https://example.com/a?x=1");
+    const editing = sessionReducer(active, {
+      type: "inputChanged",
+      value: "https://example.com/a?x=draft",
+    });
+    const unavailable = sessionReducer(editing, { type: "addQueryPiece" });
+    expect(unavailable.input).toBe(editing.input);
+    expect(unavailable.snapshot).toBe(active.snapshot);
+    expect(unavailable.history).toBe(active.history);
+    expect(unavailable.structuredSuccess).toBeNull();
+    expect(unavailable.structuredProblem?.code).toBe(
+      "structured-edit-unavailable",
+    );
+
+    const invalid = apply(active, "/relative");
+    const invalidAdd = sessionReducer(invalid, { type: "addQueryPiece" });
+    expect(invalidAdd.input).toBe(invalid.input);
+    expect(invalidAdd.snapshot).toBe(active.snapshot);
+    expect(invalidAdd.history).toBe(invalid.history);
+    expect(invalidAdd.structuredSuccess).toBeNull();
+    expect(invalidAdd.structuredProblem?.code).toBe(
+      "structured-edit-unavailable",
+    );
+
+    const changed = sessionReducer(active, {
+      type: "inputChanged",
+      value: "https://example.com/b?x=1",
+    });
+    const parse = prepareParse(changed);
+    const parsing = sessionReducer(changed, parse.start);
+    const rejected = sessionReducer(parsing, { type: "addQueryPiece" });
+    expect(rejected.phase).toBe("parsing");
+    expect(rejected.input).toBe(changed.input);
+    expect(rejected.snapshot).toBe(active.snapshot);
+    expect(rejected.history).toBe(active.history);
+    expect(rejected.structuredSuccess).toBeNull();
+  });
+
+  it("appends to a 250+ parameter URL within the local response target", () => {
+    const entries = Array.from(
+      { length: 260 },
+      (_, index) => `parameter-${index}=value-${index}`,
+    );
+    const active = apply(
+      initialSessionState,
+      `https://example.com/deep/path?${entries.join("&")}`,
+    );
+    const start = performance.now();
+    const added = sessionReducer(active, { type: "addQueryPiece" });
+    expect(performance.now() - start).toBeLessThan(100);
+    expect(added.snapshot?.query).toHaveLength(261);
+    expect(added.snapshot?.query.at(-1)?.rawKey).toBe("");
+  });
+
   it("commits a Unicode Domain edit atomically across both forms and snapshots", () => {
       const active = apply(
         initialSessionState,
