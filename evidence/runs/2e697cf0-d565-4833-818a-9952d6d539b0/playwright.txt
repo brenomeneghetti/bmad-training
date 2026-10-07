@@ -1,0 +1,39 @@
+argv: ["pnpm","exec","playwright","test","tests/workbench.spec.ts","--reporter=json"]
+exitCode: 0
+signal: null
+
+Running 31 tests using 1 worker
+
+[1/31] [chromium] › tests/workbench.spec.ts:25:1 › Token final beforeinput publishes composition once and preserves normalized prefix caret
+[2/31] [chromium] › tests/workbench.spec.ts:62:3 › Domain composition publishes once with immediate final input and preserves later edits and selection
+[3/31] [chromium] › tests/workbench.spec.ts:100:3 › Token composition retains Last Valid until end with immediate final input and later edits
+[4/31] [chromium] › tests/workbench.spec.ts:62:3 › Domain composition publishes once with delayed final input and preserves later edits and selection
+[5/31] [chromium] › tests/workbench.spec.ts:100:3 › Token composition retains Last Valid until end with delayed final input and later edits
+[6/31] [chromium] › tests/workbench.spec.ts:134:1 › intake preserves lossless semantics and rejects replacement
+[7/31] [chromium] › tests/workbench.spec.ts:269:3 › Story 2.7 invalid Draft source, independent feedback and keyboard mutations remain accessible at 320px
+[8/31] [chromium] › tests/workbench.spec.ts:329:3 › Story 2.7 invalid Draft capacity preserves all identities and measured edit/reorder response
+[9/31] [chromium] › tests/workbench.spec.ts:403:1 › Story 2.7 capacity rejection preserves invalid Draft, selection, identities and focus
+[10/31] [chromium] › tests/workbench.spec.ts:441:1 › Story 2.7 invalid Draft feedback reflows with forced colors and increased text spacing
+[11/31] [chromium] › tests/workbench.spec.ts:482:1 › Domain editing is synchronized, correctable, IME-safe, and host-only
+[12/31] [chromium] › tests/workbench.spec.ts:633:1 › capacity view renders every row and stays usable at 320px
+[13/31] [chromium] › tests/workbench.spec.ts:860:1 › removal preserves exact survivors, Search, focus, accessibility, and privacy
+[14/31] [chromium] › tests/workbench.spec.ts:926:1 › Add Query Parameter appends from either control, synchronizes Search, keeps focus, and stays private at capacity
+[15/31] [chromium] › tests/workbench.spec.ts:992:1 › Add Query Parameter remains reachable and performant at 250+ entries
+[16/31] [chromium] › tests/workbench.spec.ts:1025:1 › reorders Query Parameters by keyboard and pointer activation, honoring boundaries, Search, duplicates, and capacity
+[17/31] [chromium] › tests/workbench.spec.ts:1077:1 › reorders within a 250+ parameter list, keeping boundaries reachable and performant
+[18/31] [chromium] › tests/workbench.spec.ts:1107:1 › initial and populated workbench pass automated accessibility checks
+[19/31] [chromium] › tests/workbench.spec.ts:1171:1 › reload clears URL content and returns to no session
+[20/31] [chromium] › tests/workbench.spec.ts:1184:1 › search no-results and clear remain keyboard and activation safe
+[21/31] [chromium] › tests/workbench.spec.ts:1211:1 › structured editing preserves exact bytes, identity, validation, and focus
+[22/31] [chromium] › tests/workbench.spec.ts:1260:1 › structured editing handles search, selections, word deletion, caret, and drafts
+[23/31] [chromium] › tests/workbench.spec.ts:1419:1 › Full URL edits publish continuously without an Apply step, with no Apply URL affordance anywhere
+[24/31] [chromium] › tests/workbench.spec.ts:1433:1 › Full URL retains row identity across first intake, Enter, blur, and refocus
+[25/31] [chromium] › tests/workbench.spec.ts:1453:1 › Full URL composition leaves Last Valid and validation untouched until composition ends
+[26/31] [chromium] › tests/workbench.spec.ts:1476:1 › an invalid Draft survives structured Add with its selection, error, and focus contract
+[27/31] [chromium] › tests/workbench.spec.ts:1497:1 › continuous Full URL reconciliation meets the response target at 20,000 characters and 260 entries
+[28/31] [chromium] › tests/workbench.spec.ts:1518:1 › Enter outside IME composition suppresses the newline and closes the focus session
+[29/31] [chromium] › tests/workbench.spec.ts:1535:1 › Shift+Enter outside IME composition suppresses the newline without closing the focus session
+[30/31] [chromium] › tests/workbench.spec.ts:1553:1 › Structured View editing controls stay enabled while the Full URL draft is momentarily invalid (loosened gating)
+[31/31] [chromium] › tests/workbench.spec.ts:1579:1 › blur-close and refocus round trip keeps the Structured View synchronized
+  31 passed (21.7s)
+

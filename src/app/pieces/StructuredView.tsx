@@ -6,7 +6,6 @@ import type {
 import type {
   ChangeEvent,
   ClipboardEvent,
-  FormEvent,
   KeyboardEvent,
   RefObject,
 } from "react";
@@ -21,6 +20,34 @@ import {
 } from "../../core/session";
 import type { UrlProblem } from "../../core/contracts";
 import styles from "../../styles/workbench.module.css";
+
+const compositionResult = (
+  input: HTMLInputElement,
+  submittedValue: string,
+  compositionText: string | null,
+) => ({
+  submittedValue,
+  publishedValue: input.value,
+  compositionText,
+  start: input.selectionStart ?? input.value.length,
+  end: input.selectionEnd ?? input.value.length,
+  direction: input.selectionDirection ?? "none",
+});
+
+const restoreCompositionResult = (
+  input: HTMLInputElement,
+  result: ReturnType<typeof compositionResult>,
+  isCurrent: () => boolean,
+) => {
+  input.value = result.publishedValue;
+  input.setSelectionRange(result.start, result.end, result.direction);
+  // Restore selection after React's controlled-input restoration.
+  queueMicrotask(() => {
+    if (isCurrent() && document.activeElement === input && input.value === result.publishedValue) {
+      input.setSelectionRange(result.start, result.end, result.direction);
+    }
+  });
+};
 
 interface StructuredViewProps {
   readonly sourceDescription: string | null;
@@ -78,10 +105,14 @@ function DomainEditor({
     readonly selectionStart: number;
   } | null>(null);
   const caretFrame = useRef<number | null>(null);
-  const ignorePostCompositionValue = useRef<string | null>(null);
-  const value = compositionValue ?? draft?.value ?? committedValue;
+  const ignorePostCompositionValue = useRef<ReturnType<typeof compositionResult> | null>(null);
+  const publishedValue = draft?.value ?? committedValue;
+  const value = compositionValue ?? publishedValue;
+  const renderedValue = useRef(publishedValue);
   const errorId = `error-${pieceId}-${field}`;
   const helpId = `help-${pieceId}-domain`;
+
+  useLayoutEffect(() => { renderedValue.current = publishedValue; });
 
   useLayoutEffect(() => {
     if (pendingCaret.current === null || !inputRef.current) return;
@@ -125,10 +156,11 @@ function DomainEditor({
     if (caretFrame.current !== null) {
       window.cancelAnimationFrame(caretFrame.current);
     }
-    caretFrame.current = window.requestAnimationFrame(() => {
-      if (!inputRef.current || pendingCaret.current === null) return;
+    const pending = pendingCaret.current;
+    queueMicrotask(() => {
+      if (!inputRef.current || pending === null || pendingCaret.current !== pending) return;
       const { submittedValue, selectionStart: submittedCaret } =
-        pendingCaret.current;
+        pending;
       const normalizedPrefix =
         field === "domain-unicode"
           ? submittedValue.slice(0, submittedCaret).normalize("NFC").toLowerCase()
@@ -143,6 +175,34 @@ function DomainEditor({
     });
   };
 
+  useLayoutEffect(() => {
+    const input = inputRef.current;
+    if (!input) return;
+    const start = () => {
+      ignorePostCompositionValue.current = null;
+      composing.current = true;
+      onCompositionChange(field);
+      setCompositionValue(input.value);
+    };
+    const end = (event: CompositionEvent) => {
+      composing.current = false;
+      onCompositionChange(null);
+      setCompositionValue(null);
+      const submittedValue = input.value;
+      submit(submittedValue, input.selectionStart);
+      ignorePostCompositionValue.current = {
+        ...compositionResult(input, submittedValue, event.data),
+        publishedValue: renderedValue.current,
+      };
+    };
+    input.addEventListener("compositionstart", start);
+    input.addEventListener("compositionend", end);
+    return () => {
+      input.removeEventListener("compositionstart", start);
+      input.removeEventListener("compositionend", end);
+    };
+  });
+
   return (
     <>
       <label htmlFor={id}>{label}</label>
@@ -156,17 +216,8 @@ function DomainEditor({
         aria-errormessage={draft ? errorId : undefined}
         aria-describedby={draft ? `${helpId} ${errorId}` : helpId}
         disabled={disabled}
-        onCompositionStart={(event) => {
-          composing.current = true;
-          onCompositionChange(field);
-          setCompositionValue(event.currentTarget.value);
-        }}
-        onCompositionEnd={(event) => {
-          composing.current = false;
-          onCompositionChange(null);
-          setCompositionValue(null);
-          ignorePostCompositionValue.current = event.currentTarget.value;
-          submit(event.currentTarget.value, event.currentTarget.selectionStart);
+        onKeyDown={() => {
+          if (!composing.current) ignorePostCompositionValue.current = null;
         }}
         onChange={(event) => {
           if (
@@ -176,13 +227,13 @@ function DomainEditor({
             setCompositionValue(event.currentTarget.value);
             return;
           }
-          const inputType = (event.nativeEvent as InputEvent).inputType;
           if (
-            inputType === "insertFromComposition" &&
-            ignorePostCompositionValue.current === event.currentTarget.value
+            ignorePostCompositionValue.current?.publishedValue === publishedValue &&
+            (ignorePostCompositionValue.current.submittedValue === event.currentTarget.value ||
+              ignorePostCompositionValue.current.publishedValue === event.currentTarget.value)
           ) {
-            ignorePostCompositionValue.current = null;
-            event.currentTarget.value = value;
+            const result = ignorePostCompositionValue.current;
+            restoreCompositionResult(event.currentTarget, result, () => ignorePostCompositionValue.current === result);
             return;
           }
           ignorePostCompositionValue.current = null;
@@ -357,10 +408,19 @@ function EditableToken({
   const [compositionValue, setCompositionValue] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const compositionBase = useRef("");
+  const nativeHandlers = useRef<{
+    beforeInput: (event: InputEvent) => void;
+    start: () => void;
+    end: (event: CompositionEvent) => void;
+    value: string;
+  } | null>(null);
+  const composing = useRef(false);
+  const ignorePostCompositionValue = useRef<ReturnType<typeof compositionResult> | null>(null);
   const pendingSuffixLength = useRef<number | null>(null);
   const caretFrame = useRef<number | null>(null);
   const suppressBeforeInput = useRef(false);
-  const value = compositionValue ?? draft?.value ?? committedValue;
+  const publishedValue = draft?.value ?? committedValue;
+  const value = compositionValue ?? publishedValue;
   const errorId = `${id}-error`;
 
   useEffect(() => setCompositionValue(null), [pieceId, field, committedValue]);
@@ -410,16 +470,28 @@ function EditableToken({
     end: input.selectionEnd ?? value.length,
   });
 
-  const beforeInput = (event: FormEvent<HTMLInputElement>) => {
+  const beforeInput = (event: InputEvent) => {
     cancelCaretFrame();
-    const native = event.nativeEvent as InputEvent;
+    const native = event;
+    if (!native.cancelable) return;
     if (suppressBeforeInput.current) {
       event.preventDefault();
       return;
     }
-    if (native.isComposing || compositionValue !== null) return;
+    if (native.isComposing || composing.current) return;
     const inputType = native.inputType ?? "";
-    const range = selection(event.currentTarget);
+    const finalComposition = ignorePostCompositionValue.current;
+    if (finalComposition?.publishedValue === publishedValue &&
+      (inputType === "insertFromComposition" ||
+        (inputType === "insertText" && native.data === finalComposition.compositionText))) {
+      event.preventDefault();
+      restoreCompositionResult(event.currentTarget as HTMLInputElement, finalComposition,
+        () => ignorePostCompositionValue.current === finalComposition);
+      return;
+    }
+    if (!inputType.startsWith("insert") && !inputType.startsWith("delete")) return;
+    ignorePostCompositionValue.current = null;
+    const range = selection(event.currentTarget as HTMLInputElement);
     let start = range.start;
     let end = range.end;
     let insertedText = native.data ?? "";
@@ -455,6 +527,7 @@ function EditableToken({
 
   const paste = (event: ClipboardEvent<HTMLInputElement>) => {
     cancelCaretFrame();
+    ignorePostCompositionValue.current = null;
     event.preventDefault();
     const range = selection(event.currentTarget);
     dispatch(range.start, range.end, event.clipboardData.getData("text"));
@@ -462,8 +535,9 @@ function EditableToken({
 
   const keyDown = (event: KeyboardEvent<HTMLInputElement>) => {
     cancelCaretFrame();
+    if (!composing.current) ignorePostCompositionValue.current = null;
     if (
-      compositionValue !== null ||
+      composing.current ||
       (event.key !== "Backspace" && event.key !== "Delete")
     ) {
       return;
@@ -492,11 +566,19 @@ function EditableToken({
   };
 
   const fallbackChange = (event: ChangeEvent<HTMLInputElement>) => {
-    if (compositionValue !== null) {
+    if (composing.current || (event.nativeEvent as InputEvent).isComposing) {
       setCompositionValue(event.currentTarget.value);
       return;
     }
     const next = event.currentTarget.value;
+    if (ignorePostCompositionValue.current?.publishedValue === publishedValue &&
+      (next === ignorePostCompositionValue.current.submittedValue ||
+        next === ignorePostCompositionValue.current.publishedValue)) {
+      const result = ignorePostCompositionValue.current;
+      restoreCompositionResult(event.currentTarget, result, () => ignorePostCompositionValue.current === result);
+      return;
+    }
+    ignorePostCompositionValue.current = null;
     const replacement = minimalReplacement(value, next);
     dispatch(
       replacement.start,
@@ -505,6 +587,54 @@ function EditableToken({
       next.length - (event.currentTarget.selectionStart ?? next.length),
     );
   };
+
+  useLayoutEffect(() => {
+    const input = inputRef.current;
+    if (!input) return;
+    const start = () => {
+      cancelCaretFrame();
+      composing.current = true;
+      ignorePostCompositionValue.current = null;
+      compositionBase.current = input.value;
+      setCompositionValue(input.value);
+    };
+    const end = (event: CompositionEvent) => {
+      const next = input.value;
+      const replacement = minimalReplacement(compositionBase.current, next);
+      const suffixLength = next.length - (input.selectionStart ?? next.length);
+      composing.current = false;
+      setCompositionValue(null);
+      dispatch(replacement.start, replacement.end, replacement.insertedText,
+        suffixLength);
+      const publishedValue = nativeHandlers.current?.value ?? input.value;
+      const caret = Math.max(0, publishedValue.length - suffixLength);
+      ignorePostCompositionValue.current = {
+        ...compositionResult(input, next, event.data),
+        publishedValue,
+        start: caret,
+        end: caret,
+        direction: "none",
+      };
+    };
+    nativeHandlers.current = { beforeInput, start, end, value: publishedValue };
+  });
+
+  // Keep native listeners stable during dense renders; React's polyfill differs by engine.
+  useLayoutEffect(() => {
+    const input = inputRef.current;
+    if (!input) return;
+    const before = (event: InputEvent) => nativeHandlers.current?.beforeInput(event);
+    const start = () => nativeHandlers.current?.start();
+    const end = (event: CompositionEvent) => nativeHandlers.current?.end(event);
+    input.addEventListener("beforeinput", before);
+    input.addEventListener("compositionstart", start);
+    input.addEventListener("compositionend", end);
+    return () => {
+      input.removeEventListener("beforeinput", before);
+      input.removeEventListener("compositionstart", start);
+      input.removeEventListener("compositionend", end);
+    };
+  }, []);
 
   return (
     <>
@@ -528,32 +658,16 @@ function EditableToken({
         onBlur={() => {
           suppressBeforeInput.current = false;
         }}
-        onBeforeInput={beforeInput}
         onPaste={paste}
         onCut={(event) => {
           cancelCaretFrame();
+          ignorePostCompositionValue.current = null;
           let { start, end } = selection(event.currentTarget);
           if (start === end) return;
           ({ start, end } = expandAtomicRange(value, start, end));
           event.preventDefault();
           event.clipboardData.setData("text/plain", value.slice(start, end));
           dispatch(start, end, "");
-        }}
-        onCompositionStart={(event) => {
-          cancelCaretFrame();
-          compositionBase.current = event.currentTarget.value;
-          setCompositionValue(event.currentTarget.value);
-        }}
-        onCompositionEnd={(event) => {
-          const next = event.currentTarget.value;
-          const replacement = minimalReplacement(compositionBase.current, next);
-          setCompositionValue(null);
-          dispatch(
-            replacement.start,
-            replacement.end,
-            replacement.insertedText,
-            next.length - (event.currentTarget.selectionStart ?? next.length),
-          );
         }}
         onChange={fallbackChange}
         autoComplete="off"

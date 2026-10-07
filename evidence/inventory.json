@@ -1,0 +1,2305 @@
+[
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench accepts a full paste-and-replace of the Full URL followed by blur without error or data loss",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench announces restoration when the final search character is deleted",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench announces Search restoration even when a structured edit is rejected",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench announces the original source position when Search isolates a later piece",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench appends exactly one fresh Query Parameter from the after-list Add control after existing entries and focuses the new key",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench appends exactly one fresh Query Parameter from the before-list Add control with no query present",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench buffers Full URL composition, ignores confirming Enter even without isComposing, then publishes once",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench clears active Search before editing and retains the edited control",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench clears active Search when a Domain edit starts and retains Domain focus",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench clears an active Search and adds the row as one operation, keeping the new key focused",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench distinguishes intake from invalid Draft source and clears only Full URL feedback on correction",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench does not apply an old move focus intent to a newer identical outcome in one batch",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench does not commit or move focus on pointer-down and pointer cancellation for Add",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench does not commit or move focus on pointer-down and pointer cancellation for Move",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench does not commit or move focus on pointer-down and pointer cancellation",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench does not expand deletion across unpaired surrogate code units",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench does not let a pending caret-restoration frame overwrite a newer selection",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench does not let pending add override newer Search focus",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench does not let pending Add supersede newer Full URL composition",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench does not let pending Add supersede newer Full URL focus",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench does not let pending Add supersede newer Full URL input",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench does not let pending move override newer Search focus",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench does not let pending remove override newer Search focus",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench does not normalize canonically equivalent raw search text",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench does not throw and leaves the draft untouched when Enter arrives while composing",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench edits either Domain form while preserving focus and synchronized commits",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench edits only the selected duplicate and keeps focus",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench expands fallback partial triplet deletion to the complete atom",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench expires Domain composition suppression after the other representation changes",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench exposes a settled search announcement for at least two seconds",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench exposes boundary-disabled Move Up/Move Down controls on every row",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench filters presentation only and restores stable identity and source order",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench focuses the nearest previous visible Remove control when the last row is removed",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench gives duplicate query editors source-identifiable accessible names",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench handles cancellable native beforeinput exactly once before its fallback input",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench has the required landmark and heading structure",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench isolates an invalid Domain draft and associates its stable guidance",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench keeps an invalid percent draft associated until corrected",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench keeps field error, operation status, Search and invalid Draft composition independent",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench keeps no-result feedback reachable and clears only on activation",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench keeps percent triplets and Unicode code points atomic during deletion",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench keeps retained row identities during first-intake typing and after Enter without refocusing",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench keeps structured editors enabled while Full URL text changes or turns invalid, as long as a Last Valid snapshot exists",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench keeps Structured View editors enabled while an invalid Full URL draft is present, as long as a Last Valid snapshot exists",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench leaves an active Search unchanged when Add is rejected for exceeding URL capacity",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench mints a fresh piece id when, while focused, Full URL text detours through a changed value before returning",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench moves a middle row down by one source position, keeping focus and announcing the outcome",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench moves focus to the enabled opposite control when a move lands on a boundary",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench moves within a 250+ parameter list, preserving correctness at capacity",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench offers a skip link to the after-list Add Query Parameter control",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench permits Add while the Full URL textarea has a pending unclosed draft",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench permits Move while the Full URL textarea has a pending unclosed draft",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench persistently announces and associates Full URL and structured errors independently",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench preserves exact invalid Draft selection and source through domain with established focus",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench preserves exact invalid Draft selection and source through key with established focus",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench preserves exact invalid Draft selection and source through move with established focus",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench preserves exact invalid Draft selection and source through path with established focus",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench preserves exact invalid Draft selection and source through remove with established focus",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench preserves exact invalid Draft selection and source through value with established focus",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench preserves invalid Draft and its selection while Add updates Last Valid and focuses the new key",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench preserves invalid Draft, selection, Search and focus when capacity rejects Add and an expanding edit",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench preserves piece identity when focused and the Full URL text is re-published unchanged",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench preserves untouched raw Unicode in fallback and IME changes",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench publishes Domain composition once with delayed final input and accepts later edits",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench publishes Domain composition once with immediate final input and accepts later edits",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench publishes only the final value when the Full URL text changes twice in a row",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench publishes the Structured View keystroke by keystroke with no explicit apply step",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench publishes validation for same-turn native input/change pairs without stale parse completion",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench rejects stale Add focus and Search clearing after batched Add, Remove, Add",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench removes old-session announcements when the snapshot is replaced",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench removes one duplicate under Search and focuses the next visible Remove control",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench renders all managed pieces and retains the trusted view after invalid intake",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench resolves moves against full source order while Search filters rows",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench restores the Domain caret through normalization inside the raw suffix",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench searches every supported field with full Unicode folding",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench settles repeatable announcements without replacing live entries or moving focus",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench shows specific safety guidance for pasted line breaks",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench suppresses commits during IME composition and commits once at its end",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench suppresses Domain commits and synchronization status during IME composition",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench suppresses the newline a non-composing Enter would otherwise insert",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench uses Clear Search, the after-list Add control, or the Structured View heading as the removal focus fallback",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/idn/index.test.ts",
+    "title": "TR46 domain conversion converts complete Unicode and mixed-case Punycode edits bidirectionally",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/idn/index.test.ts",
+    "title": "TR46 domain conversion converts faß.de deterministically",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/idn/index.test.ts",
+    "title": "TR46 domain conversion converts XN--FA-HIA.DE deterministically",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/idn/index.test.ts",
+    "title": "TR46 domain conversion converts עברית.example deterministically",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/idn/index.test.ts",
+    "title": "TR46 domain conversion converts مثال.إختبار deterministically",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/idn/index.test.ts",
+    "title": "TR46 domain conversion preserves valid IP host edits: [::1]",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/idn/index.test.ts",
+    "title": "TR46 domain conversion preserves valid IP host edits: 127.0.0.1",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/idn/index.test.ts",
+    "title": "TR46 domain conversion rejects invalid domain a..b",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/idn/index.test.ts",
+    "title": "TR46 domain conversion rejects invalid domain a‍b.example",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/idn/index.test.ts",
+    "title": "TR46 domain conversion rejects invalid domain abcא.example",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/idn/index.test.ts",
+    "title": "TR46 domain conversion rejects invalid domain ́example.com",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/idn/index.test.ts",
+    "title": "TR46 domain conversion rejects invalid domain xn--",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/idn/index.test.ts",
+    "title": "TR46 domain conversion rejects malformed, joiner, bidi, and non-ASCII ASCII-form edits: ",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/idn/index.test.ts",
+    "title": "TR46 domain conversion rejects malformed, joiner, bidi, and non-ASCII ASCII-form edits: a..b",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/idn/index.test.ts",
+    "title": "TR46 domain conversion rejects malformed, joiner, bidi, and non-ASCII ASCII-form edits: a‍b.example",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/idn/index.test.ts",
+    "title": "TR46 domain conversion rejects malformed, joiner, bidi, and non-ASCII ASCII-form edits: abcא.example",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/idn/index.test.ts",
+    "title": "TR46 domain conversion rejects malformed, joiner, bidi, and non-ASCII ASCII-form edits: xn--",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/idn/index.test.ts",
+    "title": "TR46 domain conversion rejects otherwise-valid Unicode text in the ASCII/Punycode form",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "session authority adds against the Last Valid snapshot even while Full URL text is an unsynced draft, invalid, or parsing",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "session authority appends a Query Parameter with no existing query and an empty `?` marker",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "session authority appends one Query Parameter with a fresh non-recycled ID and one history entry",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "session authority appends to a 250+ parameter URL within the local response target",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "session authority applies structured commands against the Last Valid snapshot while Full URL text is an unsynced draft",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "session authority clears only the removed path draft and records a remove-path mutation",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "session authority clears only the removed piece drafts and preserves survivor drafts",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "session authority clears prior Domain success for no-op attempts but succeeds against Last Valid despite an unsynced draft",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "session authority commits a Unicode Domain edit atomically across both forms and snapshots",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "session authority commits an exact structured edit atomically with one history entry",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "session authority corrects a draft without collapsing the trusted range inside a triplet",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "session authority counts Domain capacity by Unicode code point instead of UTF-16 unit",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "session authority creates no mutation, history, or announcement for a boundary no-op",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "session authority discards stale parse completions",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "session authority does not publish or journal serialized no-ops",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "session authority does not retain an oversized insertion as a structured draft",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "session authority edits a 250+ parameter URL within the local response target",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "session authority handles no-op Domain commands without unrelated committed side effects",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "session authority handles stale Domain commands without unrelated committed side effects",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "session authority ignores duplicate parse starts after publication",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "session authority invalidates a pending parse as soon as the editor changes",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "session authority keeps invalid text as a correctable local draft",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "session authority keeps only the focused invalid Domain form as a correctable draft",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "session authority moves against the Last Valid snapshot while Full URL text is an unsynced draft or still parsing, but still rejects a stale ID",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "session authority moves within a 250+ parameter URL within the local response target",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "session authority never recycles piece identities after a valid replacement",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "session authority preserves accepted malformed percent text when correcting a new invalid draft",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "session authority preserves existing drafts when a stale removal is rejected",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "session authority preserves the opposite Domain draft across stale and capacity guards",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "session authority preserves the trusted snapshot when IDN validation rejects replacement",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "session authority publishes combining, RTL, and standards-valid mixed-script Domain edits: café.example",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "session authority publishes combining, RTL, and standards-valid mixed-script Domain edits: раypal.example",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "session authority publishes combining, RTL, and standards-valid mixed-script Domain edits: עברית.example",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "session authority publishes combining, RTL, and standards-valid mixed-script Domain edits: مثال.إختبار",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "session authority publishes valid intake atomically and preserves it after rejection",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "session authority rejects an edit that would exceed supported capacity atomically",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "session authority rejects missing and over-capacity Domain commands, but succeeds against Last Valid while text is an unsynced draft",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "session authority rejects out-of-range selection without committed side effects",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "session authority rejects stale revision without committed side effects",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "session authority removes against the Last Valid snapshot while a replacement URL is still parsing",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "session authority removes against the Last Valid snapshot while Full URL text is an unsynced draft or invalid, but still rejects a stale ID",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "session authority removes exactly one piece and atomically records its original position",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "session authority removes from a 250+ parameter URL within the local response target",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "session authority reports a missing piece without publishing content",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "session authority Story 2.7: invalid Draft authority keeps invalid Draft and validation exact while publishing add atomically",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "session authority Story 2.7: invalid Draft authority keeps invalid Draft and validation exact while publishing domain-ascii atomically",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "session authority Story 2.7: invalid Draft authority keeps invalid Draft and validation exact while publishing domain-unicode atomically",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "session authority Story 2.7: invalid Draft authority keeps invalid Draft and validation exact while publishing move atomically",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "session authority Story 2.7: invalid Draft authority keeps invalid Draft and validation exact while publishing path atomically",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "session authority Story 2.7: invalid Draft authority keeps invalid Draft and validation exact while publishing query-key atomically",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "session authority Story 2.7: invalid Draft authority keeps invalid Draft and validation exact while publishing query-value atomically",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "session authority Story 2.7: invalid Draft authority keeps invalid Draft and validation exact while publishing remove-path atomically",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "session authority Story 2.7: invalid Draft authority keeps invalid Draft and validation exact while publishing remove-query atomically",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "session authority Story 2.7: invalid Draft authority leaves committed surfaces and the open intent intact on capacity rejection during an invalid Draft",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "session authority Story 2.7: invalid Draft authority preserves independent actionable feedback through typing, parse start, rejection and valid correction",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "session authority Story 2.7: invalid Draft authority records exactly A→C, C→D, D→E, E→F and reverses complete snapshots with operation targets",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "session authority Story 2.7: invalid Draft authority rejects stale parse guards and structured targets without publishing committed surfaces",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "session authority swaps a Query Parameter with its next neighbor and records one history entry",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "session authority swaps a Query Parameter with its previous neighbor",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "Story 2.6: Full URL focus session appends no history entry when nothing changed before close",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "Story 2.6: Full URL focus session cancels a scheduled initial intake when editing closes before its first snapshot",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "Story 2.6: Full URL focus session captures a baseline/last-accepted snapshot only when a committed session already exists",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "Story 2.6: Full URL focus session carries over tokenRevisions for retained IDs and resets freshly minted ones to 0",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "Story 2.6: Full URL focus session closes the Full URL session and appends its entry before a structured mutation applies, as a separate chronological entry",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "Story 2.6: Full URL focus session discards a stale scheduled parse completion that arrives after newer input or a mutation",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "Story 2.6: Full URL focus session invalidates pending parsing when closing by blur",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "Story 2.6: Full URL focus session invalidates pending parsing when closing by enter",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "Story 2.6: Full URL focus session keeps Domain ID unconditionally and reconciles Path/Query IDs by exact-token LCS across a reparse",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "Story 2.6: Full URL focus session keeps first-intake identities without requiring blur and refocus",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "Story 2.6: Full URL focus session preserves prior history and rebases when typing after Enter without refocusing",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "Story 2.6: Full URL focus session publishes every valid reparse immediately without appending history until the session closes",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "Story 2.6: Full URL focus session reconciles a 250+ parameter, 20,000-character capacity edit within the local response target",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "Story 2.6: Full URL focus session rejects old Domain revisions after Full URL changes the host but retains its identity",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "Story 2.6: Full URL focus session retains invalid Draft, validation, and chronological snapshots during add",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "Story 2.6: Full URL focus session retains invalid Draft, validation, and chronological snapshots during domain",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "Story 2.6: Full URL focus session retains invalid Draft, validation, and chronological snapshots during move",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "Story 2.6: Full URL focus session retains invalid Draft, validation, and chronological snapshots during path",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "Story 2.6: Full URL focus session retains invalid Draft, validation, and chronological snapshots during remove",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/url/codec.test.ts",
+    "title": "raw component insertion codec rejects a UTF-16 boundary inside a surrogate pair",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/url/codec.test.ts",
+    "title": "raw component insertion codec rejects incomplete percent text: %",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/url/codec.test.ts",
+    "title": "raw component insertion codec rejects incomplete percent text: %2",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/url/codec.test.ts",
+    "title": "raw component insertion codec rejects incomplete percent text: %zz",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/url/codec.test.ts",
+    "title": "raw component insertion codec rejects invalid UTF-16 ranges",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/url/codec.test.ts",
+    "title": "raw component insertion codec rejects obviously over-capacity insertion before encoding",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/url/codec.test.ts",
+    "title": "raw component insertion codec rejects ranges that split existing percent triplets",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/url/codec.test.ts",
+    "title": "raw component insertion codec splices UTF-16 ranges without changing untouched text",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/url/codec.test.ts",
+    "title": "raw component insertion codec uses the path-segment profile",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/url/codec.test.ts",
+    "title": "raw component insertion codec uses the query-key profile",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/url/codec.test.ts",
+    "title": "raw component insertion codec uses the query-value profile",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/url/parser.test.ts",
+    "title": "lossless URL parser appends after existing Query Parameters with an `&` separator and preserves identity",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/url/parser.test.ts",
+    "title": "lossless URL parser appends an empty Query Parameter with a `?` marker when none is present",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/url/parser.test.ts",
+    "title": "lossless URL parser edits one addressed token without rewriting any other bytes",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/url/parser.test.ts",
+    "title": "lossless URL parser keeps an absent query value absent for an empty no-op",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/url/parser.test.ts",
+    "title": "lossless URL parser moves a non-boundary pair down without disturbing untouched entries",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/url/parser.test.ts",
+    "title": "lossless URL parser no-ops at the first-row up boundary and last-row down boundary",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/url/parser.test.ts",
+    "title": "lossless URL parser parses the 20,000 character 250+ parameter fixture completely",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/url/parser.test.ts",
+    "title": "lossless URL parser preserves every supported WHATWG special URL form: https:////example.com/a",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/url/parser.test.ts",
+    "title": "lossless URL parser preserves every supported WHATWG special URL form: https:\\\\example.com\\a",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/url/parser.test.ts",
+    "title": "lossless URL parser preserves every supported WHATWG special URL form: https:example.com",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/url/parser.test.ts",
+    "title": "lossless URL parser preserves exact serialization and every structural distinction",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/url/parser.test.ts",
+    "title": "lossless URL parser preserves identity and byte-for-byte content at 250+ entry capacity within 100 ms",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/url/parser.test.ts",
+    "title": "lossless URL parser preserves special URL syntax while editing: https:////example.com/a",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/url/parser.test.ts",
+    "title": "lossless URL parser preserves special URL syntax while editing: https://example.com\\one/two\\",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/url/parser.test.ts",
+    "title": "lossless URL parser preserves special URL syntax while editing: https:\\\\example.com\\a",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/url/parser.test.ts",
+    "title": "lossless URL parser preserves special URL syntax while editing: https:example.com/a",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/url/parser.test.ts",
+    "title": "lossless URL parser preserves the exact snapshot when an edit converts to the committed host",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/url/parser.test.ts",
+    "title": "lossless URL parser refreshes malformed-percent problems after an exact correction",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/url/parser.test.ts",
+    "title": "lossless URL parser rejects a move for a piece ID that is no longer present",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/url/parser.test.ts",
+    "title": "lossless URL parser rejects a structured edit beyond the supported capacity",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/url/parser.test.ts",
+    "title": "lossless URL parser rejects an append that would exceed the 20,000-character URL limit",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/url/parser.test.ts",
+    "title": "lossless URL parser rejects input beyond the supported 20,000-character boundary",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/url/parser.test.ts",
+    "title": "lossless URL parser rejects missing and wrong-kind removal IDs",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/url/parser.test.ts",
+    "title": "lossless URL parser rejects missing, invalid, and over-capacity Domain replacements atomically",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/url/parser.test.ts",
+    "title": "lossless URL parser rejects unsupported intake without throwing:  https://example.com/",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/url/parser.test.ts",
+    "title": "lossless URL parser rejects unsupported intake without throwing: ",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/url/parser.test.ts",
+    "title": "lossless URL parser rejects unsupported intake without throwing: /relative",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/url/parser.test.ts",
+    "title": "lossless URL parser rejects unsupported intake without throwing: example.com/path",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/url/parser.test.ts",
+    "title": "lossless URL parser rejects unsupported intake without throwing: ftp://example.com/file",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/url/parser.test.ts",
+    "title": "lossless URL parser rejects unsupported intake without throwing: https:///",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/url/parser.test.ts",
+    "title": "lossless URL parser rejects unsupported intake without throwing: https://example.com/",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/url/parser.test.ts",
+    "title": "lossless URL parser rejects unsupported intake without throwing: https://exa\tmple.com/",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/url/parser.test.ts",
+    "title": "lossless URL parser rejects unsupported intake without throwing: https://example.com/a\nb",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/url/parser.test.ts",
+    "title": "lossless URL parser removes one exact query entry and resets only the first surviving separator",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/url/parser.test.ts",
+    "title": "lossless URL parser removes only the addressed path segment at index 0",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/url/parser.test.ts",
+    "title": "lossless URL parser removes only the addressed path segment at index 1",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/url/parser.test.ts",
+    "title": "lossless URL parser removes only the addressed path segment at index 2",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/url/parser.test.ts",
+    "title": "lossless URL parser removes only the addressed path segment at index 3",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/url/parser.test.ts",
+    "title": "lossless URL parser removes query entry index 1 without rewriting survivors",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/url/parser.test.ts",
+    "title": "lossless URL parser removes query entry index 2 without rewriting survivors",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/url/parser.test.ts",
+    "title": "lossless URL parser removes query entry index 3 without rewriting survivors",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/url/parser.test.ts",
+    "title": "lossless URL parser removes query entry index 4 without rewriting survivors",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/url/parser.test.ts",
+    "title": "lossless URL parser removes the final non-empty path segment without retaining its delimiter",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/url/parser.test.ts",
+    "title": "lossless URL parser removes the query marker with the last query entry",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/url/parser.test.ts",
+    "title": "lossless URL parser removes the sole empty root path segment without changing authority",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/url/parser.test.ts",
+    "title": "lossless URL parser replaces an IPv6 host without changing its port or surrounding bytes",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/url/parser.test.ts",
+    "title": "lossless URL parser replaces only the exact host while preserving every unrelated byte and ID",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/url/parser.test.ts",
+    "title": "lossless URL parser reports invalid Punycode as a domain conversion problem",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/url/parser.test.ts",
+    "title": "lossless URL parser reports malformed percent positions by Unicode code point",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/url/parser.test.ts",
+    "title": "lossless URL parser reuses an existing empty `?` marker when appending",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/url/parser.test.ts",
+    "title": "lossless URL parser scans many malformed percent signs within the parse target",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/url/parser.test.ts",
+    "title": "lossless URL parser supports IP hosts without applying IDN mapping",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/url/parser.test.ts",
+    "title": "lossless URL parser swaps two adjacent query entries and recomputes only the affected separators",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/url/parser.test.ts",
+    "title": "lossless URL parser uses WHATWG special-URL backslashes as exact path separators",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/url/parser.test.ts",
+    "title": "reconcileLosslessUrl breaks equal-length LCS ties by earliest old then earliest new position",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/url/parser.test.ts",
+    "title": "reconcileLosslessUrl does not reuse an ID that was dropped from the sequence",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/url/parser.test.ts",
+    "title": "reconcileLosslessUrl keeps the Domain ID unconditionally even though every parse mints a fresh one",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/url/parser.test.ts",
+    "title": "reconcileLosslessUrl matches an exhaustive small-sequence oracle including ambiguous duplicates",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/url/parser.test.ts",
+    "title": "reconcileLosslessUrl matches Path tokens by exact rawSegment and mints fresh non-recycled IDs for the rest",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/url/parser.test.ts",
+    "title": "reconcileLosslessUrl matches Query tokens by exact {rawKey, equalsPresent, rawValue}, ignoring separatorBefore",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/url/parser.test.ts",
+    "title": "reconcileLosslessUrl preserves duplicate-key identity by matching earliest-old to earliest-new in source order",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/url/parser.test.ts",
+    "title": "reconcileLosslessUrl preserves exact byte content at 250+ entry capacity within 100 ms",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/url/parser.test.ts",
+    "title": "reconcileLosslessUrl reconciles dense duplicate path sequences near 20,000 characters within 100 ms",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/url/parser.test.ts",
+    "title": "reconcileLosslessUrl reconciles dense duplicate query sequences near 20,000 characters within 100 ms",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/url/parser.test.ts",
+    "title": "reconcileLosslessUrl returns the previous object by reference when the reparse is byte-identical",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "node",
+    "file": "evidence/run.test.mjs",
+    "title": "cancellation during final ownership checking cannot retain published success",
+    "project": "node",
+    "multiplicity": 1
+  },
+  {
+    "runner": "node",
+    "file": "evidence/run.test.mjs",
+    "title": "cancelling an executing command escalates past an exited leader and releases ownership",
+    "project": "node",
+    "multiplicity": 1
+  },
+  {
+    "runner": "node",
+    "file": "evidence/run.test.mjs",
+    "title": "exited children and ESRCH during shutdown do not replace the original failure",
+    "project": "node",
+    "multiplicity": 1
+  },
+  {
+    "runner": "node",
+    "file": "evidence/run.test.mjs",
+    "title": "failed Vitest without JSON retains its command outcome and typed diagnostics",
+    "project": "node",
+    "multiplicity": 1
+  },
+  {
+    "runner": "node",
+    "file": "evidence/run.test.mjs",
+    "title": "overlap leaves active owner and existing publication untouched",
+    "project": "node",
+    "multiplicity": 1
+  },
+  {
+    "runner": "node",
+    "file": "evidence/run.test.mjs",
+    "title": "owned command failure invalidates old success and releases only its token",
+    "project": "node",
+    "multiplicity": 1
+  },
+  {
+    "runner": "node",
+    "file": "evidence/run.test.mjs",
+    "title": "rejects symlinked build output before a producer can follow it",
+    "project": "node",
+    "multiplicity": 1
+  },
+  {
+    "runner": "node",
+    "file": "evidence/run.test.mjs",
+    "title": "signal cancellation after atomic rename exposes no success",
+    "project": "node",
+    "multiplicity": 1
+  },
+  {
+    "runner": "node",
+    "file": "evidence/run.test.mjs",
+    "title": "signal cancellation before atomic rename exposes no success",
+    "project": "node",
+    "multiplicity": 1
+  },
+  {
+    "runner": "node",
+    "file": "evidence/run.test.mjs",
+    "title": "simultaneous explicit stale recovery cannot remove the new active owner",
+    "project": "node",
+    "multiplicity": 1
+  },
+  {
+    "runner": "node",
+    "file": "evidence/run.test.mjs",
+    "title": "source changes during an executing command reject its claimed snapshot",
+    "project": "node",
+    "multiplicity": 1
+  },
+  {
+    "runner": "node",
+    "file": "evidence/run.test.mjs",
+    "title": "source mutation at publication is rejected and cannot leave current success",
+    "project": "node",
+    "multiplicity": 1
+  },
+  {
+    "runner": "node",
+    "file": "evidence/run.test.mjs",
+    "title": "stale owner requires explicit recovery; active and unverifiable owners remain untouched",
+    "project": "node",
+    "multiplicity": 1
+  },
+  {
+    "runner": "node",
+    "file": "evidence/run.test.mjs",
+    "title": "stale recovery rejects interrupted commands with potentially live descendants",
+    "project": "node",
+    "multiplicity": 1
+  },
+  {
+    "runner": "node",
+    "file": "evidence/run.test.mjs",
+    "title": "successful owned publication validates before rename and survives clean relocation",
+    "project": "node",
+    "multiplicity": 1
+  },
+  {
+    "runner": "node",
+    "file": "evidence/run.test.mjs",
+    "title": "token checked cleanup cannot delete a replacement owner",
+    "project": "node",
+    "multiplicity": 1
+  },
+  {
+    "runner": "node",
+    "file": "evidence/validate.test.mjs",
+    "title": "accepts complete clean-checkout proof with exact inventory and all 36 cells",
+    "project": "node",
+    "multiplicity": 1
+  },
+  {
+    "runner": "node",
+    "file": "evidence/validate.test.mjs",
+    "title": "native Node reporter preserves nested identities and rejects skipped todo and failed events",
+    "project": "node",
+    "multiplicity": 1
+  },
+  {
+    "runner": "node",
+    "file": "evidence/validate.test.mjs",
+    "title": "normalization preserves full titles, projects and duplicate multiplicities",
+    "project": "node",
+    "multiplicity": 1
+  },
+  {
+    "runner": "node",
+    "file": "evidence/validate.test.mjs",
+    "title": "optional public and environment inputs change source membership and identity",
+    "project": "node",
+    "multiplicity": 1
+  },
+  {
+    "runner": "node",
+    "file": "evidence/validate.test.mjs",
+    "title": "rejects content-bound duplicate browser execution even with matching pass flags",
+    "project": "node",
+    "multiplicity": 1
+  },
+  {
+    "runner": "node",
+    "file": "evidence/validate.test.mjs",
+    "title": "rejects content-bound failed browser execution even with matching pass flags",
+    "project": "node",
+    "multiplicity": 1
+  },
+  {
+    "runner": "node",
+    "file": "evidence/validate.test.mjs",
+    "title": "rejects content-bound missing browser execution even with matching pass flags",
+    "project": "node",
+    "multiplicity": 1
+  },
+  {
+    "runner": "node",
+    "file": "evidence/validate.test.mjs",
+    "title": "rejects content-bound retried browser execution even with matching pass flags",
+    "project": "node",
+    "multiplicity": 1
+  },
+  {
+    "runner": "node",
+    "file": "evidence/validate.test.mjs",
+    "title": "rejects content-bound skipped browser execution even with matching pass flags",
+    "project": "node",
+    "multiplicity": 1
+  },
+  {
+    "runner": "node",
+    "file": "evidence/validate.test.mjs",
+    "title": "rejects content-bound unmapped browser execution even with matching pass flags",
+    "project": "node",
+    "multiplicity": 1
+  },
+  {
+    "runner": "node",
+    "file": "evidence/validate.test.mjs",
+    "title": "rejects content-bound wrong-engine browser execution even with matching pass flags",
+    "project": "node",
+    "multiplicity": 1
+  },
+  {
+    "runner": "node",
+    "file": "evidence/validate.test.mjs",
+    "title": "rejects delivery CSP mutations and duplicate directives",
+    "project": "node",
+    "multiplicity": 1
+  },
+  {
+    "runner": "node",
+    "file": "evidence/validate.test.mjs",
+    "title": "rejects independently rehashed missing-cell contract",
+    "project": "node",
+    "multiplicity": 1
+  },
+  {
+    "runner": "node",
+    "file": "evidence/validate.test.mjs",
+    "title": "rejects independently rehashed missing-engine contract",
+    "project": "node",
+    "multiplicity": 1
+  },
+  {
+    "runner": "node",
+    "file": "evidence/validate.test.mjs",
+    "title": "rejects independently rehashed story contract",
+    "project": "node",
+    "multiplicity": 1
+  },
+  {
+    "runner": "node",
+    "file": "evidence/validate.test.mjs",
+    "title": "rejects independently rehashed unmapped-inventory contract",
+    "project": "node",
+    "multiplicity": 1
+  },
+  {
+    "runner": "node",
+    "file": "evidence/validate.test.mjs",
+    "title": "rejects independently rehashed unmapped-title contract",
+    "project": "node",
+    "multiplicity": 1
+  },
+  {
+    "runner": "node",
+    "file": "evidence/validate.test.mjs",
+    "title": "rejects isolated artifact proof mutation",
+    "project": "node",
+    "multiplicity": 1
+  },
+  {
+    "runner": "node",
+    "file": "evidence/validate.test.mjs",
+    "title": "rejects isolated hash proof mutation",
+    "project": "node",
+    "multiplicity": 1
+  },
+  {
+    "runner": "node",
+    "file": "evidence/validate.test.mjs",
+    "title": "rejects isolated missing-command proof mutation",
+    "project": "node",
+    "multiplicity": 1
+  },
+  {
+    "runner": "node",
+    "file": "evidence/validate.test.mjs",
+    "title": "rejects isolated missing-report proof mutation",
+    "project": "node",
+    "multiplicity": 1
+  },
+  {
+    "runner": "node",
+    "file": "evidence/validate.test.mjs",
+    "title": "rejects isolated nonzero proof mutation",
+    "project": "node",
+    "multiplicity": 1
+  },
+  {
+    "runner": "node",
+    "file": "evidence/validate.test.mjs",
+    "title": "rejects isolated signal proof mutation",
+    "project": "node",
+    "multiplicity": 1
+  },
+  {
+    "runner": "node",
+    "file": "evidence/validate.test.mjs",
+    "title": "rejects isolated source proof mutation",
+    "project": "node",
+    "multiplicity": 1
+  },
+  {
+    "runner": "node",
+    "file": "evidence/validate.test.mjs",
+    "title": "rejects isolated tool-version proof mutation",
+    "project": "node",
+    "multiplicity": 1
+  },
+  {
+    "runner": "node",
+    "file": "evidence/validate.test.mjs",
+    "title": "rejects isolated wrong-argv proof mutation",
+    "project": "node",
+    "multiplicity": 1
+  },
+  {
+    "runner": "node",
+    "file": "evidence/validate.test.mjs",
+    "title": "rejects traversal, absolute, symlink ancestors and special files before reading",
+    "project": "node",
+    "multiplicity": 1
+  },
+  {
+    "runner": "node",
+    "file": "evidence/validate.test.mjs",
+    "title": "same bytes remain valid after checkout relocation",
+    "project": "node",
+    "multiplicity": 1
+  },
+  {
+    "runner": "node",
+    "file": "evidence/validate.test.mjs",
+    "title": "unsupported observed Node versions cannot satisfy the engine contract",
+    "project": "node",
+    "multiplicity": 1
+  },
+  {
+    "runner": "playwright",
+    "file": "tests/workbench.spec.ts",
+    "title": "Add Query Parameter appends from either control, synchronizes Search, keeps focus, and stays private at capacity",
+    "project": "chromium",
+    "multiplicity": 1
+  },
+  {
+    "runner": "playwright",
+    "file": "tests/workbench.spec.ts",
+    "title": "Add Query Parameter remains reachable and performant at 250+ entries",
+    "project": "chromium",
+    "multiplicity": 1
+  },
+  {
+    "runner": "playwright",
+    "file": "tests/workbench.spec.ts",
+    "title": "an invalid Draft survives structured Add with its selection, error, and focus contract",
+    "project": "chromium",
+    "multiplicity": 1
+  },
+  {
+    "runner": "playwright",
+    "file": "tests/workbench.spec.ts",
+    "title": "blur-close and refocus round trip keeps the Structured View synchronized",
+    "project": "chromium",
+    "multiplicity": 1
+  },
+  {
+    "runner": "playwright",
+    "file": "tests/workbench.spec.ts",
+    "title": "capacity view renders every row and stays usable at 320px",
+    "project": "chromium",
+    "multiplicity": 1
+  },
+  {
+    "runner": "playwright",
+    "file": "tests/workbench.spec.ts",
+    "title": "continuous Full URL reconciliation meets the response target at 20,000 characters and 260 entries",
+    "project": "chromium",
+    "multiplicity": 1
+  },
+  {
+    "runner": "playwright",
+    "file": "tests/workbench.spec.ts",
+    "title": "Domain composition publishes once with delayed final input and preserves later edits and selection",
+    "project": "chromium",
+    "multiplicity": 1
+  },
+  {
+    "runner": "playwright",
+    "file": "tests/workbench.spec.ts",
+    "title": "Domain composition publishes once with immediate final input and preserves later edits and selection",
+    "project": "chromium",
+    "multiplicity": 1
+  },
+  {
+    "runner": "playwright",
+    "file": "tests/workbench.spec.ts",
+    "title": "Domain editing is synchronized, correctable, IME-safe, and host-only",
+    "project": "chromium",
+    "multiplicity": 1
+  },
+  {
+    "runner": "playwright",
+    "file": "tests/workbench.spec.ts",
+    "title": "Enter outside IME composition suppresses the newline and closes the focus session",
+    "project": "chromium",
+    "multiplicity": 1
+  },
+  {
+    "runner": "playwright",
+    "file": "tests/workbench.spec.ts",
+    "title": "Full URL composition leaves Last Valid and validation untouched until composition ends",
+    "project": "chromium",
+    "multiplicity": 1
+  },
+  {
+    "runner": "playwright",
+    "file": "tests/workbench.spec.ts",
+    "title": "Full URL edits publish continuously without an Apply step, with no Apply URL affordance anywhere",
+    "project": "chromium",
+    "multiplicity": 1
+  },
+  {
+    "runner": "playwright",
+    "file": "tests/workbench.spec.ts",
+    "title": "Full URL retains row identity across first intake, Enter, blur, and refocus",
+    "project": "chromium",
+    "multiplicity": 1
+  },
+  {
+    "runner": "playwright",
+    "file": "tests/workbench.spec.ts",
+    "title": "initial and populated workbench pass automated accessibility checks",
+    "project": "chromium",
+    "multiplicity": 1
+  },
+  {
+    "runner": "playwright",
+    "file": "tests/workbench.spec.ts",
+    "title": "intake preserves lossless semantics and rejects replacement",
+    "project": "chromium",
+    "multiplicity": 1
+  },
+  {
+    "runner": "playwright",
+    "file": "tests/workbench.spec.ts",
+    "title": "reload clears URL content and returns to no session",
+    "project": "chromium",
+    "multiplicity": 1
+  },
+  {
+    "runner": "playwright",
+    "file": "tests/workbench.spec.ts",
+    "title": "removal preserves exact survivors, Search, focus, accessibility, and privacy",
+    "project": "chromium",
+    "multiplicity": 1
+  },
+  {
+    "runner": "playwright",
+    "file": "tests/workbench.spec.ts",
+    "title": "reorders Query Parameters by keyboard and pointer activation, honoring boundaries, Search, duplicates, and capacity",
+    "project": "chromium",
+    "multiplicity": 1
+  },
+  {
+    "runner": "playwright",
+    "file": "tests/workbench.spec.ts",
+    "title": "reorders within a 250+ parameter list, keeping boundaries reachable and performant",
+    "project": "chromium",
+    "multiplicity": 1
+  },
+  {
+    "runner": "playwright",
+    "file": "tests/workbench.spec.ts",
+    "title": "search no-results and clear remain keyboard and activation safe",
+    "project": "chromium",
+    "multiplicity": 1
+  },
+  {
+    "runner": "playwright",
+    "file": "tests/workbench.spec.ts",
+    "title": "Shift+Enter outside IME composition suppresses the newline without closing the focus session",
+    "project": "chromium",
+    "multiplicity": 1
+  },
+  {
+    "runner": "playwright",
+    "file": "tests/workbench.spec.ts",
+    "title": "Story 2.7 capacity rejection preserves invalid Draft, selection, identities and focus",
+    "project": "chromium",
+    "multiplicity": 1
+  },
+  {
+    "runner": "playwright",
+    "file": "tests/workbench.spec.ts",
+    "title": "Story 2.7 invalid Draft capacity preserves all identities and measured edit/reorder response",
+    "project": "chromium",
+    "multiplicity": 1
+  },
+  {
+    "runner": "playwright",
+    "file": "tests/workbench.spec.ts",
+    "title": "Story 2.7 invalid Draft feedback reflows with forced colors and increased text spacing",
+    "project": "chromium",
+    "multiplicity": 1
+  },
+  {
+    "runner": "playwright",
+    "file": "tests/workbench.spec.ts",
+    "title": "Story 2.7 invalid Draft source, independent feedback and keyboard mutations remain accessible at 320px",
+    "project": "chromium",
+    "multiplicity": 1
+  },
+  {
+    "runner": "playwright",
+    "file": "tests/workbench.spec.ts",
+    "title": "structured editing handles search, selections, word deletion, caret, and drafts",
+    "project": "chromium",
+    "multiplicity": 1
+  },
+  {
+    "runner": "playwright",
+    "file": "tests/workbench.spec.ts",
+    "title": "structured editing preserves exact bytes, identity, validation, and focus",
+    "project": "chromium",
+    "multiplicity": 1
+  },
+  {
+    "runner": "playwright",
+    "file": "tests/workbench.spec.ts",
+    "title": "Structured View editing controls stay enabled while the Full URL draft is momentarily invalid (loosened gating)",
+    "project": "chromium",
+    "multiplicity": 1
+  },
+  {
+    "runner": "playwright",
+    "file": "tests/workbench.spec.ts",
+    "title": "Token composition retains Last Valid until end with delayed final input and later edits",
+    "project": "chromium",
+    "multiplicity": 1
+  },
+  {
+    "runner": "playwright",
+    "file": "tests/workbench.spec.ts",
+    "title": "Token composition retains Last Valid until end with immediate final input and later edits",
+    "project": "chromium",
+    "multiplicity": 1
+  },
+  {
+    "runner": "playwright",
+    "file": "tests/workbench.spec.ts",
+    "title": "Token final beforeinput publishes composition once and preserves normalized prefix caret",
+    "project": "chromium",
+    "multiplicity": 1
+  }
+]

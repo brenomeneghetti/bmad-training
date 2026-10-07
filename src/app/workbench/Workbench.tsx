@@ -19,12 +19,14 @@ import { ValidationMessage } from "../feedback/ValidationMessage";
 import { StructuredView } from "../pieces/StructuredView";
 import { buildManagedPieces, filterManagedPieces } from "../pieces/search";
 import styles from "../../styles/workbench.module.css";
+import { flushSync } from "react-dom";
 
 export function Workbench() {
   const [state, dispatch] = useReducer(sessionReducer, initialSessionState);
   const [searchTerm, setSearchTerm] = useState("");
   const [fullUrlComposition, setFullUrlComposition] = useState<string | null>(null);
   const fullUrlComposing = useRef(false);
+  const fullUrlEditorRef = useRef<HTMLTextAreaElement>(null);
   const [searchStatuses, setSearchStatuses] = useState<readonly {
     readonly id: number;
     readonly message: string;
@@ -230,9 +232,12 @@ export function Workbench() {
     const parse = prepareParse(afterInputChanged);
     const completion = parse.complete();
     if (value !== state.input && completion.result.ok) clearAnnouncements();
-    dispatch({ type: "inputChanged", value });
-    dispatch(parse.start);
-    dispatch(completion);
+    // Native input/change pairs can arrive before React's next render in Firefox.
+    flushSync(() => {
+      dispatch({ type: "inputChanged", value });
+      dispatch(parse.start);
+      dispatch(completion);
+    });
   };
 
   const handleFullUrlFocus = () => {
@@ -257,6 +262,26 @@ export function Workbench() {
       dispatch({ type: "closeFullUrlEdit", reason: "enter" });
     }
   };
+
+  useLayoutEffect(() => {
+    const editor = fullUrlEditorRef.current;
+    if (!editor) return;
+    const start = () => {
+      fullUrlComposing.current = true;
+      setFullUrlComposition(editor.value);
+    };
+    const end = () => {
+      fullUrlComposing.current = false;
+      setFullUrlComposition(null);
+      handleFullUrlChange(editor.value);
+    };
+    editor.addEventListener("compositionstart", start);
+    editor.addEventListener("compositionend", end);
+    return () => {
+      editor.removeEventListener("compositionstart", start);
+      editor.removeEventListener("compositionend", end);
+    };
+  });
 
   const announce = useCallback((message: string, preserveAcrossSnapshot = false) => {
     announcementId.current += 1;
@@ -409,20 +434,12 @@ export function Workbench() {
         </p>
         <textarea
           id="full-url-editor"
+          ref={fullUrlEditorRef}
           value={fullUrlComposition ?? state.input}
           onChange={(event) => {
             const value = event.currentTarget.value;
             if (fullUrlComposing.current) setFullUrlComposition(value);
             else handleFullUrlChange(value);
-          }}
-          onCompositionStart={(event) => {
-            fullUrlComposing.current = true;
-            setFullUrlComposition(event.currentTarget.value);
-          }}
-          onCompositionEnd={(event) => {
-            fullUrlComposing.current = false;
-            setFullUrlComposition(null);
-            handleFullUrlChange(event.currentTarget.value);
           }}
           onFocus={handleFullUrlFocus}
           onBlur={handleFullUrlBlur}
@@ -500,7 +517,7 @@ export function Workbench() {
               true,
             );
           }
-          dispatch({ type: "structuredEdit", command });
+          flushSync(() => dispatch({ type: "structuredEdit", command }));
         }}
         onRemovePiece={removePiece}
         onAddQueryPiece={addQueryPiece}

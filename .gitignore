@@ -3,3 +3,8 @@ dist/
 test-results/
 playwright-report/
 *.tsbuildinfo
+.cache/
+.url-evidence-*/
+evidence/.owner.json
+evidence/.recovery
+evidence/.manifest-*.json

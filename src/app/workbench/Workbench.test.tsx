@@ -14,6 +14,75 @@ import { Workbench } from "./Workbench";
 describe("URL Workbench", () => {
   afterEach(() => vi.useRealTimers());
 
+  it("expires Domain composition suppression after the other representation changes", () => {
+    render(<Workbench />);
+    const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
+    fireEvent.change(editor, { target: { value: "https://example.com/a?dup=1&dup=2" } });
+    const ascii = screen.getByLabelText("ASCII/Punycode Domain");
+    fireEvent.compositionStart(ascii);
+    fireEvent.input(ascii, { target: { value: "EXAMPLE.ORG" }, isComposing: true });
+    fireEvent.compositionEnd(ascii, { data: "EXAMPLE.ORG" });
+    fireEvent.change(screen.getByLabelText("Unicode Domain"), { target: { value: "example.net" } });
+    fireEvent.input(ascii, { target: { value: "EXAMPLE.ORG" }, inputType: "insertText" });
+    expect(ascii).toHaveValue("example.org");
+    expect(editor).toHaveValue("https://example.org/a?dup=1&dup=2");
+    expect(screen.getByText(/Domain synchronized at revision 4/)).toBeVisible();
+  });
+
+  it("publishes validation for same-turn native input/change pairs without stale parse completion", () => {
+    render(<Workbench />);
+    const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
+    act(() => {
+      fireEvent.input(editor, { target: { value: "https://example.com/a?x=1" } });
+      fireEvent.change(editor, { target: { value: "https://" } });
+    });
+    expect(editor).toHaveValue("https://");
+    expect(screen.getByLabelText("Path Segment 1 of 1")).toHaveValue("a");
+    expect(document.getElementById("error-full-url")).toHaveTextContent("Last Valid URL");
+  });
+
+  it("handles cancellable native beforeinput exactly once before its fallback input", () => {
+    render(<Workbench />);
+    const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
+    fireEvent.change(editor, { target: { value: "https://example.com/a?x=old" } });
+    const value = screen.getByLabelText("Value, Query Parameter 1 of 1") as HTMLInputElement;
+    value.focus();
+    value.setSelectionRange(0, value.value.length);
+    let accepted = true;
+    act(() => {
+      accepted = value.dispatchEvent(new InputEvent("beforeinput", {
+        bubbles: true, cancelable: true, inputType: "insertText", data: "x&😀",
+      }));
+    });
+    expect(accepted).toBe(false);
+    expect(value).toHaveValue("x%26%F0%9F%98%80");
+    expect(editor).toHaveValue("https://example.com/a?x=x%26%F0%9F%98%80");
+  });
+
+  it.each(["immediate", "delayed"] as const)(
+    "publishes Domain composition once with %s final input and accepts later edits",
+    async (timing) => {
+      render(<Workbench />);
+      const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
+      fireEvent.change(editor, { target: { value: "https://example.com/a?dup=1&dup=2#Frag%2f" } });
+      const domain = screen.getByLabelText("ASCII/Punycode Domain") as HTMLInputElement;
+      domain.focus();
+      fireEvent.compositionStart(domain);
+      fireEvent.input(domain, { target: { value: "EXAMPLE.ORG" }, isComposing: true, inputType: "insertCompositionText" });
+      expect(editor).toHaveValue("https://example.com/a?dup=1&dup=2#Frag%2f");
+      fireEvent.compositionEnd(domain, { data: "EXAMPLE.ORG" });
+      if (timing === "delayed") await act(() => new Promise((done) => window.setTimeout(done, 0)));
+      fireEvent.input(domain, { target: { value: "EXAMPLE.ORG" }, inputType: "insertFromComposition", isComposing: false });
+      expect(domain).toHaveValue("example.org");
+      expect(editor).toHaveValue("https://example.org/a?dup=1&dup=2#Frag%2f");
+      expect(screen.getByText(/Domain synchronized at revision 2/)).toBeVisible();
+      fireEvent.change(domain, { target: { value: "example.net" } });
+      expect(domain).toHaveFocus();
+      expect(editor).toHaveValue("https://example.net/a?dup=1&dup=2#Frag%2f");
+      expect(screen.getByText(/Domain synchronized at revision 3/)).toBeVisible();
+    },
+  );
+
   it("distinguishes intake from invalid Draft source and clears only Full URL feedback on correction", () => {
     render(<Workbench />);
     const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");

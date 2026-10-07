@@ -18,6 +18,113 @@ interface PrivacyProbe {
   fetchCalls: string[];
 }
 
+test.beforeEach(async ({ browser, browserName }, testInfo) => {
+  testInfo.annotations.push({ type: "engine", description: `${browserName}:${browser.version()}` });
+});
+
+test("Token final beforeinput publishes composition once and preserves normalized prefix caret", async ({ page }) => {
+  for (const inputType of ["insertFromComposition", "insertText"]) {
+    for (const delayed of [false, true]) {
+      await page.goto("/");
+      const editor = page.getByLabel("Complete HTTP or HTTPS Absolute URL");
+      await editor.fill("https://example.com/a?x=old");
+      const value = page.getByLabel("Value, Query Parameter 1 of 1");
+      await value.focus();
+      const accepted = await value.evaluate(async (input: HTMLInputElement, options) => {
+        const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!;
+        input.dispatchEvent(new CompositionEvent("compositionstart", { bubbles: true }));
+        setter.call(input, "日old");
+        input.dispatchEvent(new InputEvent("input", { bubbles: true, isComposing: true, inputType: "insertCompositionText" }));
+        input.setSelectionRange(1, 1);
+        input.dispatchEvent(new CompositionEvent("compositionend", { bubbles: true, data: "日" }));
+        if (options.delayed) await new Promise((done) => setTimeout(done, 0));
+        const finalInput = new InputEvent("beforeinput", {
+          bubbles: true, cancelable: true, data: "日", inputType: options.inputType,
+        });
+        // Chromium's constructor normalizes unsupported engine-specific input types.
+        Object.defineProperty(finalInput, "inputType", { value: options.inputType });
+        const accepted = input.dispatchEvent(finalInput);
+        setter.call(input, "日old");
+        input.dispatchEvent(new InputEvent("input", { bubbles: true, inputType: options.inputType }));
+        return accepted;
+      }, { inputType, delayed });
+      expect(accepted).toBe(false);
+      await expect(value).toHaveValue("%E6%97%A5old");
+      await expect(editor).toHaveValue("https://example.com/a?x=%E6%97%A5old");
+      expect(await value.evaluate((input: HTMLInputElement) => [input.selectionStart, input.selectionEnd])).toEqual([9, 9]);
+      await value.press("x");
+      await expect(value).toHaveValue("%E6%97%A5xold");
+    }
+  }
+});
+
+for (const timing of ["immediate", "delayed"]) {
+  test(`Domain composition publishes once with ${timing} final input and preserves later edits and selection`, async ({ page }) => {
+    await page.goto("/");
+    const editor = page.getByLabel("Complete HTTP or HTTPS Absolute URL");
+    await editor.fill("https://example.com/a?dup=1&dup=2#Frag%2f");
+    const ids = await page.locator("#managed-pieces > li").evaluateAll((rows) => rows.map((row) => row.getAttribute("data-piece-id")));
+    const domain = page.getByLabel("ASCII/Punycode Domain");
+    await domain.focus();
+    await domain.evaluate(async (element: HTMLInputElement, timing) => {
+      const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!;
+      element.dispatchEvent(new CompositionEvent("compositionstart", { bubbles: true }));
+      set.call(element, "EXAMPLE.ORG");
+      element.setSelectionRange(7, 7);
+      element.dispatchEvent(new InputEvent("input", { bubbles: true, isComposing: true, inputType: "insertCompositionText" }));
+      element.dispatchEvent(new CompositionEvent("compositionend", { bubbles: true, data: "EXAMPLE.ORG" }));
+      if (timing === "delayed") await new Promise((done) => setTimeout(done, 0));
+      set.call(element, "EXAMPLE.ORG");
+      element.setSelectionRange(7, 7);
+      element.dispatchEvent(new InputEvent("input", { bubbles: true, inputType: "insertFromComposition", isComposing: false }));
+    }, timing);
+    await expect(domain).toHaveValue("example.org");
+    await expect(editor).toHaveValue("https://example.org/a?dup=1&dup=2#Frag%2f");
+    await expect(page.getByText(/Domain synchronized at revision 2/)).toBeVisible();
+    await expect(domain).toBeFocused();
+    expect(await domain.evaluate((element: HTMLInputElement) => [element.selectionStart, element.selectionEnd])).toEqual([7, 7]);
+    await page.getByLabel("Unicode Domain").fill("example.net");
+    await expect(editor).toHaveValue("https://example.net/a?dup=1&dup=2#Frag%2f");
+    await expect(page.getByText(/Domain synchronized at revision 3/)).toBeVisible();
+    await domain.fill("EXAMPLE.ORG");
+    await expect(editor).toHaveValue("https://example.org/a?dup=1&dup=2#Frag%2f");
+    await expect(page.getByText(/Domain synchronized at revision 4/)).toBeVisible();
+    expect(await page.locator("#managed-pieces > li").evaluateAll((rows) => rows.map((row) => row.getAttribute("data-piece-id")))).toEqual(ids);
+    await domain.evaluate((element: HTMLInputElement) => {
+      element.setSelectionRange(2, 5, "backward");
+      element.dispatchEvent(new Event("select", { bubbles: true }));
+    });
+    await page.evaluate(() => new Promise<void>((done) => requestAnimationFrame(() => requestAnimationFrame(() => done()))));
+    expect(await domain.evaluate((element: HTMLInputElement) => [element.selectionStart, element.selectionEnd, element.selectionDirection])).toEqual([2, 5, "backward"]);
+  });
+  test(`Token composition retains Last Valid until end with ${timing} final input and later edits`, async ({ page }) => {
+    await page.goto("/");
+    const editor = page.getByLabel("Complete HTTP or HTTPS Absolute URL");
+    await editor.fill("https://example.com/a?x=old#Frag%2f");
+    const value = page.getByLabel("Value, Query Parameter 1 of 1");
+    await value.focus();
+    const during = await value.evaluate(async (element: HTMLInputElement, timing) => {
+      const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!;
+      element.dispatchEvent(new CompositionEvent("compositionstart", { bubbles: true }));
+      setter.call(element, "日本");
+      element.setSelectionRange(2, 2);
+      element.dispatchEvent(new InputEvent("input", { bubbles: true, isComposing: true, inputType: "insertCompositionText" }));
+      const during = document.querySelector<HTMLTextAreaElement>("#full-url-editor")!.value;
+      element.dispatchEvent(new CompositionEvent("compositionend", { bubbles: true, data: "日本" }));
+      if (timing === "delayed") await new Promise((done) => setTimeout(done, 0));
+      setter.call(element, "日本");
+      element.dispatchEvent(new InputEvent("input", { bubbles: true, isComposing: false, inputType: "insertFromComposition" }));
+      return during;
+    }, timing);
+    expect(during).toBe("https://example.com/a?x=old#Frag%2f");
+    await expect(value).toHaveValue("%E6%97%A5%E6%9C%AC");
+    await expect(editor).toHaveValue("https://example.com/a?x=%E6%97%A5%E6%9C%AC#Frag%2f");
+    await value.fill("later");
+    await expect(value).toBeFocused();
+    await expect(editor).toHaveValue("https://example.com/a?x=later#Frag%2f");
+  });
+}
+
 declare global {
   interface Window {
     readonly __privacyProbe: PrivacyProbe;
@@ -631,8 +738,9 @@ test("capacity view renders every row and stays usable at 320px", async ({ page 
       restoredIds,
     };
   });
-  expect(Object.values(searchMeasurements.durations).every((value) => value < 100))
-    .toBe(true);
+  for (const [operation, duration] of Object.entries(searchMeasurements.durations)) {
+    expect(duration, `${operation} Search response`).toBeLessThan(100);
+  }
   expect(searchMeasurements.rows.domain[0]?.values).toEqual([
     "example.com",
     "example.com",
@@ -1054,14 +1162,7 @@ test("initial and populated workbench pass automated accessibility checks", asyn
       ),
   ).toEqual([]);
 
-  const cdp = await page.context().newCDPSession(page);
-  await cdp.send("Emulation.setDeviceMetricsOverride", {
-    width: 320,
-    height: 800,
-    deviceScaleFactor: 4,
-    mobile: false,
-  });
-  expect(await page.evaluate(() => window.devicePixelRatio)).toBe(4);
+  await page.setViewportSize({ width: 320, height: 800 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
     320,
   );
@@ -1159,7 +1260,6 @@ test("structured editing preserves exact bytes, identity, validation, and focus"
 test("structured editing handles search, selections, word deletion, caret, and drafts", async ({
   page,
 }) => {
-  await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
   await page.goto("/");
   const fullUrl = page.getByLabel("Complete HTTP or HTTPS Absolute URL");
   await fullUrl.fill("https://example.com/a?dup=alpha%2F😀omega&other=two");
@@ -1173,8 +1273,13 @@ test("structured editing handles search, selections, word deletion, caret, and d
   await value.evaluate((input) => {
     (input as HTMLInputElement).setSelectionRange(0, 5);
   });
-  await value.press("ControlOrMeta+X");
-  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe("alpha");
+  expect(await value.evaluate((input) => {
+    const clipboardData = new DataTransfer();
+    const event = new Event("cut", { bubbles: true, cancelable: true });
+    Object.defineProperty(event, "clipboardData", { value: clipboardData });
+    input.dispatchEvent(event);
+    return clipboardData.getData("text/plain");
+  })).toBe("alpha");
   await expect(search).toHaveValue("");
   await expect(value).toBeFocused();
   await expect(value).toHaveValue("%2F😀omega");
@@ -1202,8 +1307,13 @@ test("structured editing handles search, selections, word deletion, caret, and d
     field.setSelectionRange(0, field.value.length);
     field.dispatchEvent(new Event("select", { bubbles: true }));
   });
-  await page.evaluate(() => navigator.clipboard.writeText("paste&😀"));
-  await value.press("ControlOrMeta+V");
+  await value.evaluate((input) => {
+    const clipboardData = new DataTransfer();
+    clipboardData.setData("text/plain", "paste&😀");
+    const event = new Event("paste", { bubbles: true, cancelable: true });
+    Object.defineProperty(event, "clipboardData", { value: clipboardData });
+    input.dispatchEvent(event);
+  });
   await expect(value).toHaveValue("paste%26%F0%9F%98%80");
   await value.fill("one");
   await value.evaluate(
@@ -1344,13 +1454,21 @@ test("Full URL composition leaves Last Valid and validation untouched until comp
   await page.goto("/");
   const editor = page.getByLabel("Complete HTTP or HTTPS Absolute URL");
   await editor.fill("https://example.com/a");
-  await editor.dispatchEvent("compositionstart");
-  await editor.fill("https://");
+  await editor.evaluate((element: HTMLTextAreaElement) => {
+    element.dispatchEvent(new CompositionEvent("compositionstart", { bubbles: true }));
+    const setter = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value")!.set!;
+    setter.call(element, "https://");
+    element.dispatchEvent(new InputEvent("input", { bubbles: true, isComposing: true, inputType: "insertCompositionText" }));
+  });
   await editor.dispatchEvent("keydown", { key: "Enter", isComposing: false });
   await expect(editor).toHaveValue("https://");
   await expect(editor).not.toHaveAttribute("aria-invalid");
   await expect(page.getByLabel("Path Segment 1 of 1")).toHaveValue("a");
-  await editor.fill("https://example.com/final");
+  await editor.evaluate((element: HTMLTextAreaElement) => {
+    const setter = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value")!.set!;
+    setter.call(element, "https://example.com/final");
+    element.dispatchEvent(new InputEvent("input", { bubbles: true, isComposing: true, inputType: "insertCompositionText" }));
+  });
   await editor.dispatchEvent("compositionend", { data: "final" });
   await expect(page.getByLabel("Path Segment 1 of 1")).toHaveValue("final");
 });

@@ -1,0 +1,729 @@
+argv: ["pnpm","exec","playwright","test","tests/workbench.spec.ts","--reporter=json"]
+exitCode: 1
+signal: null
+
+Running 90 tests using 1 worker
+
+[1/90] [chromium] › tests/workbench.spec.ts:26:3 › Domain composition publishes once with immediate final input and preserves later edits and selection
+[2/90] [chromium] › tests/workbench.spec.ts:60:3 › Token composition retains Last Valid until end with immediate final input and later edits
+[3/90] [chromium] › tests/workbench.spec.ts:26:3 › Domain composition publishes once with delayed final input and preserves later edits and selection
+[4/90] [chromium] › tests/workbench.spec.ts:60:3 › Token composition retains Last Valid until end with delayed final input and later edits
+[5/90] [chromium] › tests/workbench.spec.ts:94:1 › intake preserves lossless semantics and rejects replacement
+[6/90] [chromium] › tests/workbench.spec.ts:229:3 › Story 2.7 invalid Draft source, independent feedback and keyboard mutations remain accessible at 320px
+[7/90] [chromium] › tests/workbench.spec.ts:289:3 › Story 2.7 invalid Draft capacity preserves all identities and measured edit/reorder response
+[8/90] [chromium] › tests/workbench.spec.ts:363:1 › Story 2.7 capacity rejection preserves invalid Draft, selection, identities and focus
+[9/90] [chromium] › tests/workbench.spec.ts:401:1 › Story 2.7 invalid Draft feedback reflows with forced colors and increased text spacing
+[10/90] [chromium] › tests/workbench.spec.ts:442:1 › Domain editing is synchronized, correctable, IME-safe, and host-only
+[11/90] [chromium] › tests/workbench.spec.ts:593:1 › capacity view renders every row and stays usable at 320px
+[12/90] [chromium] › tests/workbench.spec.ts:820:1 › removal preserves exact survivors, Search, focus, accessibility, and privacy
+[13/90] [chromium] › tests/workbench.spec.ts:886:1 › Add Query Parameter appends from either control, synchronizes Search, keeps focus, and stays private at capacity
+[14/90] [chromium] › tests/workbench.spec.ts:952:1 › Add Query Parameter remains reachable and performant at 250+ entries
+[15/90] [chromium] › tests/workbench.spec.ts:985:1 › reorders Query Parameters by keyboard and pointer activation, honoring boundaries, Search, duplicates, and capacity
+[16/90] [chromium] › tests/workbench.spec.ts:1037:1 › reorders within a 250+ parameter list, keeping boundaries reachable and performant
+[17/90] [chromium] › tests/workbench.spec.ts:1067:1 › initial and populated workbench pass automated accessibility checks
+[18/90] [chromium] › tests/workbench.spec.ts:1131:1 › reload clears URL content and returns to no session
+[19/90] [chromium] › tests/workbench.spec.ts:1144:1 › search no-results and clear remain keyboard and activation safe
+[20/90] [chromium] › tests/workbench.spec.ts:1171:1 › structured editing preserves exact bytes, identity, validation, and focus
+[21/90] [chromium] › tests/workbench.spec.ts:1220:1 › structured editing handles search, selections, word deletion, caret, and drafts
+[22/90] [chromium] › tests/workbench.spec.ts:1379:1 › Full URL edits publish continuously without an Apply step, with no Apply URL affordance anywhere
+[23/90] [chromium] › tests/workbench.spec.ts:1393:1 › Full URL retains row identity across first intake, Enter, blur, and refocus
+[24/90] [chromium] › tests/workbench.spec.ts:1413:1 › Full URL composition leaves Last Valid and validation untouched until composition ends
+[25/90] [chromium] › tests/workbench.spec.ts:1436:1 › an invalid Draft survives structured Add with its selection, error, and focus contract
+[26/90] [chromium] › tests/workbench.spec.ts:1457:1 › continuous Full URL reconciliation meets the response target at 20,000 characters and 260 entries
+[27/90] [chromium] › tests/workbench.spec.ts:1478:1 › Enter outside IME composition suppresses the newline and closes the focus session
+[28/90] [chromium] › tests/workbench.spec.ts:1495:1 › Shift+Enter outside IME composition suppresses the newline without closing the focus session
+[29/90] [chromium] › tests/workbench.spec.ts:1513:1 › Structured View editing controls stay enabled while the Full URL draft is momentarily invalid (loosened gating)
+[30/90] [chromium] › tests/workbench.spec.ts:1539:1 › blur-close and refocus round trip keeps the Structured View synchronized
+[31/90] [firefox] › tests/workbench.spec.ts:26:3 › Domain composition publishes once with immediate final input and preserves later edits and selection
+[32/90] [firefox] › tests/workbench.spec.ts:60:3 › Token composition retains Last Valid until end with immediate final input and later edits
+[33/90] [firefox] › tests/workbench.spec.ts:26:3 › Domain composition publishes once with delayed final input and preserves later edits and selection
+[34/90] [firefox] › tests/workbench.spec.ts:60:3 › Token composition retains Last Valid until end with delayed final input and later edits
+[35/90] [firefox] › tests/workbench.spec.ts:94:1 › intake preserves lossless semantics and rejects replacement
+[36/90] [firefox] › tests/workbench.spec.ts:229:3 › Story 2.7 invalid Draft source, independent feedback and keyboard mutations remain accessible at 320px
+[37/90] [firefox] › tests/workbench.spec.ts:289:3 › Story 2.7 invalid Draft capacity preserves all identities and measured edit/reorder response
+[38/90] [firefox] › tests/workbench.spec.ts:363:1 › Story 2.7 capacity rejection preserves invalid Draft, selection, identities and focus
+[39/90] [firefox] › tests/workbench.spec.ts:401:1 › Story 2.7 invalid Draft feedback reflows with forced colors and increased text spacing
+[40/90] [firefox] › tests/workbench.spec.ts:442:1 › Domain editing is synchronized, correctable, IME-safe, and host-only
+[41/90] [firefox] › tests/workbench.spec.ts:593:1 › capacity view renders every row and stays usable at 320px
+[42/90] [firefox] › tests/workbench.spec.ts:820:1 › removal preserves exact survivors, Search, focus, accessibility, and privacy
+[43/90] [firefox] › tests/workbench.spec.ts:886:1 › Add Query Parameter appends from either control, synchronizes Search, keeps focus, and stays private at capacity
+[44/90] [firefox] › tests/workbench.spec.ts:952:1 › Add Query Parameter remains reachable and performant at 250+ entries
+[45/90] [firefox] › tests/workbench.spec.ts:985:1 › reorders Query Parameters by keyboard and pointer activation, honoring boundaries, Search, duplicates, and capacity
+[46/90] [firefox] › tests/workbench.spec.ts:1037:1 › reorders within a 250+ parameter list, keeping boundaries reachable and performant
+[47/90] [firefox] › tests/workbench.spec.ts:1067:1 › initial and populated workbench pass automated accessibility checks
+[48/90] [firefox] › tests/workbench.spec.ts:1131:1 › reload clears URL content and returns to no session
+[49/90] [firefox] › tests/workbench.spec.ts:1144:1 › search no-results and clear remain keyboard and activation safe
+[50/90] [firefox] › tests/workbench.spec.ts:1171:1 › structured editing preserves exact bytes, identity, validation, and focus
+[51/90] [firefox] › tests/workbench.spec.ts:1220:1 › structured editing handles search, selections, word deletion, caret, and drafts
+[52/90] [firefox] › tests/workbench.spec.ts:1379:1 › Full URL edits publish continuously without an Apply step, with no Apply URL affordance anywhere
+[53/90] [firefox] › tests/workbench.spec.ts:1393:1 › Full URL retains row identity across first intake, Enter, blur, and refocus
+[54/90] [firefox] › tests/workbench.spec.ts:1413:1 › Full URL composition leaves Last Valid and validation untouched until composition ends
+[55/90] [firefox] › tests/workbench.spec.ts:1436:1 › an invalid Draft survives structured Add with its selection, error, and focus contract
+[56/90] [firefox] › tests/workbench.spec.ts:1457:1 › continuous Full URL reconciliation meets the response target at 20,000 characters and 260 entries
+[57/90] [firefox] › tests/workbench.spec.ts:1478:1 › Enter outside IME composition suppresses the newline and closes the focus session
+[58/90] [firefox] › tests/workbench.spec.ts:1495:1 › Shift+Enter outside IME composition suppresses the newline without closing the focus session
+[59/90] [firefox] › tests/workbench.spec.ts:1513:1 › Structured View editing controls stay enabled while the Full URL draft is momentarily invalid (loosened gating)
+[60/90] [firefox] › tests/workbench.spec.ts:1539:1 › blur-close and refocus round trip keeps the Structured View synchronized
+[61/90] [webkit] › tests/workbench.spec.ts:26:3 › Domain composition publishes once with immediate final input and preserves later edits and selection
+  1) [webkit] › tests/workbench.spec.ts:26:3 › Domain composition publishes once with immediate final input and preserves later edits and selection 
+
+    Error: browserType.launch: 
+    ╔══════════════════════════════════════════════════════╗
+    ║ Host system is missing dependencies to run browsers. ║
+    ║ Please install them with the following command:      ║
+    ║                                                      ║
+    ║     sudo pnpm exec playwright install-deps           ║
+    ║                                                      ║
+    ║ Alternatively, use apt:                              ║
+    ║     sudo apt-get install libicu74\                   ║
+    ║         libxml2\                                     ║
+    ║         libflite1                                    ║
+    ║                                                      ║
+    ║ <3 Playwright Team                                   ║
+    ╚══════════════════════════════════════════════════════╝
+
+    Error Context: test-results/workbench-Domain-compositi-13a33-s-later-edits-and-selection-webkit/error-context.md
+
+
+[62/90] [webkit] › tests/workbench.spec.ts:60:3 › Token composition retains Last Valid until end with immediate final input and later edits
+  2) [webkit] › tests/workbench.spec.ts:60:3 › Token composition retains Last Valid until end with immediate final input and later edits 
+
+    Error: browserType.launch: 
+    ╔══════════════════════════════════════════════════════╗
+    ║ Host system is missing dependencies to run browsers. ║
+    ║ Please install them with the following command:      ║
+    ║                                                      ║
+    ║     sudo pnpm exec playwright install-deps           ║
+    ║                                                      ║
+    ║ Alternatively, use apt:                              ║
+    ║     sudo apt-get install libicu74\                   ║
+    ║         libxml2\                                     ║
+    ║         libflite1                                    ║
+    ║                                                      ║
+    ║ <3 Playwright Team                                   ║
+    ╚══════════════════════════════════════════════════════╝
+
+    Error Context: test-results/workbench-Token-compositio-37350-final-input-and-later-edits-webkit/error-context.md
+
+
+[63/90] [webkit] › tests/workbench.spec.ts:26:3 › Domain composition publishes once with delayed final input and preserves later edits and selection
+  3) [webkit] › tests/workbench.spec.ts:26:3 › Domain composition publishes once with delayed final input and preserves later edits and selection 
+
+    Error: browserType.launch: 
+    ╔══════════════════════════════════════════════════════╗
+    ║ Host system is missing dependencies to run browsers. ║
+    ║ Please install them with the following command:      ║
+    ║                                                      ║
+    ║     sudo pnpm exec playwright install-deps           ║
+    ║                                                      ║
+    ║ Alternatively, use apt:                              ║
+    ║     sudo apt-get install libicu74\                   ║
+    ║         libxml2\                                     ║
+    ║         libflite1                                    ║
+    ║                                                      ║
+    ║ <3 Playwright Team                                   ║
+    ╚══════════════════════════════════════════════════════╝
+
+    Error Context: test-results/workbench-Domain-compositi-b6026-s-later-edits-and-selection-webkit/error-context.md
+
+
+[64/90] [webkit] › tests/workbench.spec.ts:60:3 › Token composition retains Last Valid until end with delayed final input and later edits
+  4) [webkit] › tests/workbench.spec.ts:60:3 › Token composition retains Last Valid until end with delayed final input and later edits 
+
+    Error: browserType.launch: 
+    ╔══════════════════════════════════════════════════════╗
+    ║ Host system is missing dependencies to run browsers. ║
+    ║ Please install them with the following command:      ║
+    ║                                                      ║
+    ║     sudo pnpm exec playwright install-deps           ║
+    ║                                                      ║
+    ║ Alternatively, use apt:                              ║
+    ║     sudo apt-get install libicu74\                   ║
+    ║         libxml2\                                     ║
+    ║         libflite1                                    ║
+    ║                                                      ║
+    ║ <3 Playwright Team                                   ║
+    ╚══════════════════════════════════════════════════════╝
+
+    Error Context: test-results/workbench-Token-compositio-fe154-final-input-and-later-edits-webkit/error-context.md
+
+
+[65/90] [webkit] › tests/workbench.spec.ts:94:1 › intake preserves lossless semantics and rejects replacement
+  5) [webkit] › tests/workbench.spec.ts:94:1 › intake preserves lossless semantics and rejects replacement 
+
+    Error: browserType.launch: 
+    ╔══════════════════════════════════════════════════════╗
+    ║ Host system is missing dependencies to run browsers. ║
+    ║ Please install them with the following command:      ║
+    ║                                                      ║
+    ║     sudo pnpm exec playwright install-deps           ║
+    ║                                                      ║
+    ║ Alternatively, use apt:                              ║
+    ║     sudo apt-get install libicu74\                   ║
+    ║         libxml2\                                     ║
+    ║         libflite1                                    ║
+    ║                                                      ║
+    ║ <3 Playwright Team                                   ║
+    ╚══════════════════════════════════════════════════════╝
+
+    Error Context: test-results/workbench-intake-preserves-59939-ics-and-rejects-replacement-webkit/error-context.md
+
+
+[66/90] [webkit] › tests/workbench.spec.ts:229:3 › Story 2.7 invalid Draft source, independent feedback and keyboard mutations remain accessible at 320px
+  6) [webkit] › tests/workbench.spec.ts:229:3 › Story 2.7 invalid Draft source, independent feedback and keyboard mutations remain accessible at 320px 
+
+    Error: browserType.launch: 
+    ╔══════════════════════════════════════════════════════╗
+    ║ Host system is missing dependencies to run browsers. ║
+    ║ Please install them with the following command:      ║
+    ║                                                      ║
+    ║     sudo pnpm exec playwright install-deps           ║
+    ║                                                      ║
+    ║ Alternatively, use apt:                              ║
+    ║     sudo apt-get install libicu74\                   ║
+    ║         libxml2\                                     ║
+    ║         libflite1                                    ║
+    ║                                                      ║
+    ║ <3 Playwright Team                                   ║
+    ╚══════════════════════════════════════════════════════╝
+
+    Error Context: test-results/workbench-Story-2-7-invali-56f0a--remain-accessible-at-320px-webkit/error-context.md
+
+
+[67/90] [webkit] › tests/workbench.spec.ts:289:3 › Story 2.7 invalid Draft capacity preserves all identities and measured edit/reorder response
+  7) [webkit] › tests/workbench.spec.ts:289:3 › Story 2.7 invalid Draft capacity preserves all identities and measured edit/reorder response 
+
+    Error: browserType.launch: 
+    ╔══════════════════════════════════════════════════════╗
+    ║ Host system is missing dependencies to run browsers. ║
+    ║ Please install them with the following command:      ║
+    ║                                                      ║
+    ║     sudo pnpm exec playwright install-deps           ║
+    ║                                                      ║
+    ║ Alternatively, use apt:                              ║
+    ║     sudo apt-get install libicu74\                   ║
+    ║         libxml2\                                     ║
+    ║         libflite1                                    ║
+    ║                                                      ║
+    ║ <3 Playwright Team                                   ║
+    ╚══════════════════════════════════════════════════════╝
+
+    Error Context: test-results/workbench-Story-2-7-invali-4a886-sured-edit-reorder-response-webkit/error-context.md
+
+
+[68/90] [webkit] › tests/workbench.spec.ts:363:1 › Story 2.7 capacity rejection preserves invalid Draft, selection, identities and focus
+  8) [webkit] › tests/workbench.spec.ts:363:1 › Story 2.7 capacity rejection preserves invalid Draft, selection, identities and focus 
+
+    Error: browserType.launch: 
+    ╔══════════════════════════════════════════════════════╗
+    ║ Host system is missing dependencies to run browsers. ║
+    ║ Please install them with the following command:      ║
+    ║                                                      ║
+    ║     sudo pnpm exec playwright install-deps           ║
+    ║                                                      ║
+    ║ Alternatively, use apt:                              ║
+    ║     sudo apt-get install libicu74\                   ║
+    ║         libxml2\                                     ║
+    ║         libflite1                                    ║
+    ║                                                      ║
+    ║ <3 Playwright Team                                   ║
+    ╚══════════════════════════════════════════════════════╝
+
+    Error Context: test-results/workbench-Story-2-7-capaci-ab558-ection-identities-and-focus-webkit/error-context.md
+
+
+[69/90] [webkit] › tests/workbench.spec.ts:401:1 › Story 2.7 invalid Draft feedback reflows with forced colors and increased text spacing
+  9) [webkit] › tests/workbench.spec.ts:401:1 › Story 2.7 invalid Draft feedback reflows with forced colors and increased text spacing 
+
+    Error: browserType.launch: 
+    ╔══════════════════════════════════════════════════════╗
+    ║ Host system is missing dependencies to run browsers. ║
+    ║ Please install them with the following command:      ║
+    ║                                                      ║
+    ║     sudo pnpm exec playwright install-deps           ║
+    ║                                                      ║
+    ║ Alternatively, use apt:                              ║
+    ║     sudo apt-get install libicu74\                   ║
+    ║         libxml2\                                     ║
+    ║         libflite1                                    ║
+    ║                                                      ║
+    ║ <3 Playwright Team                                   ║
+    ╚══════════════════════════════════════════════════════╝
+
+    Error Context: test-results/workbench-Story-2-7-invali-41513--and-increased-text-spacing-webkit/error-context.md
+
+
+[70/90] [webkit] › tests/workbench.spec.ts:442:1 › Domain editing is synchronized, correctable, IME-safe, and host-only
+  10) [webkit] › tests/workbench.spec.ts:442:1 › Domain editing is synchronized, correctable, IME-safe, and host-only 
+
+    Error: browserType.launch: 
+    ╔══════════════════════════════════════════════════════╗
+    ║ Host system is missing dependencies to run browsers. ║
+    ║ Please install them with the following command:      ║
+    ║                                                      ║
+    ║     sudo pnpm exec playwright install-deps           ║
+    ║                                                      ║
+    ║ Alternatively, use apt:                              ║
+    ║     sudo apt-get install libicu74\                   ║
+    ║         libxml2\                                     ║
+    ║         libflite1                                    ║
+    ║                                                      ║
+    ║ <3 Playwright Team                                   ║
+    ╚══════════════════════════════════════════════════════╝
+
+    Error Context: test-results/workbench-Domain-editing-i-fba0d-able-IME-safe-and-host-only-webkit/error-context.md
+
+
+[71/90] [webkit] › tests/workbench.spec.ts:593:1 › capacity view renders every row and stays usable at 320px
+  11) [webkit] › tests/workbench.spec.ts:593:1 › capacity view renders every row and stays usable at 320px 
+
+    Error: browserType.launch: 
+    ╔══════════════════════════════════════════════════════╗
+    ║ Host system is missing dependencies to run browsers. ║
+    ║ Please install them with the following command:      ║
+    ║                                                      ║
+    ║     sudo pnpm exec playwright install-deps           ║
+    ║                                                      ║
+    ║ Alternatively, use apt:                              ║
+    ║     sudo apt-get install libicu74\                   ║
+    ║         libxml2\                                     ║
+    ║         libflite1                                    ║
+    ║                                                      ║
+    ║ <3 Playwright Team                                   ║
+    ╚══════════════════════════════════════════════════════╝
+
+    Error Context: test-results/workbench-capacity-view-re-cbd3f-w-and-stays-usable-at-320px-webkit/error-context.md
+
+
+[72/90] [webkit] › tests/workbench.spec.ts:820:1 › removal preserves exact survivors, Search, focus, accessibility, and privacy
+  12) [webkit] › tests/workbench.spec.ts:820:1 › removal preserves exact survivors, Search, focus, accessibility, and privacy 
+
+    Error: browserType.launch: 
+    ╔══════════════════════════════════════════════════════╗
+    ║ Host system is missing dependencies to run browsers. ║
+    ║ Please install them with the following command:      ║
+    ║                                                      ║
+    ║     sudo pnpm exec playwright install-deps           ║
+    ║                                                      ║
+    ║ Alternatively, use apt:                              ║
+    ║     sudo apt-get install libicu74\                   ║
+    ║         libxml2\                                     ║
+    ║         libflite1                                    ║
+    ║                                                      ║
+    ║ <3 Playwright Team                                   ║
+    ╚══════════════════════════════════════════════════════╝
+
+    Error Context: test-results/workbench-removal-preserve-c5604-s-accessibility-and-privacy-webkit/error-context.md
+
+
+[73/90] [webkit] › tests/workbench.spec.ts:886:1 › Add Query Parameter appends from either control, synchronizes Search, keeps focus, and stays private at capacity
+  13) [webkit] › tests/workbench.spec.ts:886:1 › Add Query Parameter appends from either control, synchronizes Search, keeps focus, and stays private at capacity 
+
+    Error: browserType.launch: 
+    ╔══════════════════════════════════════════════════════╗
+    ║ Host system is missing dependencies to run browsers. ║
+    ║ Please install them with the following command:      ║
+    ║                                                      ║
+    ║     sudo pnpm exec playwright install-deps           ║
+    ║                                                      ║
+    ║ Alternatively, use apt:                              ║
+    ║     sudo apt-get install libicu74\                   ║
+    ║         libxml2\                                     ║
+    ║         libflite1                                    ║
+    ║                                                      ║
+    ║ <3 Playwright Team                                   ║
+    ╚══════════════════════════════════════════════════════╝
+
+    Error Context: test-results/workbench-Add-Query-Parame-5e964-d-stays-private-at-capacity-webkit/error-context.md
+
+
+[74/90] [webkit] › tests/workbench.spec.ts:952:1 › Add Query Parameter remains reachable and performant at 250+ entries
+  14) [webkit] › tests/workbench.spec.ts:952:1 › Add Query Parameter remains reachable and performant at 250+ entries 
+
+    Error: browserType.launch: 
+    ╔══════════════════════════════════════════════════════╗
+    ║ Host system is missing dependencies to run browsers. ║
+    ║ Please install them with the following command:      ║
+    ║                                                      ║
+    ║     sudo pnpm exec playwright install-deps           ║
+    ║                                                      ║
+    ║ Alternatively, use apt:                              ║
+    ║     sudo apt-get install libicu74\                   ║
+    ║         libxml2\                                     ║
+    ║         libflite1                                    ║
+    ║                                                      ║
+    ║ <3 Playwright Team                                   ║
+    ╚══════════════════════════════════════════════════════╝
+
+    Error Context: test-results/workbench-Add-Query-Parame-7e17a-d-performant-at-250-entries-webkit/error-context.md
+
+
+[75/90] [webkit] › tests/workbench.spec.ts:985:1 › reorders Query Parameters by keyboard and pointer activation, honoring boundaries, Search, duplicates, and capacity
+  15) [webkit] › tests/workbench.spec.ts:985:1 › reorders Query Parameters by keyboard and pointer activation, honoring boundaries, Search, duplicates, and capacity 
+
+    Error: browserType.launch: 
+    ╔══════════════════════════════════════════════════════╗
+    ║ Host system is missing dependencies to run browsers. ║
+    ║ Please install them with the following command:      ║
+    ║                                                      ║
+    ║     sudo pnpm exec playwright install-deps           ║
+    ║                                                      ║
+    ║ Alternatively, use apt:                              ║
+    ║     sudo apt-get install libicu74\                   ║
+    ║         libxml2\                                     ║
+    ║         libflite1                                    ║
+    ║                                                      ║
+    ║ <3 Playwright Team                                   ║
+    ╚══════════════════════════════════════════════════════╝
+
+    Error Context: test-results/workbench-reorders-Query-P-57c72-rch-duplicates-and-capacity-webkit/error-context.md
+
+
+[76/90] [webkit] › tests/workbench.spec.ts:1037:1 › reorders within a 250+ parameter list, keeping boundaries reachable and performant
+  16) [webkit] › tests/workbench.spec.ts:1037:1 › reorders within a 250+ parameter list, keeping boundaries reachable and performant 
+
+    Error: browserType.launch: 
+    ╔══════════════════════════════════════════════════════╗
+    ║ Host system is missing dependencies to run browsers. ║
+    ║ Please install them with the following command:      ║
+    ║                                                      ║
+    ║     sudo pnpm exec playwright install-deps           ║
+    ║                                                      ║
+    ║ Alternatively, use apt:                              ║
+    ║     sudo apt-get install libicu74\                   ║
+    ║         libxml2\                                     ║
+    ║         libflite1                                    ║
+    ║                                                      ║
+    ║ <3 Playwright Team                                   ║
+    ╚══════════════════════════════════════════════════════╝
+
+    Error Context: test-results/workbench-reorders-within--3d6af-es-reachable-and-performant-webkit/error-context.md
+
+
+[77/90] [webkit] › tests/workbench.spec.ts:1067:1 › initial and populated workbench pass automated accessibility checks
+  17) [webkit] › tests/workbench.spec.ts:1067:1 › initial and populated workbench pass automated accessibility checks 
+
+    Error: browserType.launch: 
+    ╔══════════════════════════════════════════════════════╗
+    ║ Host system is missing dependencies to run browsers. ║
+    ║ Please install them with the following command:      ║
+    ║                                                      ║
+    ║     sudo pnpm exec playwright install-deps           ║
+    ║                                                      ║
+    ║ Alternatively, use apt:                              ║
+    ║     sudo apt-get install libicu74\                   ║
+    ║         libxml2\                                     ║
+    ║         libflite1                                    ║
+    ║                                                      ║
+    ║ <3 Playwright Team                                   ║
+    ╚══════════════════════════════════════════════════════╝
+
+    Error Context: test-results/workbench-initial-and-popu-e10d7-omated-accessibility-checks-webkit/error-context.md
+
+
+[78/90] [webkit] › tests/workbench.spec.ts:1131:1 › reload clears URL content and returns to no session
+  18) [webkit] › tests/workbench.spec.ts:1131:1 › reload clears URL content and returns to no session 
+
+    Error: browserType.launch: 
+    ╔══════════════════════════════════════════════════════╗
+    ║ Host system is missing dependencies to run browsers. ║
+    ║ Please install them with the following command:      ║
+    ║                                                      ║
+    ║     sudo pnpm exec playwright install-deps           ║
+    ║                                                      ║
+    ║ Alternatively, use apt:                              ║
+    ║     sudo apt-get install libicu74\                   ║
+    ║         libxml2\                                     ║
+    ║         libflite1                                    ║
+    ║                                                      ║
+    ║ <3 Playwright Team                                   ║
+    ╚══════════════════════════════════════════════════════╝
+
+    Error Context: test-results/workbench-reload-clears-UR-0a2c3-t-and-returns-to-no-session-webkit/error-context.md
+
+
+[79/90] [webkit] › tests/workbench.spec.ts:1144:1 › search no-results and clear remain keyboard and activation safe
+  19) [webkit] › tests/workbench.spec.ts:1144:1 › search no-results and clear remain keyboard and activation safe 
+
+    Error: browserType.launch: 
+    ╔══════════════════════════════════════════════════════╗
+    ║ Host system is missing dependencies to run browsers. ║
+    ║ Please install them with the following command:      ║
+    ║                                                      ║
+    ║     sudo pnpm exec playwright install-deps           ║
+    ║                                                      ║
+    ║ Alternatively, use apt:                              ║
+    ║     sudo apt-get install libicu74\                   ║
+    ║         libxml2\                                     ║
+    ║         libflite1                                    ║
+    ║                                                      ║
+    ║ <3 Playwright Team                                   ║
+    ╚══════════════════════════════════════════════════════╝
+
+    Error Context: test-results/workbench-search-no-result-1268a-eyboard-and-activation-safe-webkit/error-context.md
+
+
+[80/90] [webkit] › tests/workbench.spec.ts:1171:1 › structured editing preserves exact bytes, identity, validation, and focus
+  20) [webkit] › tests/workbench.spec.ts:1171:1 › structured editing preserves exact bytes, identity, validation, and focus 
+
+    Error: browserType.launch: 
+    ╔══════════════════════════════════════════════════════╗
+    ║ Host system is missing dependencies to run browsers. ║
+    ║ Please install them with the following command:      ║
+    ║                                                      ║
+    ║     sudo pnpm exec playwright install-deps           ║
+    ║                                                      ║
+    ║ Alternatively, use apt:                              ║
+    ║     sudo apt-get install libicu74\                   ║
+    ║         libxml2\                                     ║
+    ║         libflite1                                    ║
+    ║                                                      ║
+    ║ <3 Playwright Team                                   ║
+    ╚══════════════════════════════════════════════════════╝
+
+    Error Context: test-results/workbench-structured-editi-ed851-entity-validation-and-focus-webkit/error-context.md
+
+
+[81/90] [webkit] › tests/workbench.spec.ts:1220:1 › structured editing handles search, selections, word deletion, caret, and drafts
+  21) [webkit] › tests/workbench.spec.ts:1220:1 › structured editing handles search, selections, word deletion, caret, and drafts 
+
+    Error: browserType.launch: 
+    ╔══════════════════════════════════════════════════════╗
+    ║ Host system is missing dependencies to run browsers. ║
+    ║ Please install them with the following command:      ║
+    ║                                                      ║
+    ║     sudo pnpm exec playwright install-deps           ║
+    ║                                                      ║
+    ║ Alternatively, use apt:                              ║
+    ║     sudo apt-get install libicu74\                   ║
+    ║         libxml2\                                     ║
+    ║         libflite1                                    ║
+    ║                                                      ║
+    ║ <3 Playwright Team                                   ║
+    ╚══════════════════════════════════════════════════════╝
+
+    Error Context: test-results/workbench-structured-editi-1f703-d-deletion-caret-and-drafts-webkit/error-context.md
+
+
+[82/90] [webkit] › tests/workbench.spec.ts:1379:1 › Full URL edits publish continuously without an Apply step, with no Apply URL affordance anywhere
+  22) [webkit] › tests/workbench.spec.ts:1379:1 › Full URL edits publish continuously without an Apply step, with no Apply URL affordance anywhere 
+
+    Error: browserType.launch: 
+    ╔══════════════════════════════════════════════════════╗
+    ║ Host system is missing dependencies to run browsers. ║
+    ║ Please install them with the following command:      ║
+    ║                                                      ║
+    ║     sudo pnpm exec playwright install-deps           ║
+    ║                                                      ║
+    ║ Alternatively, use apt:                              ║
+    ║     sudo apt-get install libicu74\                   ║
+    ║         libxml2\                                     ║
+    ║         libflite1                                    ║
+    ║                                                      ║
+    ║ <3 Playwright Team                                   ║
+    ╚══════════════════════════════════════════════════════╝
+
+    Error Context: test-results/workbench-Full-URL-edits-p-69cfd-ply-URL-affordance-anywhere-webkit/error-context.md
+
+
+[83/90] [webkit] › tests/workbench.spec.ts:1393:1 › Full URL retains row identity across first intake, Enter, blur, and refocus
+  23) [webkit] › tests/workbench.spec.ts:1393:1 › Full URL retains row identity across first intake, Enter, blur, and refocus 
+
+    Error: browserType.launch: 
+    ╔══════════════════════════════════════════════════════╗
+    ║ Host system is missing dependencies to run browsers. ║
+    ║ Please install them with the following command:      ║
+    ║                                                      ║
+    ║     sudo pnpm exec playwright install-deps           ║
+    ║                                                      ║
+    ║ Alternatively, use apt:                              ║
+    ║     sudo apt-get install libicu74\                   ║
+    ║         libxml2\                                     ║
+    ║         libflite1                                    ║
+    ║                                                      ║
+    ║ <3 Playwright Team                                   ║
+    ╚══════════════════════════════════════════════════════╝
+
+    Error Context: test-results/workbench-Full-URL-retains-94bb6-take-Enter-blur-and-refocus-webkit/error-context.md
+
+
+[84/90] [webkit] › tests/workbench.spec.ts:1413:1 › Full URL composition leaves Last Valid and validation untouched until composition ends
+  24) [webkit] › tests/workbench.spec.ts:1413:1 › Full URL composition leaves Last Valid and validation untouched until composition ends 
+
+    Error: browserType.launch: 
+    ╔══════════════════════════════════════════════════════╗
+    ║ Host system is missing dependencies to run browsers. ║
+    ║ Please install them with the following command:      ║
+    ║                                                      ║
+    ║     sudo pnpm exec playwright install-deps           ║
+    ║                                                      ║
+    ║ Alternatively, use apt:                              ║
+    ║     sudo apt-get install libicu74\                   ║
+    ║         libxml2\                                     ║
+    ║         libflite1                                    ║
+    ║                                                      ║
+    ║ <3 Playwright Team                                   ║
+    ╚══════════════════════════════════════════════════════╝
+
+    Error Context: test-results/workbench-Full-URL-composi-29fcb-ched-until-composition-ends-webkit/error-context.md
+
+
+[85/90] [webkit] › tests/workbench.spec.ts:1436:1 › an invalid Draft survives structured Add with its selection, error, and focus contract
+  25) [webkit] › tests/workbench.spec.ts:1436:1 › an invalid Draft survives structured Add with its selection, error, and focus contract 
+
+    Error: browserType.launch: 
+    ╔══════════════════════════════════════════════════════╗
+    ║ Host system is missing dependencies to run browsers. ║
+    ║ Please install them with the following command:      ║
+    ║                                                      ║
+    ║     sudo pnpm exec playwright install-deps           ║
+    ║                                                      ║
+    ║ Alternatively, use apt:                              ║
+    ║     sudo apt-get install libicu74\                   ║
+    ║         libxml2\                                     ║
+    ║         libflite1                                    ║
+    ║                                                      ║
+    ║ <3 Playwright Team                                   ║
+    ╚══════════════════════════════════════════════════════╝
+
+    Error Context: test-results/workbench-an-invalid-Draft-5ac10-on-error-and-focus-contract-webkit/error-context.md
+
+
+[86/90] [webkit] › tests/workbench.spec.ts:1457:1 › continuous Full URL reconciliation meets the response target at 20,000 characters and 260 entries
+  26) [webkit] › tests/workbench.spec.ts:1457:1 › continuous Full URL reconciliation meets the response target at 20,000 characters and 260 entries 
+
+    Error: browserType.launch: 
+    ╔══════════════════════════════════════════════════════╗
+    ║ Host system is missing dependencies to run browsers. ║
+    ║ Please install them with the following command:      ║
+    ║                                                      ║
+    ║     sudo pnpm exec playwright install-deps           ║
+    ║                                                      ║
+    ║ Alternatively, use apt:                              ║
+    ║     sudo apt-get install libicu74\                   ║
+    ║         libxml2\                                     ║
+    ║         libflite1                                    ║
+    ║                                                      ║
+    ║ <3 Playwright Team                                   ║
+    ╚══════════════════════════════════════════════════════╝
+
+    Error Context: test-results/workbench-continuous-Full--9a609--characters-and-260-entries-webkit/error-context.md
+
+
+[87/90] [webkit] › tests/workbench.spec.ts:1478:1 › Enter outside IME composition suppresses the newline and closes the focus session
+  27) [webkit] › tests/workbench.spec.ts:1478:1 › Enter outside IME composition suppresses the newline and closes the focus session 
+
+    Error: browserType.launch: 
+    ╔══════════════════════════════════════════════════════╗
+    ║ Host system is missing dependencies to run browsers. ║
+    ║ Please install them with the following command:      ║
+    ║                                                      ║
+    ║     sudo pnpm exec playwright install-deps           ║
+    ║                                                      ║
+    ║ Alternatively, use apt:                              ║
+    ║     sudo apt-get install libicu74\                   ║
+    ║         libxml2\                                     ║
+    ║         libflite1                                    ║
+    ║                                                      ║
+    ║ <3 Playwright Team                                   ║
+    ╚══════════════════════════════════════════════════════╝
+
+    Error Context: test-results/workbench-Enter-outside-IM-e34da-nd-closes-the-focus-session-webkit/error-context.md
+
+
+[88/90] [webkit] › tests/workbench.spec.ts:1495:1 › Shift+Enter outside IME composition suppresses the newline without closing the focus session
+  28) [webkit] › tests/workbench.spec.ts:1495:1 › Shift+Enter outside IME composition suppresses the newline without closing the focus session 
+
+    Error: browserType.launch: 
+    ╔══════════════════════════════════════════════════════╗
+    ║ Host system is missing dependencies to run browsers. ║
+    ║ Please install them with the following command:      ║
+    ║                                                      ║
+    ║     sudo pnpm exec playwright install-deps           ║
+    ║                                                      ║
+    ║ Alternatively, use apt:                              ║
+    ║     sudo apt-get install libicu74\                   ║
+    ║         libxml2\                                     ║
+    ║         libflite1                                    ║
+    ║                                                      ║
+    ║ <3 Playwright Team                                   ║
+    ╚══════════════════════════════════════════════════════╝
+
+    Error Context: test-results/workbench-Shift-Enter-outs-64f9a-t-closing-the-focus-session-webkit/error-context.md
+
+
+[89/90] [webkit] › tests/workbench.spec.ts:1513:1 › Structured View editing controls stay enabled while the Full URL draft is momentarily invalid (loosened gating)
+  29) [webkit] › tests/workbench.spec.ts:1513:1 › Structured View editing controls stay enabled while the Full URL draft is momentarily invalid (loosened gating) 
+
+    Error: browserType.launch: 
+    ╔══════════════════════════════════════════════════════╗
+    ║ Host system is missing dependencies to run browsers. ║
+    ║ Please install them with the following command:      ║
+    ║                                                      ║
+    ║     sudo pnpm exec playwright install-deps           ║
+    ║                                                      ║
+    ║ Alternatively, use apt:                              ║
+    ║     sudo apt-get install libicu74\                   ║
+    ║         libxml2\                                     ║
+    ║         libflite1                                    ║
+    ║                                                      ║
+    ║ <3 Playwright Team                                   ║
+    ╚══════════════════════════════════════════════════════╝
+
+    Error Context: test-results/workbench-Structured-View--ff3ea-ly-invalid-loosened-gating--webkit/error-context.md
+
+
+[90/90] [webkit] › tests/workbench.spec.ts:1539:1 › blur-close and refocus round trip keeps the Structured View synchronized
+  30) [webkit] › tests/workbench.spec.ts:1539:1 › blur-close and refocus round trip keeps the Structured View synchronized 
+
+    Error: browserType.launch: 
+    ╔══════════════════════════════════════════════════════╗
+    ║ Host system is missing dependencies to run browsers. ║
+    ║ Please install them with the following command:      ║
+    ║                                                      ║
+    ║     sudo pnpm exec playwright install-deps           ║
+    ║                                                      ║
+    ║ Alternatively, use apt:                              ║
+    ║     sudo apt-get install libicu74\                   ║
+    ║         libxml2\                                     ║
+    ║         libflite1                                    ║
+    ║                                                      ║
+    ║ <3 Playwright Team                                   ║
+    ╚══════════════════════════════════════════════════════╝
+
+    Error Context: test-results/workbench-blur-close-and-r-ff97b-tructured-View-synchronized-webkit/error-context.md
+
+
+  30 failed
+    [webkit] › tests/workbench.spec.ts:26:3 › Domain composition publishes once with immediate final input and preserves later edits and selection 
+    [webkit] › tests/workbench.spec.ts:60:3 › Token composition retains Last Valid until end with immediate final input and later edits 
+    [webkit] › tests/workbench.spec.ts:26:3 › Domain composition publishes once with delayed final input and preserves later edits and selection 
+    [webkit] › tests/workbench.spec.ts:60:3 › Token composition retains Last Valid until end with delayed final input and later edits 
+    [webkit] › tests/workbench.spec.ts:94:1 › intake preserves lossless semantics and rejects replacement 
+    [webkit] › tests/workbench.spec.ts:229:3 › Story 2.7 invalid Draft source, independent feedback and keyboard mutations remain accessible at 320px 
+    [webkit] › tests/workbench.spec.ts:289:3 › Story 2.7 invalid Draft capacity preserves all identities and measured edit/reorder response 
+    [webkit] › tests/workbench.spec.ts:363:1 › Story 2.7 capacity rejection preserves invalid Draft, selection, identities and focus 
+    [webkit] › tests/workbench.spec.ts:401:1 › Story 2.7 invalid Draft feedback reflows with forced colors and increased text spacing 
+    [webkit] › tests/workbench.spec.ts:442:1 › Domain editing is synchronized, correctable, IME-safe, and host-only 
+    [webkit] › tests/workbench.spec.ts:593:1 › capacity view renders every row and stays usable at 320px 
+    [webkit] › tests/workbench.spec.ts:820:1 › removal preserves exact survivors, Search, focus, accessibility, and privacy 
+    [webkit] › tests/workbench.spec.ts:886:1 › Add Query Parameter appends from either control, synchronizes Search, keeps focus, and stays private at capacity 
+    [webkit] › tests/workbench.spec.ts:952:1 › Add Query Parameter remains reachable and performant at 250+ entries 
+    [webkit] › tests/workbench.spec.ts:985:1 › reorders Query Parameters by keyboard and pointer activation, honoring boundaries, Search, duplicates, and capacity 
+    [webkit] › tests/workbench.spec.ts:1037:1 › reorders within a 250+ parameter list, keeping boundaries reachable and performant 
+    [webkit] › tests/workbench.spec.ts:1067:1 › initial and populated workbench pass automated accessibility checks 
+    [webkit] › tests/workbench.spec.ts:1131:1 › reload clears URL content and returns to no session 
+    [webkit] › tests/workbench.spec.ts:1144:1 › search no-results and clear remain keyboard and activation safe 
+    [webkit] › tests/workbench.spec.ts:1171:1 › structured editing preserves exact bytes, identity, validation, and focus 
+    [webkit] › tests/workbench.spec.ts:1220:1 › structured editing handles search, selections, word deletion, caret, and drafts 
+    [webkit] › tests/workbench.spec.ts:1379:1 › Full URL edits publish continuously without an Apply step, with no Apply URL affordance anywhere 
+    [webkit] › tests/workbench.spec.ts:1393:1 › Full URL retains row identity across first intake, Enter, blur, and refocus 
+    [webkit] › tests/workbench.spec.ts:1413:1 › Full URL composition leaves Last Valid and validation untouched until composition ends 
+    [webkit] › tests/workbench.spec.ts:1436:1 › an invalid Draft survives structured Add with its selection, error, and focus contract 
+    [webkit] › tests/workbench.spec.ts:1457:1 › continuous Full URL reconciliation meets the response target at 20,000 characters and 260 entries 
+    [webkit] › tests/workbench.spec.ts:1478:1 › Enter outside IME composition suppresses the newline and closes the focus session 
+    [webkit] › tests/workbench.spec.ts:1495:1 › Shift+Enter outside IME composition suppresses the newline without closing the focus session 
+    [webkit] › tests/workbench.spec.ts:1513:1 › Structured View editing controls stay enabled while the Full URL draft is momentarily invalid (loosened gating) 
+    [webkit] › tests/workbench.spec.ts:1539:1 › blur-close and refocus round trip keeps the Structured View synchronized 
+  60 passed (1.6m)
+

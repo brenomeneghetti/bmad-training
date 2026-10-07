@@ -1,0 +1,5 @@
+argv: ["pnpm","run","lint"]
+exitCode: 0
+signal: null
+
+$ oxlint src tests vite.config.ts playwright.config.ts
