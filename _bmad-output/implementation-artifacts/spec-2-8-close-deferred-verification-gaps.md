@@ -157,3 +157,7 @@ Overlap cannot touch the owner's publication. Owned failure/cancellation invalid
 - Current [manifest](../../evidence/manifest.json) binds [run 2e697cf0](../../evidence/runs/2e697cf0-d565-4833-818a-9952d6d539b0/playwright.json), source `84a2fb7bca9c33990bcac17473b4f191c89b8475e2ea17a5f9c196f5ec3b9ea5`, artifact `969b7e194f270c8833873597529ad0d69e0501db6a042ba1bca67c884ee633c8`. Prior reports remain historical only.
 - Real subprocess tests exercise leader exit plus signal-resistant pipe-holding descendants, bounded SIGKILL escalation, ownership release, source mutation and Vitest failure without JSON. Reporter tests cover nested pass/fail/skip/todo. Browser fixtures explicitly preserve engine-specific final input types and exact normalized prefix selection without claiming real OS IME coverage.
 - All matrix rows and approved MVP acceptance criteria have passing executed coverage. Independent review fixes are complete; the unverified deadline risk and browser/manual/zoom deferrals remain explicit. Sprint status remains `review` for human acceptance; this spec's build workflow is `done`.
+
+## Human Acceptance
+
+- 2026-10-07 20:58 -03:00: The user accepted Story 2.8 as reviewed. Sprint tracking advances from `review` to `done`; the approved Chromium MVP scope and all documented deferrals remain unchanged.
