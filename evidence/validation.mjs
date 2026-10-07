@@ -37,6 +37,10 @@ const requiredCells = new Map([
   ["story-2-6-focus-session-history-squash", "2.6"],
   ["story-2-6-ime-safe-keyboard-loosened-gating", "2.6"],
   ["story-2-6-privacy-capacity", "2.6"],
+  ["story-2-7-invalid-draft-last-valid-source", "2.7"],
+  ["story-2-7-reversible-chronology", "2.7"],
+  ["story-2-7-feedback-focus-races", "2.7"],
+  ["story-2-7-privacy-capacity", "2.7"],
 ]);
 
 const requiredCsp = new Map([

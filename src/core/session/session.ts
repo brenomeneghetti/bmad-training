@@ -370,8 +370,6 @@ export const sessionReducer = (
         generation: state.generation + 1,
         pendingInput: null,
         problem: null,
-        structuredProblem: null,
-        structuredSuccess: null,
       };
     case "parseStarted":
       if (
@@ -386,8 +384,6 @@ export const sessionReducer = (
         generation: action.generation,
         pendingInput: action.input,
         problem: null,
-        structuredProblem: null,
-        structuredSuccess: null,
       };
     case "parseCompleted": {
       if (
@@ -404,7 +400,6 @@ export const sessionReducer = (
           phase: "invalid-intake",
           pendingInput: null,
           problem: action.result.error,
-          structuredSuccess: null,
         };
       }
       if (state.fullUrlFocus) {

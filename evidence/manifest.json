@@ -5,7 +5,7 @@
   "evaluatorVersion": "1.0.0",
   "artifact": {
     "path": "dist",
-    "digest": "d9e09372ff31803317c77eb499636e3439fb72df0207d8ff90f42fbdffbd0f78",
+    "digest": "fca2461405256da16e43c3e33fb241dc1787e371dd1aa18609618c7f05d49669",
     "delivery": "deployment/static-delivery.json"
   },
   "toolVersions": {
@@ -16,7 +16,7 @@
   },
   "signOff": {
     "owner": "automated-verification",
-    "recordedAt": "2026-10-07T13:44:01.000Z"
+    "recordedAt": "2026-10-07T14:38:00.000Z"
   },
   "cells": [
     {
@@ -350,6 +350,34 @@
         "src/core/session/session.test.ts",
         "tests/workbench.spec.ts"
       ]
+    },
+    {
+      "id": "story-2-7-invalid-draft-last-valid-source",
+      "story": "2.7",
+      "status": "pass",
+      "owner": "automated",
+      "evidence": ["src/core/session/session.test.ts", "src/app/workbench/Workbench.test.tsx", "tests/workbench.spec.ts"]
+    },
+    {
+      "id": "story-2-7-reversible-chronology",
+      "story": "2.7",
+      "status": "pass",
+      "owner": "automated",
+      "evidence": ["src/core/session/session.test.ts"]
+    },
+    {
+      "id": "story-2-7-feedback-focus-races",
+      "story": "2.7",
+      "status": "pass",
+      "owner": "automated",
+      "evidence": ["src/core/session/session.test.ts", "src/app/workbench/Workbench.test.tsx", "tests/workbench.spec.ts"]
+    },
+    {
+      "id": "story-2-7-privacy-capacity",
+      "story": "2.7",
+      "status": "pass",
+      "owner": "automated",
+      "evidence": ["src/test/fixtures/semantic.ts", "src/core/session/session.test.ts", "tests/workbench.spec.ts", "deployment/static-delivery.json"]
     }
   ]
 }

@@ -7,5 +7,5 @@ const root = process.env.EVIDENCE_ROOT
 const result = await validateEvidence(root);
 
 console.log(
-  `Validated ${result.cellCount} mandatory evidence cells through Story 2.6 for artifact ${result.artifactDigest}.`,
+  `Validated ${result.cellCount} mandatory evidence cells through Story 2.7 for artifact ${result.artifactDigest}.`,
 );

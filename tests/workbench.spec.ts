@@ -125,6 +125,15 @@ test("intake preserves lossless semantics and rejects replacement", async ({ pag
   await page.getByLabel("Complete HTTP or HTTPS Absolute URL").fill("/relative");
   await expect(page.getByText(/complete HTTP or HTTPS/)).toBeVisible();
   await expect(page.locator("#managed-pieces > li")).toHaveCount(13);
+  await page.getByLabel("Unicode Domain").fill("example.org");
+  await page.getByLabel("Path Segment 1 of 4").fill("invalid-draft-edit");
+  await page.locator("#add-query-before").focus();
+  await page.keyboard.press("Enter");
+  await page.getByLabel("Key, Query Parameter 9 of 9").fill("private-local");
+  await page.getByLabel("Value absent, Query Parameter 9 of 9").fill("private-value");
+  await page.getByRole("button", { name: /Move Query Parameter at position 9 of 9 up/ }).click();
+  await page.getByRole("button", { name: /Remove Query Parameter at position 8 of 9/ }).click();
+  await expect(page.getByLabel("Complete HTTP or HTTPS Absolute URL")).toHaveValue("/relative");
   expect(requestsAfterLoad).toEqual([]);
   expect(diagnostics).toEqual([]);
   expect(
@@ -150,6 +159,219 @@ test("intake preserves lossless semantics and rejects replacement", async ({ pag
   ).toEqual({ local: 0, session: 0, cookies: "", indexedDatabases: 0 });
 });
 
+  test("Story 2.7 invalid Draft source, independent feedback and keyboard mutations remain accessible at 320px", async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 800 });
+    await page.goto("/");
+    const editor = page.getByLabel("Complete HTTP or HTTPS Absolute URL");
+    await editor.fill("/invalid-intake");
+    await expect(page.locator("#error-full-url")).not.toContainText("Last Valid");
+    await expect(page.locator("#structured-source")).toHaveCount(0);
+    await editor.fill("https://example.com/a?dup=1&dup=2&flag&empty=#Frag%2f");
+    const targetId = await page.getByLabel("Value, Query Parameter 2 of 4, occurrence 2 of 2")
+      .locator("xpath=ancestor::li").getAttribute("data-piece-id");
+    const value = page.locator(`#query-value-${targetId}`);
+    await value.fill("%");
+    const fieldError = await value.getAttribute("aria-errormessage");
+    await editor.fill("https://");
+    await editor.evaluate((input: HTMLTextAreaElement) => input.setSelectionRange(2, 6, "backward"));
+    const fullError = await page.locator("#error-full-url").textContent();
+    await expect(page.locator("#error-full-url")).toContainText(
+      "Draft URL is not valid. Structured View changes use the Last Valid URL.",
+    );
+    await expect(page.getByRole("region", { name: "Structured View" }))
+      .toHaveAccessibleDescription("Source: Last Valid URL.");
+    await expect(page.locator(`#${fieldError}`)).toContainText("complete triplet");
+    await expect(value).toHaveAccessibleDescription(/complete triplet/);
+    await expect(editor).toHaveAccessibleDescription(/Draft URL is not valid/);
+    await expect(page.getByLabel("ASCII/Punycode Domain")).toHaveAccessibleDescription(/Last Valid URL/);
+    expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+
+    await page.getByLabel("Unicode Domain").fill("example.org");
+    await page.getByLabel("Path Segment 1 of 1").fill("new");
+    await page.getByLabel("Key, Query Parameter 1 of 4, occurrence 1 of 2").fill("first");
+    await value.fill("%2F");
+    await expect(value).toBeFocused();
+    await expect(value).not.toHaveAttribute("aria-invalid");
+    await page.getByLabel("Search Managed Pieces").fill("%2F");
+    await expect(page.locator("#managed-pieces > li")).toHaveCount(1);
+    const move = page.getByRole("button", { name: /Move Query Parameter at position 2 of 4 up/ });
+    await move.focus();
+    await page.keyboard.press("Enter");
+    await expect(page.locator(`#move-down-${targetId}`)).toBeFocused();
+    await expect(page.getByLabel("Search Managed Pieces")).toHaveValue("%2F");
+    await expect(page.getByText(/Last Valid URL and Structured View updated. Draft unchanged./)).toBeVisible();
+    await page.locator("#add-query-after").focus();
+    await page.keyboard.press("Space");
+    await expect(page.getByLabel("Search Managed Pieces")).toHaveValue("");
+    await expect(page.getByLabel("Key, Query Parameter 5 of 5")).toBeFocused();
+    await page.locator(`#remove-${targetId}`).focus();
+    await page.keyboard.press("Enter");
+    await expect(page.getByRole("button", { name: /Remove Query Parameter at position 1 of 4/ })).toBeFocused();
+    await expect(editor).toHaveValue("https://");
+    expect(await editor.evaluate((input: HTMLTextAreaElement) =>
+      [input.selectionStart, input.selectionEnd, input.selectionDirection])).toEqual([2, 6, "backward"]);
+    await expect(page.locator("#error-full-url")).toHaveText(fullError!);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
+    expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+    await editor.fill("https://example.org/new?first=1&flag&empty=&#Frag%2f");
+    await expect(page.locator("#structured-source")).toHaveCount(0);
+    await expect(page.locator("#error-full-url")).toHaveCount(0);
+    await expect(page.locator("#managed-pieces > li")).toHaveCount(6);
+  });
+
+  test("Story 2.7 invalid Draft capacity preserves all identities and measured edit/reorder response", async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 800 });
+    await page.goto("/");
+    const requests: string[] = [];
+    const diagnostics: string[] = [];
+    page.on("request", (request) => requests.push(request.url()));
+    page.on("console", (message) => diagnostics.push(message.text()));
+    page.on("pageerror", (error) => diagnostics.push(error.message));
+    const editor = page.getByLabel("Complete HTTP or HTTPS Absolute URL");
+    const fixture = createCapacityFixture();
+    await editor.fill(fixture);
+    const ids = await page.locator("#managed-pieces > li").evaluateAll((rows) =>
+      rows.map((row) => (row as HTMLElement).dataset.pieceId));
+    await editor.fill("https://");
+    const key = page.getByLabel("Key, Query Parameter 260 of 260");
+    const editDuration = await key.evaluate(async (input: HTMLInputElement) => {
+      const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!;
+      const start = performance.now();
+      setter.call(input, "last");
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      // Two frames include a rendering opportunity after checking publication.
+      await new Promise<void>((resolve, reject) => requestAnimationFrame(() => {
+        if (input.value !== "last") {
+          reject(new Error("The measured edit did not publish its DOM outcome."));
+          return;
+        }
+        input.getBoundingClientRect();
+        requestAnimationFrame(() => resolve());
+      }));
+      return performance.now() - start;
+    });
+    expect(editDuration).toBeLessThan(100);
+    await expect(key).toHaveValue("last");
+    const move = page.getByRole("button", { name: /Move Query Parameter at position 260 of 260 up/ });
+    const moveDuration = await move.evaluate(async (button: HTMLButtonElement) => {
+      const row = button.closest("li")!;
+      const previousRow = row.previousElementSibling!;
+      const start = performance.now();
+      button.click();
+      await new Promise<void>((resolve, reject) => requestAnimationFrame(() => {
+        if (row.nextElementSibling !== previousRow || document.activeElement !== button) {
+          reject(new Error("The measured move did not publish its order and focus."));
+          return;
+        }
+        row.getBoundingClientRect();
+        requestAnimationFrame(() => resolve());
+      }));
+      return performance.now() - start;
+    });
+
+    expect(moveDuration).toBeLessThan(100);
+    await expect(page.locator(`#move-up-${ids.at(-1)}`)).toBeFocused();
+    await expect(page.locator("#managed-pieces > li")).toHaveCount(263);
+    expect(await page.locator("#managed-pieces > li").evaluateAll((rows) =>
+      rows.map((row) => (row as HTMLElement).dataset.pieceId)))
+      .toEqual([...ids.slice(0, -2), ids.at(-1), ids.at(-2)]);
+    await expect(editor).toHaveValue("https://");
+    await expect(page.getByRole("region", { name: "Structured View" }))
+      .toHaveAccessibleDescription("Source: Last Valid URL.");
+    const entries = fixture.slice(fixture.indexOf("?") + 1, fixture.indexOf("#")).split("&");
+    entries[259] = entries[259]!.replace("parameter-259", "last");
+    [entries[258], entries[259]] = [entries[259]!, entries[258]!];
+    await editor.fill(`${fixture.slice(0, fixture.indexOf("?") + 1)}${entries.join("&")}${fixture.slice(fixture.indexOf("#"))}`);
+    await expect(page.locator("#structured-source")).toHaveCount(0);
+    expect(await page.locator("#managed-pieces > li").evaluateAll((rows) =>
+      rows.map((row) => (row as HTMLElement).dataset.pieceId)))
+      .toEqual([...ids.slice(0, -2), ids.at(-1), ids.at(-2)]);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
+    expect(requests).toEqual([]);
+    expect(diagnostics).toEqual([]);
+    expect(await page.evaluate(() => [localStorage.length, sessionStorage.length, document.cookie]))
+      .toEqual([0, 0, ""]);
+  });
+
+test("Story 2.7 capacity rejection preserves invalid Draft, selection, identities and focus", async ({ page }) => {
+    await page.goto("/");
+    const editor = page.getByLabel("Complete HTTP or HTTPS Absolute URL");
+    await editor.fill(createCapacityFixture());
+    const ids = await page.locator("#managed-pieces > li").evaluateAll((rows) =>
+      rows.map((row) => (row as HTMLElement).dataset.pieceId));
+    await editor.fill("https://");
+    await editor.evaluate((input: HTMLTextAreaElement) => input.setSelectionRange(2, 6, "backward"));
+    const parserError = await page.locator("#error-full-url").textContent();
+    const search = page.getByLabel("Search Managed Pieces");
+    await search.fill("parameter-259");
+    await page.locator("#add-query-after").focus();
+    await page.keyboard.press("Enter");
+    await expect(search).toHaveValue("parameter-259");
+    await expect(page.locator("#add-query-after")).toBeFocused();
+    await expect(page.locator("#managed-pieces > li")).toHaveCount(1);
+    await expect(page.locator("#structured-validation")).toContainText(/20,000/);
+    await expect(page.getByText(/Query Parameter \d+ added/)).toHaveCount(0);
+    await page.getByRole("button", { name: "Clear Search" }).click();
+    const key = page.getByLabel("Key, Query Parameter 260 of 260");
+    await key.fill("parameter-259-extra");
+    await expect(key).toBeFocused();
+    await expect(key).toHaveAttribute("aria-invalid", "true");
+    await expect(key).toHaveAccessibleDescription(/20,000/);
+    await expect(editor).toHaveValue("https://");
+    expect(await editor.evaluate((input: HTMLTextAreaElement) =>
+      [input.selectionStart, input.selectionEnd, input.selectionDirection])).toEqual([2, 6, "backward"]);
+    await expect(page.locator("#error-full-url")).toHaveText(parserError!);
+    expect(await page.locator("#managed-pieces > li").evaluateAll((rows) =>
+      rows.map((row) => (row as HTMLElement).dataset.pieceId))).toEqual(ids);
+    await key.fill("parameter-259");
+    await expect(key).not.toHaveAttribute("aria-invalid");
+    await editor.fill(createCapacityFixture());
+    await expect(page.locator("#structured-source")).toHaveCount(0);
+    expect(await page.locator("#managed-pieces > li").evaluateAll((rows) =>
+      rows.map((row) => (row as HTMLElement).dataset.pieceId))).toEqual(ids);
+});
+
+test("Story 2.7 invalid Draft feedback reflows with forced colors and increased text spacing", async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 800 });
+    await page.emulateMedia({ forcedColors: "active" });
+    await page.goto("/");
+    // CSP forbids inline styles, so change the existing same-origin sheet.
+    await page.evaluate(() => {
+      document.styleSheets[0]!.insertRule(
+        "* { line-height: 1.5 !important; letter-spacing: 0.12em !important; word-spacing: 0.16em !important; }",
+        document.styleSheets[0]!.cssRules.length,
+      );
+      document.styleSheets[0]!.insertRule(
+        "p { margin-bottom: 2em !important; }",
+        document.styleSheets[0]!.cssRules.length,
+      );
+    });
+    const editor = page.getByLabel("Complete HTTP or HTTPS Absolute URL");
+    await editor.fill("https://example.com/a?x=1&y=2");
+    const domain = page.getByLabel("Unicode Domain");
+    await domain.fill("xn--");
+    await expect(domain).toHaveAccessibleDescription(/valid|Domain|domain/);
+    const domainError = await domain.getAttribute("aria-errormessage");
+    await expect(page.locator(`#${domainError}-feedback`)).not.toBeEmpty();
+    await editor.fill("https://");
+    await expect(editor).toHaveAccessibleDescription(/Last Valid URL/);
+    await expect(page.getByRole("region", { name: "Structured View" }))
+      .toHaveAccessibleDescription("Source: Last Valid URL.");
+    await domain.fill("example.org");
+    await page.locator("#add-query-after").focus();
+    await page.keyboard.press("Space");
+    await expect(page.getByLabel("Key, Query Parameter 3 of 3")).toBeFocused();
+    for (const selector of ["#error-full-url", "#structured-source", "#add-query-after", "#query-key-" + (
+      await page.getByLabel("Key, Query Parameter 3 of 3").locator("xpath=ancestor::li").getAttribute("data-piece-id")
+    )]) {
+      const box = await page.locator(selector).boundingBox();
+      expect(box).not.toBeNull();
+      expect(box!.x).toBeGreaterThanOrEqual(0);
+      expect(box!.x + box!.width).toBeLessThanOrEqual(320);
+    }
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
+    expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+});
 test("Domain editing is synchronized, correctable, IME-safe, and host-only", async ({
   page,
 }) => {
@@ -189,7 +411,7 @@ test("Domain editing is synchronized, correctable, IME-safe, and host-only", asy
     expect(errorId).toBe(`error-${domainId}-domain-ascii`);
     await expect(ascii).toHaveAttribute(
       "aria-describedby",
-      `help-${domainId}-domain`,
+      `help-${domainId}-domain error-${domainId}-domain-ascii`,
     );
     await expect(page.locator(`#${errorId}`)).toContainText(
       "valid ASCII or Punycode",
@@ -917,7 +1139,7 @@ test("structured editing preserves exact bytes, identity, validation, and focus"
   await duplicateValue.fill("%");
   await expect(duplicateValue).toHaveValue("%");
   await expect(duplicateValue).toHaveAttribute("aria-invalid", "true");
-  await expect(page.getByText(/complete triplet/)).toBeVisible();
+  await expect(page.locator("#managed-pieces").getByText(/complete triplet/)).toBeVisible();
   await expect(fullUrl).toHaveValue(
     "https://User@example.com:044/a%2fb//tail?dup=1&dup=x%26%F0%9F%98%80&flag&empty=#Frag%2f",
   );

@@ -33,6 +33,7 @@ export function Workbench() {
   }[]>([]);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const pendingRemovalFocus = useRef<{
+    readonly epoch: number;
     readonly revision: number;
     readonly pieceId: string;
     readonly candidates: readonly string[];
@@ -40,18 +41,24 @@ export function Workbench() {
     readonly successMessage: string;
   } | null>(null);
   const pendingAddFocus = useRef<{
+    readonly epoch: number;
     readonly revision: number;
     readonly pieceId: string;
     readonly successMessage: string;
     readonly shouldClearSearch: boolean;
   } | null>(null);
   const pendingMoveFocus = useRef<{
+    readonly epoch: number;
     readonly revision: number;
     readonly pieceId: string;
     readonly direction: "up" | "down";
     readonly successMessage: string;
   } | null>(null);
-  const pendingFocusAfterSearchClear = useRef<string | null>(null);
+  const pendingFocusAfterSearchClear = useRef<{
+    readonly pieceId: string;
+    readonly revision: number;
+    readonly epoch: number;
+  } | null>(null);
   const announcementId = useRef(0);
   const announcementTimers = useRef(new Map<number, number>());
   const explicitClear = useRef(false);
@@ -68,13 +75,22 @@ export function Workbench() {
     !state.lastValidSnapshot ||
     state.phase === "no-session" ||
     state.phase === "parsing";
+  const invalidDraft = state.snapshot !== null && state.problem !== null;
+
+  const cancelPendingOperationFocus = () => {
+    pendingRemovalFocus.current = null;
+    pendingAddFocus.current = null;
+    pendingMoveFocus.current = null;
+    pendingFocusAfterSearchClear.current = null;
+  };
 
   useLayoutEffect(() => {
     const pending = pendingRemovalFocus.current;
     if (!pending) return;
     pendingRemovalFocus.current = null;
     if (
-      state.revision <= pending.revision ||
+      state.revision !== pending.revision + 1 ||
+      state.epoch !== pending.epoch ||
       state.structuredSuccess !== pending.successMessage ||
       allPieces.some((piece) => piece.id === pending.pieceId)
     ) {
@@ -105,7 +121,8 @@ export function Workbench() {
     if (!pending) return;
     pendingAddFocus.current = null;
     if (
-      state.revision <= pending.revision ||
+      state.revision !== pending.revision + 1 ||
+      state.epoch !== pending.epoch ||
       state.structuredSuccess !== pending.successMessage
     ) {
       return;
@@ -118,7 +135,11 @@ export function Workbench() {
         `${allPieces.length} of ${allPieces.length} Managed Pieces shown.`,
         true,
       );
-      pendingFocusAfterSearchClear.current = pending.pieceId;
+      pendingFocusAfterSearchClear.current = {
+        pieceId: pending.pieceId,
+        revision: state.revision,
+        epoch: state.epoch,
+      };
       return;
     }
     document.getElementById(`query-key-${pending.pieceId}`)?.focus();
@@ -129,7 +150,8 @@ export function Workbench() {
     if (!pending) return;
     pendingMoveFocus.current = null;
     if (
-      state.revision <= pending.revision ||
+      state.revision !== pending.revision + 1 ||
+      state.epoch !== pending.epoch ||
       state.structuredSuccess !== pending.successMessage
     ) {
       return;
@@ -153,11 +175,16 @@ export function Workbench() {
   }, [allPieces, state]);
 
   useLayoutEffect(() => {
-    const pieceId = pendingFocusAfterSearchClear.current;
-    if (!pieceId || searchTerm !== "") return;
+    const pending = pendingFocusAfterSearchClear.current;
+    if (!pending) return;
+    if (state.revision !== pending.revision || state.epoch !== pending.epoch) {
+      pendingFocusAfterSearchClear.current = null;
+      return;
+    }
+    if (searchTerm !== "") return;
     pendingFocusAfterSearchClear.current = null;
-    document.getElementById(`query-key-${pieceId}`)?.focus();
-  }, [searchTerm, visiblePieces]);
+    document.getElementById(`query-key-${pending.pieceId}`)?.focus();
+  }, [searchTerm, visiblePieces, state.revision, state.epoch]);
 
   const removePiece = (removal: ManagedPieceRemoval) => {
     const target = allPieces.find((piece) => piece.id === removal.pieceId);
@@ -176,6 +203,7 @@ export function Workbench() {
           : [];
       const label = removal.kind === "path" ? "Path Segment" : "Query Parameter";
       pendingRemovalFocus.current = {
+        epoch: state.epoch,
         revision: state.revision,
         pieceId: removal.pieceId,
         candidates,
@@ -191,7 +219,6 @@ export function Workbench() {
   };
 
   const handleFullUrlChange = (value: string) => {
-    if (value !== state.input) clearAnnouncements();
     // Compute the reducer transitions locally (mirroring the synchronous
     // `inputChanged` -> `parseStarted` -> `parseCompleted` chain) so each
     // keystroke parses and publishes immediately without waiting for a
@@ -201,9 +228,11 @@ export function Workbench() {
       value,
     });
     const parse = prepareParse(afterInputChanged);
+    const completion = parse.complete();
+    if (value !== state.input && completion.result.ok) clearAnnouncements();
     dispatch({ type: "inputChanged", value });
     dispatch(parse.start);
-    dispatch(parse.complete());
+    dispatch(completion);
   };
 
   const handleFullUrlFocus = () => {
@@ -276,6 +305,7 @@ export function Workbench() {
     const pieceId = createIdAllocator(state.nextPieceId).next();
     const position = state.snapshot.query.length + 1;
     pendingAddFocus.current = {
+      epoch: state.epoch,
       revision: state.revision,
       pieceId,
       successMessage: `Query Parameter ${position} added. ${structuredUpdateMessage(state)}`,
@@ -296,6 +326,7 @@ export function Workbench() {
           ? `${target.piece.rawKey}=${target.piece.rawValue}`
           : target.piece.rawKey;
         pendingMoveFocus.current = {
+          epoch: state.epoch,
           revision: state.revision,
           pieceId,
           direction,
@@ -346,7 +377,12 @@ export function Workbench() {
   );
 
   return (
-    <main className={styles.workbench}>
+    <main
+      className={styles.workbench}
+      onFocusCapture={cancelPendingOperationFocus}
+      onChangeCapture={cancelPendingOperationFocus}
+      onCompositionStartCapture={cancelPendingOperationFocus}
+    >
       <h1>URL Workbench</h1>
       <p className={styles.privacyNotice}>
         Your URL stays in this browser and is cleared when you reload or close
@@ -391,17 +427,21 @@ export function Workbench() {
           onFocus={handleFullUrlFocus}
           onBlur={handleFullUrlBlur}
           onKeyDown={handleFullUrlKeyDown}
-          aria-describedby="full-url-help"
+          aria-describedby={state.problem ? "full-url-help error-full-url" : "full-url-help"}
           aria-invalid={state.problem ? true : undefined}
           aria-errormessage={state.problem ? "error-full-url" : undefined}
           maxLength={20_000}
           dir="ltr"
         />
-        {state.problem ? (
-          <ValidationMessage id="error-full-url">
-            {state.problem.message}
-          </ValidationMessage>
-        ) : null}
+        <div id="full-url-validation" aria-live="polite" aria-atomic="true">
+          {state.problem ? (
+            <ValidationMessage id="error-full-url">
+              {invalidDraft
+                ? `Draft URL is not valid. Structured View changes use the Last Valid URL. ${state.problem.message}`
+                : state.problem.message}
+            </ValidationMessage>
+          ) : null}
+        </div>
       </section>
 
       <section
@@ -440,6 +480,7 @@ export function Workbench() {
       </section>
 
       <StructuredView
+        sourceDescription={invalidDraft ? "Source: Last Valid URL." : null}
         snapshot={state.snapshot}
         busy={state.phase === "parsing"}
         pieces={visiblePieces}

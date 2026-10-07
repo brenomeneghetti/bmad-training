@@ -3,6 +3,7 @@ import {
   initialSessionState,
   prepareParse,
   sessionReducer,
+  type SessionAction,
   type SessionState,
 } from ".";
 import { createCapacityFixture } from "../../test/fixtures/semantic";
@@ -23,6 +24,193 @@ describe("session authority", () => {
     expect(rejected.phase).toBe("invalid-intake");
     expect(rejected.input).toBe("/relative");
     expect(rejected.snapshot).toBe(active.snapshot);
+  });
+
+  describe("Story 2.7: invalid Draft authority", () => {
+    it("records exactly A→C, C→D, D→E, E→F and reverses complete snapshots with operation targets", () => {
+      const a = apply(initialSessionState, "https://example.com/a?dup=1&dup=2&flag&empty=#Frag%2f");
+      const b = apply(a, a.input.replace("/a?", "/b?"));
+      const c = apply(b, b.input.replace("/b?", "/c?"));
+      const x = apply(c, "https://");
+      const target = x.snapshot!.query[1]!.id;
+      const d = sessionReducer(x, { type: "moveQueryPiece", pieceId: target, direction: "up" });
+      const e = sessionReducer(d, { type: "removePiece", removal: { kind: "query", pieceId: target } });
+      const correction = apply(e, e.snapshot!.serialized.replace("/c?", "/f?"));
+      const f = sessionReducer(correction, { type: "closeFullUrlEdit", reason: "enter" });
+      const snapshots = [a.snapshot!, c.snapshot!, d.snapshot!, e.snapshot!, f.snapshot!];
+      const expectedUrls = [
+        "https://example.com/a?dup=1&dup=2&flag&empty=#Frag%2f",
+        "https://example.com/c?dup=1&dup=2&flag&empty=#Frag%2f",
+        "https://example.com/c?dup=2&dup=1&flag&empty=#Frag%2f",
+        "https://example.com/c?dup=1&flag&empty=#Frag%2f",
+        "https://example.com/f?dup=1&flag&empty=#Frag%2f",
+      ];
+      const originalIds = a.snapshot!.query.map((piece) => piece.id);
+      const expectedQueryIds = [
+        originalIds, originalIds,
+        [originalIds[1], originalIds[0], originalIds[2], originalIds[3]],
+        [originalIds[0], originalIds[2], originalIds[3]],
+        [originalIds[0], originalIds[2], originalIds[3]],
+      ];
+      expect(snapshots.map((snapshot) => snapshot.serialized)).toEqual(expectedUrls);
+      expect(snapshots.map((snapshot) => snapshot.query.map((piece) => piece.id))).toEqual(expectedQueryIds);
+      expect(snapshots.map((snapshot) => snapshot.domainId)).toEqual(Array(5).fill(a.snapshot!.domainId));
+      expect(snapshots.map((snapshot) => snapshot.path[0]!.id)).toEqual([
+        a.snapshot!.path[0]!.id, c.snapshot!.path[0]!.id, c.snapshot!.path[0]!.id,
+        c.snapshot!.path[0]!.id, f.snapshot!.path[0]!.id,
+      ]);
+      expect(c.snapshot!.path[0]!.id).not.toBe(a.snapshot!.path[0]!.id);
+      expect(f.snapshot!.path[0]!.id).not.toBe(c.snapshot!.path[0]!.id);
+      expect(f.history).toHaveLength(4);
+      expect(f.history.map((entry) => [entry.before.serialized, entry.after.serialized]))
+        .toEqual(expectedUrls.slice(0, -1).map((url, index) => [url, expectedUrls[index + 1]]));
+      expect(f.history.map((entry) => [
+        entry.before.query.map((piece) => piece.id),
+        entry.after.query.map((piece) => piece.id),
+      ])).toEqual(expectedQueryIds.slice(0, -1).map((ids, index) => [ids, expectedQueryIds[index + 1]]));
+      expect(f.history.map((entry) => [entry.before, entry.after]))
+        .toEqual(snapshots.slice(0, -1).map((snapshot, index) => [snapshot, snapshots[index + 1]]));
+      expect(f.history.map((entry) => [entry.field, entry.pieceId])).toEqual([
+        ["full-url", a.snapshot!.domainId], ["reorder-query", target],
+        ["remove-query", target], ["full-url", e.snapshot!.domainId],
+      ]);
+      let restored = f.snapshot!;
+      for (const entry of [...f.history].reverse()) {
+        expect(restored).toBe(entry.after);
+        expect(restored.serialized).toBe(entry.after.serialized);
+        restored = entry.before;
+      }
+      expect(restored).toBe(a.snapshot);
+      expect(d.snapshot!.query[0]!.id).toBe(target);
+      expect(e.snapshot!.query.some((piece) => piece.id === target)).toBe(false);
+      expect(f.snapshot!.query.map((piece) => piece.id)).toEqual(e.snapshot!.query.map((piece) => piece.id));
+      expect(f.history.some((entry) => entry.after === b.snapshot)).toBe(false);
+      expect(f.history.flatMap((entry) => [entry.before.serialized, entry.after.serialized]))
+        .not.toContain(x.input);
+
+      const againInvalid = apply(f, "/still-invalid");
+      const added = sessionReducer(againInvalid, { type: "addQueryPiece" });
+      const finalCorrection = apply(added, added.snapshot!.serialized.replace("/f?", "/g?"));
+      const closed = sessionReducer(finalCorrection, { type: "closeFullUrlEdit", reason: "blur" });
+      expect(closed.history.slice(-2).map((entry) => [entry.before, entry.after]))
+        .toEqual([[f.snapshot, added.snapshot], [added.snapshot, closed.snapshot]]);
+      expect(added.snapshot!.query.at(-1)!.id).not.toBe(target);
+    });
+
+    it.each(["domain-unicode", "domain-ascii", "path", "query-key", "query-value", "add", "remove-path", "remove-query", "move"] as const)(
+      "keeps invalid Draft and validation exact while publishing %s atomically",
+      (kind) => {
+        const a = apply(initialSessionState, "https://example.com/a?dup=1&dup=2&flag&empty=#Frag%2f");
+        const c = apply(a, a.input.replace("/a?", "/c?"));
+        const x = apply(c, "https://");
+        const snapshot = x.snapshot!;
+        const query = snapshot.query[1]!;
+        const path = snapshot.path[0]!;
+        const action: SessionAction = kind === "add" ? { type: "addQueryPiece" }
+          : kind === "move" ? { type: "moveQueryPiece", pieceId: query.id, direction: "up" }
+          : kind === "remove-path" ? { type: "removePiece", removal: { kind: "path", pieceId: path.id } }
+          : kind === "remove-query" ? { type: "removePiece", removal: { kind: "query", pieceId: query.id } }
+          : kind === "domain-unicode" || kind === "domain-ascii"
+            ? { type: "structuredEdit", command: { field: kind, pieceId: snapshot.domainId, tokenRevision: 0, value: "example.org" } }
+            : { type: "structuredEdit", command: { field: kind, pieceId: kind === "path" ? path.id : query.id,
+              tokenRevision: 0, start: 0, end: 1, insertedText: "z" } };
+        const changed = sessionReducer(x, action);
+        expect(changed.input).toBe(x.input);
+        expect(changed.problem).toBe(x.problem);
+        expect(changed.snapshot).toBe(changed.lastValidSnapshot);
+        expect(changed.snapshot!.serialized).toContain("#Frag%2f");
+        expect(changed.snapshot!.domainId).toBe(snapshot.domainId);
+        expect(changed.history.map((entry) => [entry.before, entry.after]))
+          .toEqual([[a.snapshot, c.snapshot], [c.snapshot, changed.snapshot]]);
+        expect(changed.history[1]!.field).toBe(kind === "move" ? "reorder-query" : kind === "add" ? "add-query" : kind);
+        expect(changed.fullUrlFocus).toBeNull();
+      },
+    );
+
+    it("preserves independent actionable feedback through typing, parse start, rejection and valid correction", () => {
+      const a = apply(initialSessionState, "https://example.com/a?x=1");
+      const target = a.snapshot!.query[0]!.id;
+      const error = sessionReducer(a, { type: "structuredEdit", command: {
+        pieceId: target, field: "query-value", tokenRevision: 0, start: 0, end: 1, insertedText: "%",
+      } });
+      const changed = sessionReducer(error, { type: "inputChanged", value: "https://" });
+      const parse = prepareParse(changed);
+      const started = sessionReducer(changed, parse.start);
+      const invalid = sessionReducer(started, parse.complete());
+      for (const state of [changed, started, invalid]) {
+        expect(state.structuredProblem).toBe(error.structuredProblem);
+        expect(state.structuredDrafts).toBe(error.structuredDrafts);
+      }
+      const added = sessionReducer(invalid, { type: "addQueryPiece" });
+      const rejected = apply(added, "/invalid-again");
+      expect(rejected.structuredSuccess).toBe(added.structuredSuccess);
+      expect(rejected.structuredDrafts[`${target}:query-value`]).toBe(error.structuredDrafts[`${target}:query-value`]);
+      const corrected = apply(rejected, added.snapshot!.serialized);
+      expect(corrected.problem).toBeNull();
+      expect(corrected.structuredDrafts[`${target}:query-value`]).toBeDefined();
+    });
+
+    it("rejects stale parse guards and structured targets without publishing committed surfaces", () => {
+      const a = apply(initialSessionState, "https://example.com/a?x=1&y=2");
+      const changed = sessionReducer(a, { type: "inputChanged", value: "/invalid" });
+      const parse = prepareParse(changed);
+      const pending = sessionReducer(changed, parse.start);
+      const complete = parse.complete();
+      for (const patch of [{ generation: complete.generation - 1 }, { epoch: complete.epoch + 1 },
+        { revision: complete.revision + 1 }, { input: "different" }]) {
+        expect(sessionReducer(pending, { ...complete, ...patch })).toBe(pending);
+      }
+      const invalid = sessionReducer(pending, complete);
+      const added = sessionReducer(invalid, { type: "addQueryPiece" });
+      expect(sessionReducer(added, complete)).toBe(added);
+      const id = added.snapshot!.query[0]!.id;
+      const actions: SessionAction[] = [
+        { type: "moveQueryPiece", pieceId: "missing" as typeof id, direction: "up" },
+        { type: "removePiece", removal: { kind: "query", pieceId: "missing" as typeof id } },
+        { type: "structuredEdit", command: { pieceId: id, field: "query-value",
+          tokenRevision: 99, start: 0, end: 1, insertedText: "stale" } },
+        { type: "structuredEdit", command: { pieceId: added.snapshot!.domainId, field: "domain-ascii",
+          tokenRevision: 99, value: "stale.example" } },
+      ];
+      for (const action of actions) {
+        const rejected = sessionReducer(added, action);
+        expect(rejected.snapshot).toBe(added.snapshot);
+        expect(rejected.lastValidSnapshot).toBe(added.snapshot);
+        expect(rejected.input).toBe(added.input);
+        expect(rejected.problem).toBe(added.problem);
+        expect(rejected.history).toBe(added.history);
+        expect(rejected.revision).toBe(added.revision);
+        expect(rejected.nextPieceId).toBe(added.nextPieceId);
+        expect(rejected.structuredSuccess).toBeNull();
+        expect(rejected.structuredProblem).not.toBeNull();
+      }
+    });
+
+    it("leaves committed surfaces and the open intent intact on capacity rejection during an invalid Draft", () => {
+      const active = apply(initialSessionState, createCapacityFixture());
+      const invalid = apply(active, "https://");
+      const target = invalid.snapshot!.query[259]!;
+      const actions: SessionAction[] = [
+        { type: "addQueryPiece" },
+        { type: "structuredEdit", command: {
+          pieceId: target.id, field: "query-key", tokenRevision: 0,
+          start: target.rawKey.length, end: target.rawKey.length, insertedText: "-extra",
+        } },
+      ];
+      for (const action of actions) {
+        const rejected = sessionReducer(invalid, action);
+        expect(rejected.structuredProblem?.code).toBe("url-capacity-exceeded");
+        expect(rejected.structuredSuccess).toBeNull();
+        expect(rejected.input).toBe(invalid.input);
+        expect(rejected.problem).toBe(invalid.problem);
+        expect(rejected.snapshot).toBe(invalid.snapshot);
+        expect(rejected.lastValidSnapshot).toBe(invalid.lastValidSnapshot);
+        expect(rejected.history).toBe(invalid.history);
+        expect(rejected.fullUrlFocus).toBe(invalid.fullUrlFocus);
+        expect(rejected.revision).toBe(invalid.revision);
+        expect(rejected.nextPieceId).toBe(invalid.nextPieceId);
+      }
+    });
   });
 
   it("discards stale parse completions", () => {

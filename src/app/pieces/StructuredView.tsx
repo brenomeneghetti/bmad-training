@@ -23,6 +23,7 @@ import type { UrlProblem } from "../../core/contracts";
 import styles from "../../styles/workbench.module.css";
 
 interface StructuredViewProps {
+  readonly sourceDescription: string | null;
   readonly snapshot: LosslessUrl | null;
   readonly busy: boolean;
   readonly pieces: readonly ManagedPiece[];
@@ -153,7 +154,7 @@ function DomainEditor({
         value={value}
         aria-invalid={draft ? true : undefined}
         aria-errormessage={draft ? errorId : undefined}
-        aria-describedby={helpId}
+        aria-describedby={draft ? `${helpId} ${errorId}` : helpId}
         disabled={disabled}
         onCompositionStart={(event) => {
           composing.current = true;
@@ -190,11 +191,18 @@ function DomainEditor({
         autoComplete="off"
         spellCheck={false}
       />
-      {draft ? (
-        <p id={errorId} className={styles.validation}>
-          {draft.problem.message}
-        </p>
-      ) : null}
+      <div
+        id={`${errorId}-feedback`}
+        className={draft ? undefined : styles.visuallyHidden}
+        aria-live="polite"
+        aria-atomic="true"
+      >
+        {draft ? (
+          <p id={errorId} className={styles.validation}>
+            {draft.problem.message}
+          </p>
+        ) : null}
+      </div>
     </>
   );
 }
@@ -510,6 +518,7 @@ function EditableToken({
         aria-label={accessibleLabel}
         aria-invalid={draft ? true : undefined}
         aria-errormessage={draft ? errorId : undefined}
+        aria-describedby={draft ? errorId : undefined}
         disabled={disabled}
         onKeyDown={keyDown}
         onSelect={cancelCaretFrame}
@@ -550,16 +559,24 @@ function EditableToken({
         autoComplete="off"
         spellCheck={false}
       />
-      {draft ? (
-        <p id={errorId} className={styles.validation}>
-          {draft.problem.message}
-        </p>
-      ) : null}
+      <div
+        id={`${errorId}-feedback`}
+        className={draft ? undefined : styles.visuallyHidden}
+        aria-live="polite"
+        aria-atomic="true"
+      >
+        {draft ? (
+          <p id={errorId} className={styles.validation}>
+            {draft.problem.message}
+          </p>
+        ) : null}
+      </div>
     </>
   );
 }
 
 export function StructuredView({
+  sourceDescription,
   snapshot,
   busy,
   pieces,
@@ -586,10 +603,15 @@ export function StructuredView({
   const summary = `${visibleCount} of ${managedCount} Managed Pieces shown`;
 
   return (
-    <section aria-labelledby="structured-heading" className={styles.panel}>
+    <section
+      aria-labelledby="structured-heading"
+      aria-describedby={sourceDescription ? "structured-source" : undefined}
+      className={styles.panel}
+    >
       <h2 id="structured-heading" tabIndex={-1}>
         Structured View
       </h2>
+      {sourceDescription ? <p id="structured-source">{sourceDescription}</p> : null}
       <div className={styles.searchControls}>
         <label htmlFor="managed-piece-search">Search Managed Pieces</label>
         <input
@@ -645,7 +667,7 @@ export function StructuredView({
                     <p className={styles.position}>{filteredPosition}</p>
                     <p id={`help-${managedPiece.id}-domain`}>
                       Edit either form. Valid input synchronizes both Domain forms and
-                      the Full URL.
+                      {sourceDescription ? " the Last Valid URL." : " the Full URL."}
                     </p>
                     <DomainEditor
                       id={`unicode-${managedPiece.id}`}
@@ -862,14 +884,16 @@ export function StructuredView({
           {problem.message}
         </p>
       ))}
-      {structuredProblem &&
-      !Object.values(structuredDrafts).some(
-        (draft) => draft.problem === structuredProblem,
-      ) ? (
-        <p className={styles.validation} role="status">
-          {structuredProblem.message}
-        </p>
-      ) : null}
+      <div id="structured-validation" role="status" aria-live="polite" aria-atomic="true">
+        {structuredProblem &&
+        !Object.values(structuredDrafts).some(
+          (draft) => draft.problem === structuredProblem,
+        ) ? (
+          <p className={styles.validation}>
+            {structuredProblem.message}
+          </p>
+        ) : null}
+      </div>
       {structuredSuccess && composingDomainField === null ? (
         <p className={styles.conversionStatus} role="status" aria-live="polite">
           {structuredSuccess}

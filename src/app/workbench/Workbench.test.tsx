@@ -14,6 +14,289 @@ import { Workbench } from "./Workbench";
 describe("URL Workbench", () => {
   afterEach(() => vi.useRealTimers());
 
+  it("distinguishes intake from invalid Draft source and clears only Full URL feedback on correction", () => {
+    render(<Workbench />);
+    const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
+    fireEvent.change(editor, { target: { value: "/invalid" } });
+    expect(screen.queryByText(/Draft URL is not valid/)).not.toBeInTheDocument();
+    expect(document.getElementById("structured-source")).not.toBeInTheDocument();
+    fireEvent.change(editor, { target: { value: "https://example.com/a?x=1" } });
+    const value = screen.getByLabelText("Value, Query Parameter 1 of 1");
+    fireEvent.change(value, { target: { value: "%" } });
+    const errorId = value.getAttribute("aria-errormessage")!;
+    fireEvent.change(editor, { target: { value: "https://" } });
+    expect(document.getElementById("error-full-url")).toHaveTextContent(
+      "Draft URL is not valid. Structured View changes use the Last Valid URL.",
+    );
+    expect(document.getElementById("error-full-url")).not.toHaveTextContent(
+      /^Draft URL is not valid\. Structured View changes use the Last Valid URL\.$/,
+    );
+    expect(screen.getByRole("region", { name: "Structured View" }))
+      .toHaveAccessibleDescription("Source: Last Valid URL.");
+    expect(value).toHaveValue("%");
+    expect(document.getElementById(errorId)).toHaveTextContent(/complete triplet/);
+    expect(document.querySelector('[id$="-domain"]')).toHaveTextContent("the Last Valid URL");
+    const search = screen.getByLabelText("Search Managed Pieces");
+    search.focus();
+    fireEvent.change(search, { target: { value: "x=not-present" } });
+    expect(screen.getByText(/No Managed Piece matches/)).toBeVisible();
+    expect(search).toHaveFocus();
+    fireEvent.click(screen.getByRole("button", { name: "Clear Search" }));
+    expect(value).toHaveAttribute("aria-invalid", "true");
+    fireEvent.change(editor, { target: { value: "https://example.com/a?x=1" } });
+    expect(document.getElementById("error-full-url")).not.toBeInTheDocument();
+    expect(document.getElementById("structured-source")).not.toBeInTheDocument();
+    const correctedValue = screen.getByLabelText("Value, Query Parameter 1 of 1");
+    expect(correctedValue).toHaveAttribute("aria-invalid", "true");
+    fireEvent.change(correctedValue, { target: { value: "%2F" } });
+    expect(correctedValue).not.toHaveAttribute("aria-invalid");
+  });
+
+  it("keeps field error, operation status, Search and invalid Draft composition independent", () => {
+    vi.useFakeTimers();
+    render(<Workbench />);
+    const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
+    fireEvent.change(editor, { target: { value: "https://example.com/a?x=1" } });
+    const value = screen.getByLabelText("Value, Query Parameter 1 of 1");
+    fireEvent.change(value, { target: { value: "%" } });
+    fireEvent.change(editor, { target: { value: "/invalid" } });
+    fireEvent.click(screen.getByRole("button", { name: "Add Query Parameter before the list" }));
+    const status = screen.getByText(/Query Parameter 2 added/).textContent;
+    const search = screen.getByLabelText("Search Managed Pieces");
+    search.focus();
+    fireEvent.change(search, { target: { value: "x" } });
+    act(() => vi.advanceTimersByTime(300));
+    expect(document.getElementById("search-status")).toHaveTextContent("2 of 4 Managed Pieces shown.");
+    fireEvent.change(editor, { target: { value: "/still-invalid" } });
+    expect(screen.getByText(/Query Parameter 2 added/)).toHaveTextContent(status!);
+    expect(document.getElementById("search-status")).toHaveTextContent("2 of 4 Managed Pieces shown.");
+    expect(search).toHaveFocus();
+    const error = document.getElementById("error-full-url")!.textContent;
+    fireEvent.compositionStart(editor);
+    fireEvent.change(editor, { target: { value: "https://example.com/final?x=1&" } });
+    fireEvent.keyDown(editor, { key: "Enter" });
+    expect(document.getElementById("error-full-url")).toHaveTextContent(error!);
+    expect(screen.getByText("Source: Last Valid URL.")).toBeVisible();
+    fireEvent.compositionEnd(editor);
+    expect(document.getElementById("error-full-url")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Value, Query Parameter 1 of 2")).toHaveValue("%");
+  });
+
+  it("does not apply an old move focus intent to a newer identical outcome in one batch", () => {
+    render(<Workbench />);
+    const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
+    fireEvent.change(editor, { target: { value: "https://example.com/a?x=1&y=2&z=3" } });
+    fireEvent.change(editor, { target: { value: "/invalid" } });
+    const search = screen.getByLabelText("Search Managed Pieces");
+    search.focus();
+    const row = screen.getByLabelText("Key, Query Parameter 2 of 3").closest("li")!;
+    const down = within(row).getByRole("button", { name: / down,/ });
+    const up = within(row).getByRole("button", { name: / up,/ });
+    act(() => {
+      down.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      up.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      down.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+    expect(screen.getByText(/"y=2" moved from position 2 to position 3 of 3/)).toBeVisible();
+    expect(search).toHaveFocus();
+    expect(editor).toHaveValue("/invalid");
+  });
+
+  it.each(["add", "move", "remove"] as const)(
+    "does not let pending %s override newer Search focus",
+    (operation) => {
+      render(<Workbench />);
+      const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
+      fireEvent.change(editor, { target: { value: "https://example.com/a?x=1&y=2" } });
+      fireEvent.change(editor, { target: { value: "/invalid" } });
+      const search = screen.getByLabelText("Search Managed Pieces");
+      fireEvent.change(search, { target: { value: "x" } });
+      editor.focus();
+      const button = operation === "add"
+        ? screen.getByRole("button", { name: "Add Query Parameter before the list" })
+        : screen.getByRole("button", {
+          name: operation === "move"
+            ? /Move Query Parameter at position 1 of 2 down/
+            : /Remove Query Parameter at position 1 of 2/,
+        });
+      act(() => {
+        button.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+        search.focus();
+      });
+      expect(search).toHaveFocus();
+      expect(search).toHaveValue("x");
+      expect(editor).toHaveValue("/invalid");
+    },
+  );
+
+  it.each(["focus", "input", "composition"] as const)(
+    "does not let pending Add supersede newer Full URL %s",
+    (interaction) => {
+      render(<Workbench />);
+      const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
+      fireEvent.change(editor, { target: { value: "https://example.com/a?x=1" } });
+      fireEvent.change(editor, { target: { value: "/invalid" } });
+      const search = screen.getByLabelText("Search Managed Pieces");
+      fireEvent.change(search, { target: { value: "x" } });
+      search.focus();
+      const add = screen.getByRole("button", { name: "Add Query Parameter before the list" });
+      act(() => {
+        add.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+        if (interaction === "focus") editor.focus();
+        if (interaction === "input") {
+          fireEvent.change(editor, { target: { value: "/new-invalid" } });
+        }
+        if (interaction === "composition") fireEvent.compositionStart(editor);
+      });
+      expect(search).toHaveValue("x");
+      expect(interaction === "focus" ? editor : search).toHaveFocus();
+      expect(screen.queryByLabelText("Key, Query Parameter 2 of 2")).not.toBeInTheDocument();
+    },
+  );
+
+  it("rejects stale Add focus and Search clearing after batched Add, Remove, Add", () => {
+    render(<Workbench />);
+    const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
+    fireEvent.change(editor, { target: { value: "https://example.com/a?x=1" } });
+    fireEvent.change(editor, { target: { value: "/invalid" } });
+    const search = screen.getByLabelText("Search Managed Pieces");
+    fireEvent.change(search, { target: { value: "x" } });
+    search.focus();
+    const add = screen.getByRole("button", { name: "Add Query Parameter before the list" });
+    const remove = screen.getByRole("button", { name: /Remove Query Parameter at position 1 of 1/ });
+    act(() => {
+      add.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      remove.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      add.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+    expect(search).toHaveFocus();
+    expect(search).toHaveValue("x");
+    expect(screen.getByText(/Query Parameter 2 added/)).toBeVisible();
+    expect(editor).toHaveValue("/invalid");
+  });
+
+  it("persistently announces and associates Full URL and structured errors independently", () => {
+    render(<Workbench />);
+    const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
+    const fullUrlRegion = document.getElementById("full-url-validation");
+    const structuredRegion = document.getElementById("structured-validation");
+    expect(fullUrlRegion).toHaveAttribute("aria-live", "polite");
+    expect(structuredRegion).toHaveAttribute("aria-live", "polite");
+    expect(fullUrlRegion).toBeEmptyDOMElement();
+    fireEvent.change(editor, { target: { value: "https://example.com/a?x=1" } });
+    const domain = screen.getByLabelText("Unicode Domain");
+    const domainRegion = document.getElementById(
+      `error-${domain.closest("li")!.dataset.pieceId}-domain-unicode-feedback`,
+    );
+    expect(domainRegion).toHaveAttribute("aria-live", "polite");
+    expect(domainRegion).toBeEmptyDOMElement();
+    fireEvent.change(domain, { target: { value: "xn--" } });
+    const domainError = document.getElementById(domain.getAttribute("aria-errormessage")!)!;
+    expect(domain).toHaveAccessibleDescription(expect.stringContaining(domainError.textContent!));
+    expect(domain).toHaveAccessibleDescription(expect.stringContaining("Edit either form."));
+    expect(domainRegion).toHaveTextContent(domainError.textContent!);
+    expect(structuredRegion).toBeEmptyDOMElement();
+    fireEvent.change(domain, { target: { value: "example.com" } });
+    expect(domain).not.toHaveAttribute("aria-errormessage");
+    expect(domain).toHaveAccessibleDescription(/Edit either form/);
+    expect(domainRegion).toBeEmptyDOMElement();
+
+    for (const label of ["Path Segment 1 of 1", "Key, Query Parameter 1 of 1", "Value, Query Parameter 1 of 1"]) {
+      const input = screen.getByLabelText(label);
+      const validValue = (input as HTMLInputElement).value;
+      const fieldRegion = document.getElementById(
+        `${input.id}-error-feedback`,
+      );
+      expect(fieldRegion).toHaveAttribute("aria-live", "polite");
+      expect(fieldRegion).toBeEmptyDOMElement();
+      fireEvent.change(input, { target: { value: "%" } });
+      const error = document.getElementById(input.getAttribute("aria-errormessage")!)!;
+      expect(input).toHaveAccessibleDescription(error.textContent!);
+      expect(fieldRegion).toHaveTextContent(error.textContent!);
+      fireEvent.change(editor, { target: { value: "https://" } });
+      expect(editor).toHaveAccessibleDescription(expect.stringContaining("Draft URL is not valid."));
+      expect(fullUrlRegion).toHaveTextContent("Structured View changes use the Last Valid URL.");
+      expect(fieldRegion).toHaveTextContent(error.textContent!);
+      fireEvent.change(input, { target: { value: validValue } });
+      expect(input).not.toHaveAttribute("aria-describedby");
+      expect(fieldRegion).toBeEmptyDOMElement();
+      fireEvent.change(editor, { target: { value: "https://example.com/a?x=1" } });
+      expect(editor).toHaveAccessibleDescription(document.getElementById("full-url-help")!.textContent!);
+      expect(fullUrlRegion).toBeEmptyDOMElement();
+      expect(screen.getByText(/URL parsed/)).toBeVisible();
+    }
+    expect(document.getElementById("full-url-validation")).toBe(fullUrlRegion);
+    expect(document.getElementById("structured-validation")).toBe(structuredRegion);
+  });
+
+  it("preserves invalid Draft, selection, Search and focus when capacity rejects Add and an expanding edit", () => {
+    render(<Workbench />);
+    const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL") as HTMLTextAreaElement;
+    const prefix = "https://example.com/a?big=";
+    fireEvent.change(editor, { target: { value: `${prefix}${"x".repeat(20_000 - prefix.length)}` } });
+    const ids = screen.getAllByRole("listitem").map((row) => row.dataset.pieceId);
+    fireEvent.change(editor, { target: { value: "https://" } });
+    editor.setSelectionRange(2, 6, "backward");
+    const parserError = document.getElementById("error-full-url")!.textContent!;
+    const search = screen.getByLabelText("Search Managed Pieces");
+    fireEvent.change(search, { target: { value: "big" } });
+    search.focus();
+    fireEvent.click(screen.getByRole("button", { name: "Add Query Parameter after the list" }));
+    expect(search).toHaveValue("big");
+    expect(search).toHaveFocus();
+    expect(screen.getAllByRole("listitem")).toHaveLength(1);
+    expect(screen.queryByText(/Query Parameter \d+ added/)).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Clear Search" }));
+    const key = screen.getByLabelText("Key, Query Parameter 1 of 1");
+    key.focus();
+    fireEvent.change(key, { target: { value: "big-extra" } });
+    expect(key).toHaveFocus();
+    expect(key).toHaveAttribute("aria-invalid", "true");
+    expect(search).toHaveValue("");
+    expect(editor).toHaveValue("https://");
+    expect([editor.selectionStart, editor.selectionEnd, editor.selectionDirection]).toEqual([2, 6, "backward"]);
+    expect(document.getElementById("error-full-url")).toHaveTextContent(parserError);
+    expect(screen.getAllByRole("listitem").map((row) => row.dataset.pieceId)).toEqual(ids);
+  });
+
+  it.each(["domain", "path", "key", "value", "remove", "move"] as const)(
+    "preserves exact invalid Draft selection and source through %s with established focus",
+    (operation) => {
+      render(<Workbench />);
+      const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL") as HTMLTextAreaElement;
+      fireEvent.change(editor, { target: { value: "https://example.com/a?dup=1&dup=2" } });
+      const ids = screen.getAllByRole("listitem").map((row) => row.dataset.pieceId);
+      fireEvent.change(editor, { target: { value: "https://" } });
+      editor.setSelectionRange(2, 6, "backward");
+      const error = document.getElementById("error-full-url")!.textContent;
+      const control = operation === "domain" ? screen.getByLabelText("Unicode Domain")
+        : operation === "path" ? screen.getByLabelText("Path Segment 1 of 1")
+        : operation === "key" ? screen.getAllByLabelText(/^Key, Query/)[1]!
+        : operation === "value" ? screen.getAllByLabelText(/^Value, Query/)[1]!
+        : screen.getByRole("button", {
+          name: operation === "move" ? /Move Query Parameter at position 2 of 2 up/ : /Remove Query Parameter at position 2 of 2/,
+        });
+      control.focus();
+      if (operation === "move" || operation === "remove") fireEvent.click(control);
+      else fireEvent.change(control, { target: { value: operation === "domain" ? "example.org" : "new" } });
+      expect(editor).toHaveValue("https://");
+      expect([editor.selectionStart, editor.selectionEnd, editor.selectionDirection]).toEqual([2, 6, "backward"]);
+      expect(document.getElementById("error-full-url")).toHaveTextContent(error!);
+      expect(screen.getByRole("region", { name: "Structured View" }))
+        .toHaveAccessibleDescription("Source: Last Valid URL.");
+      if (operation === "remove") {
+        expect(document.getElementById(`remove-${ids[2]}`)).toHaveFocus();
+        expect(screen.getAllByRole("listitem").map((row) => row.dataset.pieceId)).toEqual(ids.slice(0, -1));
+      } else if (operation === "move") {
+        expect(document.getElementById(`move-down-${ids[3]}`)).toHaveFocus();
+        expect(screen.getAllByRole("listitem").map((row) => row.dataset.pieceId)).toEqual([ids[0], ids[1], ids[3], ids[2]]);
+      } else {
+        expect(control).toHaveFocus();
+        expect(screen.getAllByRole("listitem").map((row) => row.dataset.pieceId)).toEqual(ids);
+      }
+    },
+  );
+
   it("does not let a pending caret-restoration frame overwrite a newer selection", () => {
     const callbacks: FrameRequestCallback[] = [];
     const frame = vi.spyOn(window, "requestAnimationFrame").mockImplementation((callback) => {
@@ -343,7 +626,9 @@ describe("URL Workbench", () => {
     fireEvent.change(value, { target: { value: "%" } });
     expect(value).toHaveValue("%");
     expect(value).toHaveAttribute("aria-invalid", "true");
-    expect(screen.getByText(/complete triplet/)).toBeVisible();
+    const error = document.getElementById(value.getAttribute("aria-errormessage")!)!;
+    expect(error).toBeVisible();
+    expect(error).toHaveTextContent(/complete triplet/);
     expect(screen.getByLabelText("Complete HTTP or HTTPS Absolute URL")).toHaveValue(
       "https://example.com/a?x=1",
     );
@@ -413,7 +698,7 @@ describe("URL Workbench", () => {
     );
     expect(ascii).toHaveAttribute(
       "aria-describedby",
-      `help-${domainId}-domain`,
+      `help-${domainId}-domain error-${domainId}-domain-ascii`,
     );
     expect(
       document.getElementById(`help-${domainId}-domain`),

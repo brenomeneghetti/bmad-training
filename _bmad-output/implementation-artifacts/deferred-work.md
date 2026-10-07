@@ -34,3 +34,12 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-2-5-reorder-query-parameters-by-keyboard.md`
   summary: Remove the client-side duplication of the reducer's generated `structuredSuccess` message used to restore focus after a Move Up/Down.
   evidence: "`Workbench.tsx`'s `moveQueryPiece` handler and `session.ts`'s `moveQueryPiece` reducer case both independently build the exact same success-message string to let the caller predict it for the focus-restoration guard (`state.structuredSuccess !== pending.successMessage`). This only stays correct because both sides derive the string from the same `allPieces`/`sourcePosition`/`destinationPosition` values in the same synchronous tick; a future change to either template could silently break focus-after-move with no compiler or test failure. Fixing this correctly would require the reducer to return the generated message/identity to the caller rather than have the caller predict it, a moderate state-shape change out of scope for this story; the same class of duplication was flagged and deferred for Story 2.4's ID-prediction logic."
+- source_spec: `_bmad-output/implementation-artifacts/spec-2-7-keep-working-through-an-invalid-full-url-draft.md`
+  summary: Bind all mandatory evidence cells to immutable passing execution records for the tested artifact through the trusted release-evidence gate.
+  evidence: The inherited validator checks mappings, source paths, CSP and artifact digest but cannot reject cells whose referenced tests failed or did not execute; a shared producer and verified run-result contract are required.
+- source_spec: `_bmad-output/implementation-artifacts/spec-2-7-keep-working-through-an-invalid-full-url-draft.md`
+  summary: Execute invalid-Draft editing, IME, selection and keyboard focus checks across the latest-two-major supported browser matrix.
+  evidence: Playwright config provides Chromium only; Firefox and WebKit executables are unavailable, and the approved story prohibits installing dependencies or tools. Installed-engine execution alone cannot prove the required version matrix.
+- source_spec: `_bmad-output/implementation-artifacts/spec-2-7-keep-working-through-an-invalid-full-url-draft.md`
+  summary: Complete true 400% browser-zoom and manual assistive-technology validation of independent errors, Last Valid source changes and operation focus.
+  evidence: Added automated forced-colors and text-spacing coverage at 320 CSS pixels, but neither axe nor headless viewport emulation establishes real browser-zoom and screen-reader announcement behavior.

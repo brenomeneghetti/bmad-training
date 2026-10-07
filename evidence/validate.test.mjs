@@ -90,6 +90,10 @@ const createFixture = async (context) => {
       ["story-2-6-focus-session-history-squash", "2.6"],
       ["story-2-6-ime-safe-keyboard-loosened-gating", "2.6"],
       ["story-2-6-privacy-capacity", "2.6"],
+      ["story-2-7-invalid-draft-last-valid-source", "2.7"],
+      ["story-2-7-reversible-chronology", "2.7"],
+      ["story-2-7-feedback-focus-races", "2.7"],
+      ["story-2-7-privacy-capacity", "2.7"],
     ].map(([id, story]) => ({
       id,
       story,
@@ -111,7 +115,29 @@ const writeManifest = (root, manifest) =>
 
 test("accepts a complete valid evidence fixture", async (context) => {
   const { root } = await createFixture(context);
-  assert.equal((await validateEvidence(root)).cellCount, 32);
+  assert.equal((await validateEvidence(root)).cellCount, 36);
+});
+
+test("requires each Story 2.7 cell with correct identity, mapping, evidence and passing status", async (context) => {
+  for (const id of [
+    "story-2-7-invalid-draft-last-valid-source",
+    "story-2-7-reversible-chronology",
+    "story-2-7-feedback-focus-races",
+    "story-2-7-privacy-capacity",
+  ]) {
+    for (const mutation of ["missing", "status", "identity", "mapping", "evidence"]) {
+      const { root, manifest } = await createFixture(context);
+      const index = manifest.cells.findIndex((cell) => cell.id === id);
+      const cell = manifest.cells[index];
+      if (mutation === "missing") manifest.cells.splice(index, 1);
+      if (mutation === "status") cell.status = "incomplete";
+      if (mutation === "identity") cell.id = "story-2-7-unregistered";
+      if (mutation === "mapping") cell.story = "2.6";
+      if (mutation === "evidence") cell.evidence = ["missing-proof.txt"];
+      await writeManifest(root, manifest);
+      await assert.rejects(validateEvidence(root));
+    }
+  }
 });
 
 test("requires every Story 2.4 cell to remain mandatory and passing", async (context) => {
