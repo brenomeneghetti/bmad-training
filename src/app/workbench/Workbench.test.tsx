@@ -14,13 +14,37 @@ import { Workbench } from "./Workbench";
 describe("URL Workbench", () => {
   afterEach(() => vi.useRealTimers());
 
+  it("does not let a pending caret-restoration frame overwrite a newer selection", () => {
+    const callbacks: FrameRequestCallback[] = [];
+    const frame = vi.spyOn(window, "requestAnimationFrame").mockImplementation((callback) => {
+      callbacks.push(callback);
+      return callbacks.length;
+    });
+    try {
+      render(<Workbench />);
+      fireEvent.change(screen.getByLabelText("Complete HTTP or HTTPS Absolute URL"), {
+        target: { value: "https://example.com/a?flag" },
+      });
+      const value = screen.getByLabelText("Value absent, Query Parameter 1 of 1") as HTMLInputElement;
+      fireEvent.change(value, { target: { value: "x" } });
+      value.setSelectionRange(0, 1);
+      act(() => callbacks.forEach((callback) => callback(performance.now())));
+      expect([value.selectionStart, value.selectionEnd]).toEqual([0, 1]);
+      fireEvent.keyDown(value, { key: "Delete" });
+      expect(value).toHaveValue("");
+      expect(screen.getByLabelText("Complete HTTP or HTTPS Absolute URL"))
+        .toHaveValue("https://example.com/a?flag=");
+    } finally {
+      frame.mockRestore();
+    }
+  });
+
   it("renders all managed pieces and retains the trusted view after invalid intake", async () => {
     const user = userEvent.setup();
     render(<Workbench />);
     const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
 
     await user.type(editor, semanticFixture);
-    await user.click(screen.getByRole("button", { name: "Apply URL" }));
     await screen.findByText(/URL parsed/);
     expect(screen.getAllByRole("listitem")).toHaveLength(13);
     expect(screen.getByLabelText("Unicode Domain")).toHaveValue("faß.de");
@@ -31,32 +55,25 @@ describe("URL Workbench", () => {
 
     await user.clear(editor);
     await user.type(editor, "/relative");
-    await user.click(screen.getByRole("button", { name: "Apply URL" }));
     expect(await screen.findByText(/complete HTTP or HTTPS/)).toBeVisible();
     expect(screen.getAllByRole("listitem")).toHaveLength(13);
   });
 
-  it("does not publish a stale parse", async () => {
+  it("publishes only the final value when the Full URL text changes twice in a row", () => {
     render(<Workbench />);
     const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
     fireEvent.change(editor, { target: { value: "https://first.example/a" } });
-    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
     fireEvent.change(editor, { target: { value: "https://second.example/b" } });
-    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
-    await waitFor(() =>
-      expect(screen.getByLabelText("Unicode Domain")).toHaveValue(
-        "second.example",
-      ),
+    expect(screen.getByLabelText("Unicode Domain")).toHaveValue(
+      "second.example",
     );
   });
 
-  it("shows specific safety guidance for pasted line breaks", async () => {
-    const user = userEvent.setup();
+  it("shows specific safety guidance for pasted line breaks", () => {
     render(<Workbench />);
     const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
-    await user.type(editor, "https://example.com/a{enter}b");
-    await user.click(screen.getByRole("button", { name: "Apply URL" }));
-    expect(await screen.findByText(/Remove line breaks/)).toBeVisible();
+    fireEvent.change(editor, { target: { value: "https://example.com/a\nb" } });
+    expect(screen.getByText(/Remove line breaks/)).toBeVisible();
   });
 
   it("has the required landmark and heading structure", () => {
@@ -76,7 +93,6 @@ describe("URL Workbench", () => {
       editor,
       "https://faß.de/Alpha/Straße?MixedKey=ValueOne&other=Needle",
     );
-    await user.click(screen.getByRole("button", { name: "Apply URL" }));
     const search = screen.getByLabelText("Search Managed Pieces");
 
     await user.type(search, "SS");
@@ -107,7 +123,6 @@ describe("URL Workbench", () => {
     render(<Workbench />);
     const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
     await user.type(editor, semanticFixture);
-    await user.click(screen.getByRole("button", { name: "Apply URL" }));
     const originalRows = screen.getAllByRole("listitem");
     const originalIds = originalRows.map((row) => row.dataset.pieceId);
     const search = screen.getByLabelText("Search Managed Pieces");
@@ -158,7 +173,6 @@ describe("URL Workbench", () => {
       screen.getByLabelText("Complete HTTP or HTTPS Absolute URL"),
       { target: { value: "https://example.com/a?x=1" } },
     );
-    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
     const search = screen.getByLabelText("Search Managed Pieces");
     fireEvent.change(search, { target: { value: "unmatched" } });
     expect(screen.getByText(/No Managed Piece matches/)).toHaveTextContent(
@@ -188,7 +202,6 @@ describe("URL Workbench", () => {
       screen.getByLabelText("Complete HTTP or HTTPS Absolute URL"),
       "https://example.com/café",
     );
-    await user.click(screen.getByRole("button", { name: "Apply URL" }));
 
     fireEvent.change(screen.getByLabelText("Search Managed Pieces"), {
       target: { value: "cafe\u0301" },
@@ -202,7 +215,6 @@ describe("URL Workbench", () => {
       screen.getByLabelText("Complete HTTP or HTTPS Absolute URL"),
       { target: { value: "https://example.com/a?x=1&x=2" } },
     );
-    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
     const search = screen.getByLabelText("Search Managed Pieces");
     search.focus();
 
@@ -237,7 +249,6 @@ describe("URL Workbench", () => {
       screen.getByLabelText("Complete HTTP or HTTPS Absolute URL"),
       { target: { value: "https://example.com/a?x=1" } },
     );
-    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
     const search = screen.getByLabelText("Search Managed Pieces");
     fireEvent.change(search, { target: { value: "x" } });
     fireEvent.change(search, { target: { value: "" } });
@@ -256,7 +267,6 @@ describe("URL Workbench", () => {
     fireEvent.change(editor, {
       target: { value: "https://first.example/a?x=1" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
     fireEvent.change(screen.getByLabelText("Search Managed Pieces"), {
       target: { value: "1" },
     });
@@ -264,7 +274,6 @@ describe("URL Workbench", () => {
     expect(screen.getByText("1 of 3 Managed Pieces shown.")).toBeInTheDocument();
 
     fireEvent.change(editor, { target: { value: "https://second.example/b" } });
-    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
     expect(
       screen.queryByText("1 of 3 Managed Pieces shown."),
     ).not.toBeInTheDocument();
@@ -279,7 +288,6 @@ describe("URL Workbench", () => {
       screen.getByLabelText("Complete HTTP or HTTPS Absolute URL"),
       { target: { value: "https://example.com/a?x=1" } },
     );
-    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
     fireEvent.change(screen.getByLabelText("Search Managed Pieces"), {
       target: { value: "x" },
     });
@@ -311,7 +319,6 @@ describe("URL Workbench", () => {
     fireEvent.change(editor, {
       target: { value: "https://example.com/a?dup=1&dup=2&flag" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
     const values = screen.getAllByLabelText(/^Value, Query Parameter/);
     const second = values[1] as HTMLInputElement;
     second.focus();
@@ -331,7 +338,6 @@ describe("URL Workbench", () => {
       screen.getByLabelText("Complete HTTP or HTTPS Absolute URL"),
       { target: { value: "https://example.com/a?x=1" } },
     );
-    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
     const value = screen.getByLabelText(/^Value, Query Parameter/);
     value.focus();
     fireEvent.change(value, { target: { value: "%" } });
@@ -355,7 +361,6 @@ describe("URL Workbench", () => {
     render(<Workbench />);
     const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
     fireEvent.change(editor, { target: { value: "https://example.com/a?x=long" } });
-    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
     const value = screen.getByLabelText(/^Value, Query Parameter/);
     fireEvent.compositionStart(value);
     fireEvent.change(value, { target: { value: "日本" } });
@@ -370,7 +375,6 @@ describe("URL Workbench", () => {
     fireEvent.change(editor, {
       target: { value: "https://User@example.com:044/a%2fb?x=1#Frag%2f" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
     const unicode = screen.getByLabelText("Unicode Domain");
     unicode.focus();
     fireEvent.change(unicode, { target: { value: "faß.de" } });
@@ -398,7 +402,6 @@ describe("URL Workbench", () => {
     render(<Workbench />);
     const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
     fireEvent.change(editor, { target: { value: "https://example.com/a?x=1" } });
-    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
     const ascii = screen.getByLabelText("ASCII/Punycode Domain");
     const domainId = ascii.closest("li")?.dataset.pieceId;
     fireEvent.change(ascii, { target: { value: "xn--" } });
@@ -444,7 +447,6 @@ describe("URL Workbench", () => {
     fireEvent.change(editor, {
       target: { value: "https://example.com/a?x=1" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
     const search = screen.getByLabelText("Search Managed Pieces");
     fireEvent.change(search, { target: { value: "example" } });
     const unicode = screen.getByLabelText("Unicode Domain");
@@ -461,7 +463,6 @@ describe("URL Workbench", () => {
     render(<Workbench />);
     const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
     fireEvent.change(editor, { target: { value: "https://example.com/" } });
-    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
     const unicode = screen.getByLabelText("Unicode Domain");
     fireEvent.compositionStart(unicode);
     fireEvent.change(unicode, { target: { value: "cafe\u0301.example" } });
@@ -489,7 +490,6 @@ describe("URL Workbench", () => {
     render(<Workbench />);
     const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
     fireEvent.change(editor, { target: { value: "https://example.com/" } });
-    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
     const unicode = screen.getByLabelText("Unicode Domain") as HTMLInputElement;
 
     fireEvent.change(unicode, { target: { value: "cafe\u0301..example" } });
@@ -505,25 +505,25 @@ describe("URL Workbench", () => {
     expect(unicode.selectionStart).toBe(5);
   });
 
-  it("disables structured editors while Full URL text is pending or invalid", () => {
+  it("keeps structured editors enabled while Full URL text changes or turns invalid, as long as a Last Valid snapshot exists", () => {
     render(<Workbench />);
     const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
     fireEvent.change(editor, { target: { value: "https://example.com/a?x=1" } });
-    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
     const value = screen.getByLabelText(/^Value, Query Parameter/);
     expect(value).toBeEnabled();
 
     fireEvent.change(editor, {
-      target: { value: "https://example.com/a?x=unapplied" },
+      target: { value: "https://example.com/a?x=revised" },
     });
-    expect(value).toBeDisabled();
-    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
     expect(screen.getByLabelText(/^Value, Query Parameter/)).toBeEnabled();
 
     fireEvent.change(editor, { target: { value: "/invalid" } });
-    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
-    expect(screen.getByLabelText(/^Value, Query Parameter/)).toBeDisabled();
+    expect(screen.getByLabelText(/^Value, Query Parameter/)).toBeEnabled();
+    expect(
+      screen.getByRole("button", { name: "Add Query Parameter before the list" }),
+    ).toBeEnabled();
     expect(editor).toHaveValue("/invalid");
+    expect(screen.getByText(/complete HTTP or HTTPS/)).toBeVisible();
   });
 
   it("clears active Search before editing and retains the edited control", () => {
@@ -532,7 +532,6 @@ describe("URL Workbench", () => {
       screen.getByLabelText("Complete HTTP or HTTPS Absolute URL"),
       { target: { value: "https://example.com/a?dup=1&other=2" } },
     );
-    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
     const search = screen.getByLabelText("Search Managed Pieces");
     fireEvent.change(search, { target: { value: "dup" } });
     const key = screen.getByLabelText(
@@ -558,7 +557,6 @@ describe("URL Workbench", () => {
       screen.getByLabelText("Complete HTTP or HTTPS Absolute URL"),
       { target: { value: "https://example.com/a?x=%2F😀" } },
     );
-    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
     const value = screen.getByLabelText(/^Value, Query Parameter/) as HTMLInputElement;
     value.focus();
     fireEvent.change(value, { target: { value: "😀" } });
@@ -575,7 +573,6 @@ describe("URL Workbench", () => {
       screen.getByLabelText("Complete HTTP or HTTPS Absolute URL"),
       { target: { value: "https://example.com/a?x=%2F" } },
     );
-    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
     const value = screen.getByLabelText(/^Value, Query Parameter/);
     fireEvent.change(value, { target: { value: "%F" } });
     expect(value).toHaveValue("");
@@ -584,15 +581,17 @@ describe("URL Workbench", () => {
     ).toHaveValue("https://example.com/a?x=");
   });
 
-  it("preserves piece identity when applying an unchanged active URL", () => {
+  it("preserves piece identity when focused and the Full URL text is re-published unchanged", () => {
     render(<Workbench />);
     const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
     fireEvent.change(editor, { target: { value: "https://example.com/a?x=1" } });
-    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
     const before = screen
       .getAllByRole("listitem")
       .map((item) => item.getAttribute("data-piece-id"));
-    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
+
+    fireEvent.focus(editor);
+    fireEvent.change(editor, { target: { value: "https://example.com/a?x=1" } });
+
     expect(
       screen
         .getAllByRole("listitem")
@@ -600,27 +599,29 @@ describe("URL Workbench", () => {
     ).toEqual(before);
   });
 
-  it("restores active state without reparsing when Full URL text returns unchanged", () => {
+  it("mints a fresh piece id when, while focused, Full URL text detours through a changed value before returning", () => {
+    // Reconciliation diffs each keystroke against the most recently accepted
+    // snapshot (not the original focus baseline), so a value that changes and
+    // then changes back does not recover its original id -- only an
+    // unmodified round-trip (see the test above) does.
     render(<Workbench />);
     const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
     fireEvent.change(editor, { target: { value: "https://example.com/a?x=1" } });
-    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
     const value = screen.getByLabelText(/^Value, Query Parameter/);
     const beforeId = value.closest("li")?.getAttribute("data-piece-id");
 
+    fireEvent.focus(editor);
     fireEvent.change(editor, {
       target: { value: "https://example.com/a?x=draft" },
     });
-    expect(value).toBeDisabled();
+    expect(screen.getByLabelText(/^Value, Query Parameter/)).toBeEnabled();
     fireEvent.change(editor, { target: { value: "https://example.com/a?x=1" } });
-    expect(value).toBeEnabled();
-    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
     expect(
       screen
         .getByLabelText(/^Value, Query Parameter/)
         .closest("li")
         ?.getAttribute("data-piece-id"),
-    ).toBe(beforeId);
+    ).not.toBe(beforeId);
   });
 
   it("does not expand deletion across unpaired surrogate code units", () => {
@@ -629,7 +630,6 @@ describe("URL Workbench", () => {
     fireEvent.change(editor, {
       target: { value: "https://example.com/a?x=a\uDC00x" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
     const value = screen.getByLabelText(
       /^Value, Query Parameter/,
     ) as HTMLInputElement;
@@ -641,7 +641,6 @@ describe("URL Workbench", () => {
     fireEvent.change(editor, {
       target: { value: "https://example.com/a?x=a\uD800x" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
     const nextValue = screen.getByLabelText(
       /^Value, Query Parameter/,
     ) as HTMLInputElement;
@@ -658,7 +657,6 @@ describe("URL Workbench", () => {
       screen.getByLabelText("Complete HTTP or HTTPS Absolute URL"),
       { target: { value: "https://example.com/a?x=1" } },
     );
-    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
     fireEvent.change(screen.getByLabelText("Search Managed Pieces"), {
       target: { value: "x" },
     });
@@ -681,7 +679,6 @@ describe("URL Workbench", () => {
       screen.getByLabelText("Complete HTTP or HTTPS Absolute URL"),
       { target: { value: "https://example.com/b?y=2" } },
     );
-    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
     expect(
       within(document.querySelector("#search-status") as HTMLElement).queryByText(
         "3 of 3 Managed Pieces shown.",
@@ -695,7 +692,6 @@ describe("URL Workbench", () => {
     fireEvent.change(editor, {
       target: { value: "https://example.com/a?x=café-tail" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
     const value = screen.getByLabelText(/^Value, Query Parameter/);
     fireEvent.change(value, { target: { value: "café-next" } });
     expect(editor).toHaveValue("https://example.com/a?x=café-next");
@@ -714,7 +710,6 @@ describe("URL Workbench", () => {
       screen.getByLabelText("Complete HTTP or HTTPS Absolute URL"),
       { target: { value: "https://example.com/?dup=1&dup=2" } },
     );
-    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
     expect(
       screen.getByLabelText(
         "Key, Query Parameter 2 of 2, occurrence 2 of 2",
@@ -732,7 +727,6 @@ describe("URL Workbench", () => {
     render(<Workbench />);
     const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
     fireEvent.change(editor, { target: { value: removalFixtures.duplicateQuery } });
-    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
     const beforeIds = screen
       .getAllByRole("listitem")
       .map((row) => row.getAttribute("data-piece-id"));
@@ -766,7 +760,6 @@ describe("URL Workbench", () => {
     render(<Workbench />);
     const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
     fireEvent.change(editor, { target: { value: removalFixtures.mixedQuery } });
-    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
     const search = screen.getByLabelText("Search Managed Pieces");
     search.focus();
     const remove = screen.getByRole("button", {
@@ -789,7 +782,6 @@ describe("URL Workbench", () => {
     fireEvent.change(editor, {
       target: { value: removalFixtures.clearSearchFallback },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
     const search = screen.getByLabelText("Search Managed Pieces");
     fireEvent.change(search, { target: { value: "example.com" } });
     expect(screen.getAllByRole("listitem")).toHaveLength(2);
@@ -801,7 +793,6 @@ describe("URL Workbench", () => {
 
     rerender(<Workbench />);
     fireEvent.change(editor, { target: { value: removalFixtures.headingFallback } });
-    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
     fireEvent.change(search, { target: { value: "needle" } });
     const remove = screen.getByRole("button", {
       name: /Remove Query Parameter at position 1 of 2/,
@@ -821,7 +812,6 @@ describe("URL Workbench", () => {
     fireEvent.change(editor, {
       target: { value: "https://example.com/?needle=1&needle=2" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
     fireEvent.change(screen.getByLabelText("Search Managed Pieces"), {
       target: { value: "needle" },
     });
@@ -847,7 +837,6 @@ describe("URL Workbench", () => {
     fireEvent.change(editor, {
       target: { value: "https://example.com/?first=1&target=2&third=3" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
     fireEvent.change(screen.getByLabelText("Search Managed Pieces"), {
       target: { value: "target" },
     });
@@ -871,7 +860,6 @@ describe("URL Workbench", () => {
       screen.getByLabelText("Complete HTTP or HTTPS Absolute URL"),
       "https://example.com/a?x=1",
     );
-    await user.click(screen.getByRole("button", { name: "Apply URL" }));
     expect(
       screen.getByRole("link", { name: "Skip to Add Query Parameter" }),
     ).toHaveAttribute("href", "#add-query-after");
@@ -883,7 +871,6 @@ describe("URL Workbench", () => {
     render(<Workbench />);
     const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
     await user.type(editor, "https://example.com/a");
-    await user.click(screen.getByRole("button", { name: "Apply URL" }));
     expect(screen.getAllByRole("listitem")).toHaveLength(2);
 
     await user.click(screen.getByRole("button", { name: "Add Query Parameter before the list" }));
@@ -900,7 +887,6 @@ describe("URL Workbench", () => {
     render(<Workbench />);
     const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
     fireEvent.change(editor, { target: { value: "https://example.com/a?x=1" } });
-    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
     const beforeIds = screen
       .getAllByRole("listitem")
       .map((row) => row.getAttribute("data-piece-id"));
@@ -933,7 +919,6 @@ describe("URL Workbench", () => {
     fireEvent.change(editor, {
       target: { value: "https://example.com/a?dup=1&dup=2" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
     const search = screen.getByLabelText("Search Managed Pieces");
     fireEvent.change(search, { target: { value: "dup" } });
     expect(screen.getAllByRole("listitem")).toHaveLength(2);
@@ -958,7 +943,6 @@ describe("URL Workbench", () => {
     const prefix = "https://example.com/a?big=";
     const atCapacity = `${prefix}${"x".repeat(20_000 - prefix.length)}`;
     fireEvent.change(editor, { target: { value: atCapacity } });
-    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
     const search = screen.getByLabelText("Search Managed Pieces");
     fireEvent.change(search, { target: { value: "no-match-term" } });
     expect(screen.queryAllByRole("listitem")).toHaveLength(0);
@@ -976,7 +960,6 @@ describe("URL Workbench", () => {
     render(<Workbench />);
     const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
     fireEvent.change(editor, { target: { value: "https://example.com/a?x=1" } });
-    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
     const search = screen.getByLabelText("Search Managed Pieces");
     search.focus();
     const addAfter = document.getElementById("add-query-after");
@@ -994,21 +977,29 @@ describe("URL Workbench", () => {
     expect(screen.queryByText(/Query Parameter 2 added/)).toBeNull();
   });
 
-  it("rejects Add while Full URL text is unapplied, producing no row, mutation, history, Search change, or focus change", async () => {
+  it("permits Add while the Full URL textarea has a pending unclosed draft", async () => {
     const user = userEvent.setup();
     render(<Workbench />);
     const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
     fireEvent.change(editor, { target: { value: "https://example.com/a?x=1" } });
-    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
-    await user.type(editor, "&draft");
+    fireEvent.focus(editor);
+    fireEvent.change(editor, {
+      target: { value: "https://example.com/a?x=1&draft" },
+    });
 
     expect(
       [
         screen.getByRole("button", { name: "Add Query Parameter before the list" }),
         screen.getByRole("button", { name: "Add Query Parameter after the list" }),
-      ].every((button) => (button as HTMLButtonElement).disabled),
+      ].every((button) => !(button as HTMLButtonElement).disabled),
     ).toBe(true);
-    expect(screen.getAllByRole("listitem")).toHaveLength(3);
+    expect(screen.getAllByRole("listitem")).toHaveLength(4);
+
+    await user.click(
+      screen.getByRole("button", { name: "Add Query Parameter after the list" }),
+    );
+    expect(screen.getAllByRole("listitem")).toHaveLength(5);
+    expect(editor).toHaveValue("https://example.com/a?x=1&draft&");
   });
 
   it("exposes boundary-disabled Move Up/Move Down controls on every row", async () => {
@@ -1016,7 +1007,6 @@ describe("URL Workbench", () => {
     render(<Workbench />);
     const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
     await user.type(editor, "https://example.com/a?x=1&y=2&z=3");
-    await user.click(screen.getByRole("button", { name: "Apply URL" }));
 
     const firstUp = screen.getByRole("button", {
       name: /Move Query Parameter at position 1 of 3 up/,
@@ -1042,7 +1032,6 @@ describe("URL Workbench", () => {
     render(<Workbench />);
     const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
     await user.type(editor, "https://example.com/a?x=1&y=2&z=3");
-    await user.click(screen.getByRole("button", { name: "Apply URL" }));
 
     const moveDown = screen.getByRole("button", {
       name: /Move Query Parameter at position 2 of 3 down/,
@@ -1065,7 +1054,6 @@ describe("URL Workbench", () => {
     render(<Workbench />);
     const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
     await user.type(editor, "https://example.com/a?x=1&y=2&z=3");
-    await user.click(screen.getByRole("button", { name: "Apply URL" }));
 
     const moveUp = screen.getByRole("button", {
       name: /Move Query Parameter at position 2 of 3 up/,
@@ -1085,7 +1073,6 @@ describe("URL Workbench", () => {
     render(<Workbench />);
     const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
     await user.type(editor, "https://example.com/a?x=1&needle=2&z=3");
-    await user.click(screen.getByRole("button", { name: "Apply URL" }));
     const search = screen.getByLabelText("Search Managed Pieces");
     fireEvent.change(search, { target: { value: "needle" } });
     expect(screen.getAllByRole("listitem")).toHaveLength(1);
@@ -1109,7 +1096,6 @@ describe("URL Workbench", () => {
     render(<Workbench />);
     const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
     fireEvent.change(editor, { target: { value: "https://example.com/a?x=1&y=2" } });
-    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
     const search = screen.getByLabelText("Search Managed Pieces");
     search.focus();
     const moveDown = screen.getByRole("button", {
@@ -1125,19 +1111,27 @@ describe("URL Workbench", () => {
     expect(screen.queryByText(/moved from position/)).toBeNull();
   });
 
-  it("rejects Move while Full URL text is unapplied, producing no mutation, history, or focus change", async () => {
+  it("permits Move while the Full URL textarea has a pending unclosed draft", async () => {
     const user = userEvent.setup();
     render(<Workbench />);
     const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
     fireEvent.change(editor, { target: { value: "https://example.com/a?x=1&y=2" } });
-    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
-    await user.type(editor, "&draft");
+    fireEvent.focus(editor);
+    fireEvent.change(editor, {
+      target: { value: "https://example.com/a?x=1&y=2&draft" },
+    });
 
     const moveButtons = screen.getAllByRole("button", { name: /Move Query Parameter/ });
-    expect(moveButtons.every((button) => (button as HTMLButtonElement).disabled)).toBe(
+    expect(moveButtons.some((button) => !(button as HTMLButtonElement).disabled)).toBe(
       true,
     );
-    expect(editor).toHaveValue("https://example.com/a?x=1&y=2&draft");
+
+    await user.click(
+      screen.getByRole("button", {
+        name: /Move Query Parameter at position 1 of 3 down/,
+      }),
+    );
+    expect(editor).toHaveValue("https://example.com/a?y=2&x=1&draft");
   });
 
   it("moves within a 250+ parameter list, preserving correctness at capacity", async () => {
@@ -1150,7 +1144,6 @@ describe("URL Workbench", () => {
     fireEvent.change(editor, {
       target: { value: `https://example.com/deep/path?${entries.join("&")}` },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Apply URL" }));
 
     const moveDown = screen.getByRole("button", {
       name: /Move Query Parameter at position 101 of 260 down/,
@@ -1160,6 +1153,147 @@ describe("URL Workbench", () => {
       "parameter-101=value-101&parameter-100=value-100",
     );
   }, 20_000);
+
+  it("publishes the Structured View keystroke by keystroke with no explicit apply step", () => {
+    render(<Workbench />);
+    const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
+    expect(
+      screen.queryByRole("button", { name: "Apply URL" }),
+    ).not.toBeInTheDocument();
+
+    const target = "https://example.com/a?x=1";
+    for (let length = 1; length <= target.length; length += 1) {
+      fireEvent.change(editor, { target: { value: target.slice(0, length) } });
+    }
+
+    expect(screen.getByLabelText("Unicode Domain")).toHaveValue("example.com");
+    expect(screen.getByLabelText("Path Segment 1 of 1")).toHaveValue("a");
+    expect(screen.getByLabelText(/^Key, Query Parameter/)).toHaveValue("x");
+    expect(screen.getByLabelText(/^Value, Query Parameter/)).toHaveValue("1");
+    expect(
+      screen.queryByRole("button", { name: "Apply URL" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("accepts a full paste-and-replace of the Full URL followed by blur without error or data loss", () => {
+    render(<Workbench />);
+    const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
+    fireEvent.change(editor, { target: { value: "https://example.com/a?x=1" } });
+    fireEvent.focus(editor);
+    fireEvent.change(editor, {
+      target: { value: "https://replaced.example/b?y=2" },
+    });
+
+    expect(() => fireEvent.blur(editor)).not.toThrow();
+    expect(editor).toHaveValue("https://replaced.example/b?y=2");
+    expect(screen.getByLabelText("Unicode Domain")).toHaveValue("replaced.example");
+    expect(screen.getAllByRole("listitem")).toHaveLength(3);
+  });
+
+    it("keeps retained row identities during first-intake typing and after Enter without refocusing", () => {
+      render(<Workbench />);
+      const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
+      fireEvent.focus(editor);
+      fireEvent.change(editor, { target: { value: "https://example.com/a?x=1" } });
+      const query = screen.getByLabelText(/^Key, Query Parameter/);
+      const initialId = query.id;
+      fireEvent.change(editor, { target: { value: "https://example.com/b?x=1" } });
+      expect(screen.getByLabelText(/^Key, Query Parameter/).id).toBe(initialId);
+      fireEvent.keyDown(editor, { key: "Enter" });
+      fireEvent.change(editor, { target: { value: "https://example.com/c?x=1" } });
+      expect(screen.getByLabelText(/^Key, Query Parameter/).id).toBe(initialId);
+    });
+
+    it("buffers Full URL composition, ignores confirming Enter even without isComposing, then publishes once", () => {
+      render(<Workbench />);
+      const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
+      fireEvent.focus(editor);
+      fireEvent.change(editor, { target: { value: "https://example.com/a" } });
+      const path = screen.getByLabelText("Path Segment 1 of 1");
+      fireEvent.compositionStart(editor);
+      fireEvent.change(editor, { target: { value: "https://" } });
+      fireEvent.keyDown(editor, { key: "Enter", isComposing: false });
+      expect(editor).toHaveValue("https://");
+      expect(path).toHaveValue("a");
+      expect(editor).not.toHaveAttribute("aria-invalid");
+      fireEvent.change(editor, { target: { value: "https://example.com/final" } });
+      fireEvent.compositionEnd(editor, { data: "final" });
+      expect(screen.getByLabelText("Path Segment 1 of 1")).toHaveValue("final");
+      expect(editor).toHaveValue("https://example.com/final");
+    });
+
+    it("preserves invalid Draft and its selection while Add updates Last Valid and focuses the new key", () => {
+      render(<Workbench />);
+      const editor = screen.getByLabelText(
+        "Complete HTTP or HTTPS Absolute URL",
+      ) as HTMLTextAreaElement;
+      fireEvent.focus(editor);
+      fireEvent.change(editor, { target: { value: "https://example.com/a?x=1" } });
+      fireEvent.change(editor, { target: { value: "https://example.com/b?x=1" } });
+      fireEvent.change(editor, { target: { value: "https://" } });
+      editor.setSelectionRange(3, 5);
+      const error = document.getElementById("error-full-url")?.textContent;
+      fireEvent.click(screen.getByRole("button", {
+        name: "Add Query Parameter before the list",
+      }));
+      expect(editor).toHaveValue("https://");
+      expect(editor.selectionStart).toBe(3);
+      expect(editor.selectionEnd).toBe(5);
+      expect(document.getElementById("error-full-url")?.textContent).toBe(error);
+      expect(screen.getByLabelText("Key, Query Parameter 2 of 2")).toHaveFocus();
+      expect(screen.getByText(/Last Valid URL and Structured View updated. Draft unchanged./))
+        .toBeVisible();
+    });
+
+  it("suppresses the newline a non-composing Enter would otherwise insert", async () => {
+    const user = userEvent.setup();
+    render(<Workbench />);
+    const editor = screen.getByLabelText(
+      "Complete HTTP or HTTPS Absolute URL",
+    ) as HTMLTextAreaElement;
+
+    await user.type(editor, "https://example.com/a{Enter}b");
+
+    expect(editor.value).toBe("https://example.com/ab");
+    expect(editor.value).not.toContain("\n");
+  });
+
+  it("does not throw and leaves the draft untouched when Enter arrives while composing", () => {
+    render(<Workbench />);
+    const editor = screen.getByLabelText(
+      "Complete HTTP or HTTPS Absolute URL",
+    ) as HTMLTextAreaElement;
+    fireEvent.change(editor, { target: { value: "https://example.com/a" } });
+
+    expect(() =>
+      fireEvent.keyDown(editor, { key: "Enter", isComposing: true }),
+    ).not.toThrow();
+    expect(editor.value).toBe("https://example.com/a");
+  });
+
+  it("keeps Structured View editors enabled while an invalid Full URL draft is present, as long as a Last Valid snapshot exists", () => {
+    render(<Workbench />);
+    const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
+    fireEvent.change(editor, { target: { value: "https://example.com/a?x=1" } });
+    const removeButton = screen.getByRole("button", {
+      name: /Remove Query Parameter at position 1 of 1/,
+    });
+    const addButton = screen.getByRole("button", {
+      name: "Add Query Parameter before the list",
+    });
+    expect(removeButton).toBeEnabled();
+    expect(addButton).toBeEnabled();
+
+    fireEvent.change(editor, { target: { value: "not-a-valid-url" } });
+
+    expect(
+      screen.getByRole("button", {
+        name: /Remove Query Parameter at position 1 of 1/,
+      }),
+    ).toBeEnabled();
+    expect(
+      screen.getByRole("button", { name: "Add Query Parameter before the list" }),
+    ).toBeEnabled();
+    expect(screen.getByText(/complete HTTP or HTTPS/)).toBeVisible();
+  });
 });
-
-

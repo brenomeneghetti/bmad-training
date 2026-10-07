@@ -228,6 +228,121 @@ export const parseLosslessUrl = (
   });
 };
 
+const reconcileTokens = <T extends { readonly id: string }>(
+  previous: readonly T[],
+  rescanned: readonly T[],
+  keyOf: (piece: T) => string,
+  ids: IdAllocator,
+): readonly T[] => {
+  const previousKeys = previous.map(keyOf);
+  const rescannedKeys = rescanned.map(keyOf);
+  const previousCount = previous.length;
+  const rescannedCount = rescanned.length;
+
+  const matchedPreviousIndexByRescannedIndex = new Map<number, number>();
+  let previousIndex = 0;
+  let rescannedIndex = 0;
+  while (
+    previousIndex < previousCount &&
+    rescannedIndex < rescannedCount &&
+    previousKeys[previousIndex] === rescannedKeys[rescannedIndex]
+  ) {
+    matchedPreviousIndexByRescannedIndex.set(rescannedIndex, previousIndex);
+    previousIndex += 1;
+    rescannedIndex += 1;
+  }
+
+  // Each bit records a one-unit increase in a suffix LCS row. BigInt computes
+  // the row in word-sized batches, rather than allocating a number per cell.
+  const masks = new Map<string, bigint>();
+  const positions = new Map<string, number[]>();
+  for (let index = rescannedIndex; index < rescannedCount; index += 1) {
+    const key = rescannedKeys[index]!;
+    const bit = 1n << BigInt(rescannedCount - index - 1);
+    masks.set(key, (masks.get(key) ?? 0n) | bit);
+    const occurrences = positions.get(key) ?? [];
+    occurrences.push(index);
+    positions.set(key, occurrences);
+  }
+  const rows: bigint[] = [];
+  let row = 0n;
+  for (let index = previousCount - 1; index >= previousIndex; index -= 1) {
+    const matches = masks.get(previousKeys[index]!) ?? 0n;
+    const union = matches | row;
+    row = union & ~(union - ((row << 1n) | 1n));
+    rows[index] = row;
+  }
+  const suffixLength = (bits: bigint, width: number) => {
+    const hex = (bits & ((1n << BigInt(width)) - 1n)).toString(16);
+    const counts = [0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4];
+    let length = 0;
+    for (const digit of hex) length += counts[Number.parseInt(digit, 16)]!;
+    return length;
+  };
+  let remaining = suffixLength(row, rescannedCount - rescannedIndex);
+  while (remaining > 0 && previousIndex < previousCount && rescannedIndex < rescannedCount) {
+    if (previousKeys[previousIndex] === rescannedKeys[rescannedIndex]) {
+      matchedPreviousIndexByRescannedIndex.set(rescannedIndex, previousIndex);
+      previousIndex += 1;
+      rescannedIndex += 1;
+      remaining -= 1;
+    } else {
+      const occurrences = positions.get(previousKeys[previousIndex]!) ?? [];
+      let low = 0;
+      let high = occurrences.length;
+      while (low < high) {
+        const middle = Math.floor((low + high) / 2);
+        if (occurrences[middle]! < rescannedIndex) low = middle + 1;
+        else high = middle;
+      }
+      const candidate = occurrences[low];
+      // If the earliest new match cannot complete an optimal subsequence,
+      // later matches cannot either. Prefer the earliest feasible old token.
+      if (candidate !== undefined &&
+        suffixLength(rows[previousIndex + 1] ?? 0n, rescannedCount - candidate - 1) === remaining - 1) {
+        matchedPreviousIndexByRescannedIndex.set(candidate, previousIndex);
+        rescannedIndex = candidate + 1;
+        remaining -= 1;
+      }
+      previousIndex += 1;
+    }
+  }
+
+  return rescanned.map((piece, index) => {
+    const matched = matchedPreviousIndexByRescannedIndex.get(index);
+    const id = matched === undefined ? ids.next() : previous[matched]!.id;
+    return { ...piece, id };
+  });
+};
+
+export const reconcileLosslessUrl = (
+  previous: LosslessUrl,
+  rescanned: LosslessUrl,
+  ids: IdAllocator,
+): LosslessUrl => {
+  if (rescanned.serialized === previous.serialized) {
+    return previous;
+  }
+  const path = reconcileTokens(
+    previous.path,
+    rescanned.path,
+    (piece) => piece.rawSegment,
+    ids,
+  );
+  const query = reconcileTokens(
+    previous.query,
+    rescanned.query,
+    (piece) => `${piece.rawKey}\u0000${piece.equalsPresent ? "1" : "0"}\u0000${piece.rawValue}`,
+    ids,
+  );
+  return {
+    ...rescanned,
+    domainId: previous.domainId,
+    path,
+    query,
+  };
+};
+
 export const serializeLosslessUrl = (url: LosslessUrl): string => url.serialized;
 
 const serializeParts = (url: Omit<LosslessUrl, "serialized">): string =>

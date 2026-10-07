@@ -1,9 +1,10 @@
-import { createIdAllocator, type UrlProblem } from "../contracts";
+import { createIdAllocator, type IdAllocator, type UrlProblem } from "../contracts";
 import {
   addLosslessQueryPiece,
   editLosslessToken,
   moveLosslessQueryPiece,
   parseLosslessUrl,
+  reconcileLosslessUrl,
   removeLosslessPiece,
   replaceLosslessDomain,
   type DomainFieldKind,
@@ -41,7 +42,8 @@ export interface MutationEntry {
     | "remove-path"
     | "remove-query"
     | "add-query"
-    | "reorder-query";
+    | "reorder-query"
+    | "full-url";
 }
 
 export type SessionPhase =
@@ -67,6 +69,10 @@ export interface SessionState {
   readonly revision: number;
   readonly nextPieceId: number;
   readonly pendingInput: string | null;
+  readonly fullUrlFocus: {
+    readonly baseline: LosslessUrl;
+    readonly lastAccepted: LosslessUrl;
+  } | null;
 }
 
 export type SessionAction =
@@ -87,6 +93,11 @@ export type SessionAction =
       readonly type: "moveQueryPiece";
       readonly pieceId: QueryPiece["id"];
       readonly direction: "up" | "down";
+    }
+  | { readonly type: "fullUrlFocusBegin" }
+  | {
+      readonly type: "closeFullUrlEdit";
+      readonly reason: "blur" | "enter" | "mutation";
     };
 
 export const initialSessionState: SessionState = {
@@ -105,6 +116,7 @@ export const initialSessionState: SessionState = {
   revision: 0,
   nextPieceId: 1,
   pendingInput: null,
+  fullUrlFocus: null,
 };
 
 export const structuredFieldKey = (
@@ -226,6 +238,117 @@ const revisionsFor = (snapshot: LosslessUrl): Readonly<Record<string, number>> =
     ]),
   ]);
 
+const reconciledTokenRevisions = (
+  previous: Readonly<Record<string, number>>,
+  previousSnapshot: LosslessUrl,
+  reconciled: LosslessUrl,
+): Readonly<Record<string, number>> => {
+  const retainedIds = new Set([
+    ...previousSnapshot.path.map((piece) => piece.id),
+    ...previousSnapshot.query.map((piece) => piece.id),
+  ]);
+  const carryOver = (key: string) => previous[key] ?? 0;
+  const domainChange = previousSnapshot.rawHost !== reconciled.rawHost ? 1 : 0;
+  return Object.fromEntries([
+    [
+      structuredFieldKey(reconciled.domainId, "domain-unicode"),
+      carryOver(structuredFieldKey(previousSnapshot.domainId, "domain-unicode")) + domainChange,
+    ],
+    [
+      structuredFieldKey(reconciled.domainId, "domain-ascii"),
+      carryOver(structuredFieldKey(previousSnapshot.domainId, "domain-ascii")) + domainChange,
+    ],
+    ...reconciled.path.map((piece) => {
+      const key = structuredFieldKey(piece.id, "path");
+      return [key, retainedIds.has(piece.id) ? carryOver(key) : 0];
+    }),
+    ...reconciled.query.flatMap((piece) => {
+      const keyKey = structuredFieldKey(piece.id, "query-key");
+      const valueKey = structuredFieldKey(piece.id, "query-value");
+      const retained = retainedIds.has(piece.id);
+      return [
+        [keyKey, retained ? carryOver(keyKey) : 0],
+        [valueKey, retained ? carryOver(valueKey) : 0],
+      ];
+    }),
+  ]);
+};
+
+const reconciledStructuredDrafts = (
+  drafts: Readonly<Record<string, StructuredDraft>>,
+  previous: LosslessUrl,
+  reconciled: LosslessUrl,
+): Readonly<Record<string, StructuredDraft>> => {
+  const retainedIds = new Set([
+    reconciled.domainId,
+    ...reconciled.path.map((piece) => piece.id),
+    ...reconciled.query.map((piece) => piece.id),
+  ]);
+  const next: Record<string, StructuredDraft> = {};
+  for (const [key, draft] of Object.entries(drafts)) {
+    if (previous.rawHost !== reconciled.rawHost &&
+      (key === structuredFieldKey(previous.domainId, "domain-unicode") ||
+        key === structuredFieldKey(previous.domainId, "domain-ascii"))) continue;
+    const pieceId = key.slice(0, key.lastIndexOf(":"));
+    if (retainedIds.has(pieceId as LosslessUrl["domainId"])) {
+      next[key] = draft;
+    }
+  }
+  return next;
+};
+
+const closeFullUrlEditIfOpen = (
+  state: SessionState,
+  reason: "blur" | "enter" | "mutation",
+): SessionState => {
+  void reason;
+  const focus = state.fullUrlFocus;
+  if (!focus && state.pendingInput === null) return state;
+  const closed = {
+    ...state,
+    fullUrlFocus: null,
+    pendingInput: null,
+    generation: state.generation + 1,
+    phase: state.phase === "parsing"
+      ? state.snapshot ? "editing" as const : "no-session" as const
+      : state.phase,
+  };
+  if (!focus) return closed;
+  if (focus.baseline === focus.lastAccepted) return closed;
+  return {
+    ...closed,
+    history: [
+      ...state.history,
+      {
+        before: focus.baseline,
+        after: focus.lastAccepted,
+        pieceId: focus.baseline.domainId,
+        field: "full-url",
+      },
+    ],
+  };
+};
+
+export const structuredUpdateMessage = (state: SessionState): string =>
+  state.input === state.snapshot?.serialized
+    ? "Full URL and Structured View updated."
+    : "Last Valid URL and Structured View updated. Draft unchanged.";
+
+const structuredPublication = (state: SessionState, snapshot: LosslessUrl) => {
+  const preservesDraft = state.input !== state.snapshot?.serialized;
+  return {
+    phase: preservesDraft
+      ? state.phase === "parsing" ? "editing" as const : state.phase
+      : "active" as const,
+    input: preservesDraft ? state.input : snapshot.serialized,
+    snapshot,
+    lastValidSnapshot: snapshot,
+    problem: preservesDraft ? state.problem : null,
+    pendingInput: null,
+    generation: state.generation + 1,
+  };
+};
+
 export const sessionReducer = (
   state: SessionState,
   action: SessionAction,
@@ -241,6 +364,9 @@ export const sessionReducer = (
               ? "editing"
               : "no-session",
         input: action.value,
+        fullUrlFocus: state.fullUrlFocus ?? (state.snapshot
+          ? { baseline: state.snapshot, lastAccepted: state.snapshot }
+          : null),
         generation: state.generation + 1,
         pendingInput: null,
         problem: null,
@@ -281,11 +407,64 @@ export const sessionReducer = (
           structuredSuccess: null,
         };
       }
+      if (state.fullUrlFocus) {
+        const previousAccepted = state.fullUrlFocus.lastAccepted;
+        let mintedCount = 0;
+        const allocator = createIdAllocator(state.nextPieceId);
+        const trackingAllocator: IdAllocator = {
+          next: () => {
+            mintedCount += 1;
+            return allocator.next();
+          },
+        };
+        const reconciled = reconcileLosslessUrl(
+          previousAccepted,
+          action.result.value,
+          trackingAllocator,
+        );
+        if (reconciled === previousAccepted) {
+          return {
+            ...state,
+            phase: "active",
+            pendingInput: null,
+            problem: null,
+            structuredProblem: null,
+            structuredSuccess: null,
+          };
+        }
+        return {
+          ...state,
+          phase: "active",
+          snapshot: reconciled,
+          lastValidSnapshot: reconciled,
+          fullUrlFocus: { ...state.fullUrlFocus, lastAccepted: reconciled },
+          pendingInput: null,
+          problem: null,
+          structuredProblem: null,
+          structuredSuccess: null,
+          structuredDrafts: reconciledStructuredDrafts(
+            state.structuredDrafts,
+            previousAccepted,
+            reconciled,
+          ),
+          tokenRevisions: reconciledTokenRevisions(
+            state.tokenRevisions,
+            previousAccepted,
+            reconciled,
+          ),
+          revision: state.revision + 1,
+          nextPieceId: state.nextPieceId + mintedCount,
+        };
+      }
       return {
         ...state,
         phase: "active",
         snapshot: action.result.value,
         lastValidSnapshot: action.result.value,
+        fullUrlFocus: {
+          baseline: action.result.value,
+          lastAccepted: action.result.value,
+        },
         pendingInput: null,
         problem: null,
         structuredProblem: null,
@@ -304,21 +483,6 @@ export const sessionReducer = (
     }
     case "removePiece": {
       if (!state.snapshot) return state;
-      if (
-        state.phase !== "active" ||
-        state.input !== state.snapshot.serialized
-      ) {
-        return {
-          ...state,
-          structuredProblem: {
-            code: "structured-edit-unavailable",
-            field: "component",
-            message:
-              "Apply the current Full URL text before editing structured fields.",
-          },
-          structuredSuccess: null,
-        };
-      }
 
       const sourceIndex =
         action.removal.kind === "path"
@@ -352,21 +516,18 @@ export const sessionReducer = (
       }
       const label =
         action.removal.kind === "path" ? "Path Segment" : "Query Parameter";
+      const closed = closeFullUrlEditIfOpen(state, "mutation");
 
       return {
-        ...state,
-        phase: "active",
-        input: result.value.serialized,
-        snapshot: result.value,
-        lastValidSnapshot: result.value,
-        problem: null,
+        ...closed,
+        ...structuredPublication(closed, result.value),
         structuredProblem: null,
-        structuredSuccess: `${label} ${sourceIndex + 1} removed. Full URL and Structured View updated.`,
+        structuredSuccess: `${label} ${sourceIndex + 1} removed. ${structuredUpdateMessage(state)}`,
         structuredDrafts,
         tokenRevisions,
         revision: state.revision + 1,
         history: [
-          ...state.history,
+          ...closed.history,
           {
             before: state.snapshot,
             after: result.value,
@@ -378,21 +539,6 @@ export const sessionReducer = (
     }
     case "addQueryPiece": {
       if (!state.snapshot) return state;
-      if (
-        state.phase !== "active" ||
-        state.input !== state.snapshot.serialized
-      ) {
-        return {
-          ...state,
-          structuredProblem: {
-            code: "structured-edit-unavailable",
-            field: "component",
-            message:
-              "Apply the current Full URL text before editing structured fields.",
-          },
-          structuredSuccess: null,
-        };
-      }
 
       const pieceId = createIdAllocator(state.nextPieceId).next();
       const result = addLosslessQueryPiece(state.snapshot, pieceId);
@@ -405,16 +551,13 @@ export const sessionReducer = (
       }
 
       const position = state.snapshot.query.length + 1;
+      const closed = closeFullUrlEditIfOpen(state, "mutation");
 
       return {
-        ...state,
-        phase: "active",
-        input: result.value.serialized,
-        snapshot: result.value,
-        lastValidSnapshot: result.value,
-        problem: null,
+        ...closed,
+        ...structuredPublication(closed, result.value),
         structuredProblem: null,
-        structuredSuccess: `Query Parameter ${position} added. Full URL and Structured View updated.`,
+        structuredSuccess: `Query Parameter ${position} added. ${structuredUpdateMessage(state)}`,
         tokenRevisions: {
           ...state.tokenRevisions,
           [structuredFieldKey(pieceId, "query-key")]: 0,
@@ -423,7 +566,7 @@ export const sessionReducer = (
         nextPieceId: state.nextPieceId + 1,
         revision: state.revision + 1,
         history: [
-          ...state.history,
+          ...closed.history,
           {
             before: state.snapshot,
             after: result.value,
@@ -435,21 +578,6 @@ export const sessionReducer = (
     }
     case "moveQueryPiece": {
       if (!state.snapshot) return state;
-      if (
-        state.phase !== "active" ||
-        state.input !== state.snapshot.serialized
-      ) {
-        return {
-          ...state,
-          structuredProblem: {
-            code: "structured-edit-unavailable",
-            field: "component",
-            message:
-              "Apply the current Full URL text before editing structured fields.",
-          },
-          structuredSuccess: null,
-        };
-      }
 
       const sourceIndex = state.snapshot.query.findIndex(
         (piece) => piece.id === action.pieceId,
@@ -478,21 +606,18 @@ export const sessionReducer = (
         moved && moved.equalsPresent
           ? `${moved.rawKey}=${moved.rawValue}`
           : (moved?.rawKey ?? "");
+      const closed = closeFullUrlEditIfOpen(state, "mutation");
 
       return {
-        ...state,
-        phase: "active",
-        input: result.value.serialized,
-        snapshot: result.value,
-        lastValidSnapshot: result.value,
-        problem: null,
+        ...closed,
+        ...structuredPublication(closed, result.value),
         structuredProblem: null,
         structuredSuccess: `Query Parameter "${identity}" moved from position ${
           sourceIndex + 1
-        } to position ${destinationIndex + 1} of ${total}. Full URL and Structured View updated.`,
+        } to position ${destinationIndex + 1} of ${total}. ${structuredUpdateMessage(state)}`,
         revision: state.revision + 1,
         history: [
-          ...state.history,
+          ...closed.history,
           {
             before: state.snapshot,
             after: result.value,
@@ -504,21 +629,6 @@ export const sessionReducer = (
     }
     case "structuredEdit": {
       if (!state.snapshot) return state;
-      if (
-        state.phase !== "active" ||
-        state.input !== state.snapshot.serialized
-      ) {
-        return {
-          ...state,
-          structuredProblem: {
-            code: "structured-edit-unavailable",
-            field: "component",
-            message:
-              "Apply the current Full URL text before editing structured fields.",
-          },
-          structuredSuccess: null,
-        };
-      }
       const key = structuredFieldKey(
         action.command.pieceId,
         action.command.field,
@@ -636,16 +746,18 @@ export const sessionReducer = (
             structuredDrafts,
           };
         }
+        const closed = closeFullUrlEditIfOpen(state, "mutation");
         return {
-          ...state,
-          input: result.value.serialized,
-          snapshot: result.value,
-          lastValidSnapshot: result.value,
-          problem: null,
+          ...closed,
+          ...structuredPublication(closed, result.value),
           structuredProblem: null,
           structuredSuccess: `Domain synchronized at revision ${
             state.revision + 1
-          }: Unicode Domain, ASCII/Punycode Domain, and Full URL updated.`,
+          }: Unicode Domain, ASCII/Punycode Domain, and ${
+            state.input === state.snapshot.serialized
+              ? "Full URL updated."
+              : "Last Valid URL updated. Draft unchanged."
+          }`,
           structuredDrafts,
           tokenRevisions: {
             ...state.tokenRevisions,
@@ -660,7 +772,7 @@ export const sessionReducer = (
           },
           revision: state.revision + 1,
           history: [
-            ...state.history,
+            ...closed.history,
             {
               before: state.snapshot,
               after: result.value,
@@ -749,13 +861,10 @@ export const sessionReducer = (
           structuredDrafts,
         };
       }
+      const closed = closeFullUrlEditIfOpen(state, "mutation");
       return {
-        ...state,
-        phase: "active",
-        input: result.value.serialized,
-        snapshot: result.value,
-        lastValidSnapshot: result.value,
-        problem: null,
+        ...closed,
+        ...structuredPublication(closed, result.value),
         structuredProblem: null,
         structuredSuccess: null,
         structuredDrafts,
@@ -765,7 +874,7 @@ export const sessionReducer = (
         },
         revision: state.revision + 1,
         history: [
-          ...state.history,
+          ...closed.history,
           {
             before: state.snapshot,
             after: result.value,
@@ -775,6 +884,18 @@ export const sessionReducer = (
         ],
       };
     }
+    case "fullUrlFocusBegin": {
+      if (!state.snapshot || state.fullUrlFocus) return state;
+      return {
+        ...state,
+        fullUrlFocus: {
+          baseline: state.snapshot,
+          lastAccepted: state.snapshot,
+        },
+      };
+    }
+    case "closeFullUrlEdit":
+      return closeFullUrlEditIfOpen(state, action.reason);
   }
 };
 

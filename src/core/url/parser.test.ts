@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { createIdAllocator } from "../contracts";
 import {
   createCapacityFixture,
   semanticFixture,
@@ -9,6 +10,7 @@ import {
   editLosslessToken,
   moveLosslessQueryPiece,
   parseLosslessUrl,
+  reconcileLosslessUrl,
   removeLosslessPiece,
   replaceLosslessDomain,
   serializeLosslessUrl,
@@ -679,5 +681,215 @@ describe("lossless URL parser", () => {
     expect(moved.value.query[100]).toEqual(parsed.value.query[101]);
     expect(moved.value.query[101]?.rawKey).toBe(target.rawKey);
     expect(moved.value.query[101]?.rawValue).toBe(target.rawValue);
+  });
+});
+
+describe("reconcileLosslessUrl", () => {
+  const parse = (input: string) => {
+    const result = parseLosslessUrl(input);
+    if (!result.ok) throw new Error("Expected a valid fixture URL");
+    return result.value;
+  };
+
+  it("returns the previous object by reference when the reparse is byte-identical", () => {
+    const previous = parse("https://example.com/a?x=1");
+    const rescanned = parse("https://example.com/a?x=1");
+    const reconciled = reconcileLosslessUrl(
+      previous,
+      rescanned,
+      createIdAllocator(100),
+    );
+    expect(reconciled).toBe(previous);
+  });
+
+  it("keeps the Domain ID unconditionally even though every parse mints a fresh one", () => {
+    const previous = parse("https://example.com/a");
+    const rescanned = parse("https://example.org/a");
+    const reconciled = reconcileLosslessUrl(
+      previous,
+      rescanned,
+      createIdAllocator(100),
+    );
+    expect(reconciled.domainId).toBe(previous.domainId);
+    expect(reconciled.domain.ascii).toBe("example.org");
+  });
+
+  it("matches Path tokens by exact rawSegment and mints fresh non-recycled IDs for the rest", () => {
+    const previous = parse("https://example.com/a/b/c");
+    const rescanned = parse("https://example.com/x/a/c/y");
+    const ids = createIdAllocator(1000);
+    const reconciled = reconcileLosslessUrl(previous, rescanned, ids);
+
+    const [aId, bId, cId] = previous.path.map((piece) => piece.id);
+    const resultIds = reconciled.path.map((piece) => piece.id);
+    expect(reconciled.path.map((piece) => piece.rawSegment)).toEqual([
+      "x",
+      "a",
+      "c",
+      "y",
+    ]);
+    expect(resultIds[1]).toBe(aId);
+    expect(resultIds[2]).toBe(cId);
+    expect(resultIds[0]).not.toBe(aId);
+    expect(resultIds[0]).not.toBe(bId);
+    expect(resultIds[0]).not.toBe(cId);
+    expect(resultIds[3]).not.toBe(aId);
+    expect(resultIds[3]).not.toBe(bId);
+    expect(resultIds[3]).not.toBe(cId);
+    expect(new Set(resultIds).size).toBe(4);
+  });
+
+  it("matches Query tokens by exact {rawKey, equalsPresent, rawValue}, ignoring separatorBefore", () => {
+    const previous = parse("https://example.com/a?x=1&y=2");
+    const rescanned = parse("https://example.com/a?z=3&x=1&y=2");
+    const ids = createIdAllocator(1000);
+    const reconciled = reconcileLosslessUrl(previous, rescanned, ids);
+
+    const [xId, yId] = previous.query.map((piece) => piece.id);
+    const resultIds = reconciled.query.map((piece) => piece.id);
+    expect(resultIds[1]).toBe(xId);
+    expect(resultIds[2]).toBe(yId);
+    expect(resultIds[0]).not.toBe(xId);
+    expect(resultIds[0]).not.toBe(yId);
+  });
+
+  it("preserves duplicate-key identity by matching earliest-old to earliest-new in source order", () => {
+    const previous = parse("https://example.com/a?dup=1&dup=1&dup=2");
+    const rescanned = parse("https://example.com/a?dup=2&dup=1&dup=1");
+    const ids = createIdAllocator(1000);
+    const reconciled = reconcileLosslessUrl(previous, rescanned, ids);
+
+    const [firstDupId, secondDupId, thirdDupId] = previous.query.map(
+      (piece) => piece.id,
+    );
+    const resultIds = reconciled.query.map((piece) => piece.id);
+    // The LCS is the two "dup=1" entries (order-preserving); the leading
+    // "dup=2" cannot join that match without breaking order, so it mints a
+    // fresh ID even though an identical-looking "dup=2" existed before.
+    expect(resultIds[0]).not.toBe(thirdDupId);
+    expect(resultIds[0]).not.toBe(firstDupId);
+    expect(resultIds[0]).not.toBe(secondDupId);
+    // The two "dup=1" occurrences match earliest-old to earliest-new.
+    expect(resultIds[1]).toBe(firstDupId);
+    expect(resultIds[2]).toBe(secondDupId);
+  });
+
+  it("does not reuse an ID that was dropped from the sequence", () => {
+    const previous = parse("https://example.com/a?x=1&y=2&z=3");
+    const rescanned = parse("https://example.com/a?x=1&z=3");
+    const allocator = createIdAllocator(previous.query.length + 2);
+    const reconciled = reconcileLosslessUrl(previous, rescanned, allocator);
+    const [xId, yId, zId] = previous.query.map((piece) => piece.id);
+    const resultIds = reconciled.query.map((piece) => piece.id);
+    expect(resultIds).toEqual([xId, zId]);
+    expect(resultIds).not.toContain(yId);
+
+    const freshlyMinted = allocator.next();
+    expect(resultIds).not.toContain(freshlyMinted);
+  });
+
+  it("breaks equal-length LCS ties by earliest old then earliest new position", () => {
+    for (const kind of ["path", "query"] as const) {
+      const previous = parse(kind === "path"
+        ? "https://example.com/a/b"
+        : "https://example.com/?a&b");
+      const next = parse(kind === "path"
+        ? "https://example.com/b/a"
+        : "https://example.com/?b&a");
+      const reconciled = reconcileLosslessUrl(previous, next, createIdAllocator(100));
+      expect(reconciled[kind][1]?.id).toBe(previous[kind][0]?.id);
+      expect(reconciled[kind][0]?.id).not.toBe(previous[kind][1]?.id);
+    }
+  });
+
+  it("matches an exhaustive small-sequence oracle including ambiguous duplicates", () => {
+    const sequences: string[][] = [[]];
+    for (let length = 1; length <= 3; length += 1) {
+      for (const bits of Array.from({ length: 2 ** length }, (_, index) => index)) {
+        sequences.push(Array.from({ length }, (_, index) =>
+          (bits & (1 << index)) === 0 ? "a" : "b"));
+      }
+    }
+    const oracle = (old: readonly string[], next: readonly string[]) => {
+      let best: readonly (readonly [number, number])[] = [];
+      const visit = (i: number, j: number, pairs: readonly (readonly [number, number])[]) => {
+        const lexEarlier = pairs.some(([oldIndex, newIndex], index) => {
+          const candidate = best[index];
+          return candidate !== undefined &&
+            pairs.slice(0, index).every((pair, prefix) =>
+              pair[0] === best[prefix]?.[0] && pair[1] === best[prefix]?.[1]) &&
+            (oldIndex < candidate[0] ||
+              (oldIndex === candidate[0] && newIndex < candidate[1]));
+        });
+        if (pairs.length > best.length || (pairs.length === best.length && lexEarlier)) {
+          best = pairs;
+        }
+        for (let oldIndex = i; oldIndex < old.length; oldIndex += 1) {
+          for (let newIndex = j; newIndex < next.length; newIndex += 1) {
+            if (old[oldIndex] === next[newIndex]) {
+              visit(oldIndex + 1, newIndex + 1, [...pairs, [oldIndex, newIndex]]);
+            }
+          }
+        }
+      };
+      visit(0, 0, []);
+      return best;
+    };
+    for (const old of sequences) {
+      for (const next of sequences) {
+        const previous = parse(`https://example.com/?${old.join("&")}`);
+        const rescanned = parse(`https://example.com/?${next.join("&")}`);
+        const reconciled = reconcileLosslessUrl(previous, rescanned, createIdAllocator(100));
+        const expected = oracle(old, next);
+        const actual = reconciled.query.flatMap((piece, newIndex) => {
+          const oldIndex = previous.query.findIndex((candidate) => candidate.id === piece.id);
+          return oldIndex < 0 ? [] : [[oldIndex, newIndex]];
+        });
+        expect(actual, `${old.join(",")} -> ${next.join(",")}`).toEqual(expected);
+      }
+    }
+  });
+
+  it.each(["path", "query"] as const)(
+    "reconciles dense duplicate %s sequences near 20,000 characters within 100 ms",
+    (kind) => {
+      const first = Array.from({ length: 4_990 }, () => "a");
+      const second = Array.from({ length: 4_990 }, () => "b");
+      const url = (tokens: readonly string[]) => kind === "path"
+        ? `https://example.com/${tokens.join("/")}`
+        : `https://example.com/?${tokens.join("&")}`;
+      const previous = parse(url([...first, ...second]));
+      const rescanned = parse(url([...second, ...first]));
+      expect(previous.serialized.length).toBeLessThanOrEqual(20_000);
+      const start = performance.now();
+      const reconciled = reconcileLosslessUrl(previous, rescanned, createIdAllocator(50_000));
+      expect(performance.now() - start).toBeLessThan(100);
+      expect(reconciled[kind]).toHaveLength(9_980);
+      expect(reconciled[kind][4_990]?.id).toBe(previous[kind][0]?.id);
+      expect(reconciled.serialized).toBe(rescanned.serialized);
+    },
+  );
+
+  it("preserves exact byte content at 250+ entry capacity within 100 ms", () => {
+    const previous = parse(createCapacityFixture());
+    const entries = previous.queryRaw.split("&");
+    const modified = [...entries.slice(1), "extra=1"].join("&");
+    const rescanned = parse(
+      previous.serialized.replace(previous.queryRaw, modified),
+    );
+    const start = performance.now();
+    const reconciled = reconcileLosslessUrl(
+      previous,
+      rescanned,
+      createIdAllocator(previous.query.length + 10),
+    );
+    expect(performance.now() - start).toBeLessThan(100);
+    expect(reconciled.query).toHaveLength(previous.query.length);
+    for (let index = 0; index < previous.query.length - 1; index += 1) {
+      expect(reconciled.query[index]?.id).toBe(previous.query[index + 1]?.id);
+      expect(reconciled.query[index]?.rawValue).toBe(
+        previous.query[index + 1]?.rawValue,
+      );
+    }
   });
 });

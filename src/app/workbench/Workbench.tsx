@@ -12,6 +12,7 @@ import {
   initialSessionState,
   prepareParse,
   sessionReducer,
+  structuredUpdateMessage,
 } from "../../core/session";
 import type { LosslessUrl, ManagedPieceRemoval, QueryPiece } from "../../core/url";
 import { ValidationMessage } from "../feedback/ValidationMessage";
@@ -22,6 +23,8 @@ import styles from "../../styles/workbench.module.css";
 export function Workbench() {
   const [state, dispatch] = useReducer(sessionReducer, initialSessionState);
   const [searchTerm, setSearchTerm] = useState("");
+  const [fullUrlComposition, setFullUrlComposition] = useState<string | null>(null);
+  const fullUrlComposing = useRef(false);
   const [searchStatuses, setSearchStatuses] = useState<readonly {
     readonly id: number;
     readonly message: string;
@@ -62,7 +65,9 @@ export function Workbench() {
     [allPieces, searchTerm],
   );
   const editorsDisabled =
-    state.phase !== "active" || state.input !== state.snapshot?.serialized;
+    !state.lastValidSnapshot ||
+    state.phase === "no-session" ||
+    state.phase === "parsing";
 
   useLayoutEffect(() => {
     const pending = pendingRemovalFocus.current;
@@ -177,7 +182,7 @@ export function Workbench() {
         hasFilteredSurvivors: visiblePieces.some(
           (piece) => piece.id !== removal.pieceId,
         ),
-        successMessage: `${label} ${target.sourcePosition} removed. Full URL and Structured View updated.`,
+        successMessage: `${label} ${target.sourcePosition} removed. ${structuredUpdateMessage(state)}`,
       };
     } else {
       pendingRemovalFocus.current = null;
@@ -185,17 +190,43 @@ export function Workbench() {
     dispatch({ type: "removePiece", removal });
   };
 
-  const apply = () => {
-    if (
-      state.phase === "active" &&
-      state.snapshot &&
-      state.input === state.snapshot.serialized
-    ) {
-      return;
-    }
-    const parse = prepareParse(state);
+  const handleFullUrlChange = (value: string) => {
+    if (value !== state.input) clearAnnouncements();
+    // Compute the reducer transitions locally (mirroring the synchronous
+    // `inputChanged` -> `parseStarted` -> `parseCompleted` chain) so each
+    // keystroke parses and publishes immediately without waiting for a
+    // re-render to read back the dispatched state.
+    const afterInputChanged = sessionReducer(state, {
+      type: "inputChanged",
+      value,
+    });
+    const parse = prepareParse(afterInputChanged);
+    dispatch({ type: "inputChanged", value });
     dispatch(parse.start);
     dispatch(parse.complete());
+  };
+
+  const handleFullUrlFocus = () => {
+    dispatch({ type: "fullUrlFocusBegin" });
+  };
+
+  const handleFullUrlBlur = () => {
+    dispatch({ type: "closeFullUrlEdit", reason: "blur" });
+  };
+
+  const handleFullUrlKeyDown = (
+    event: React.KeyboardEvent<HTMLTextAreaElement>,
+  ) => {
+    if (event.key !== "Enter") return;
+    if (fullUrlComposing.current || event.nativeEvent.isComposing || event.keyCode === 229) {
+      // Let the IME confirm composition natively: no apply, no close, no
+      // newline insertion, no mutation entry.
+      return;
+    }
+    event.preventDefault();
+    if (!event.shiftKey) {
+      dispatch({ type: "closeFullUrlEdit", reason: "enter" });
+    }
   };
 
   const announce = useCallback((message: string, preserveAcrossSnapshot = false) => {
@@ -238,11 +269,7 @@ export function Workbench() {
   };
 
   const addQueryPiece = () => {
-    if (
-      !state.snapshot ||
-      state.phase !== "active" ||
-      state.input !== state.snapshot.serialized
-    ) {
+    if (!state.snapshot) {
       dispatch({ type: "addQueryPiece" });
       return;
     }
@@ -251,7 +278,7 @@ export function Workbench() {
     pendingAddFocus.current = {
       revision: state.revision,
       pieceId,
-      successMessage: `Query Parameter ${position} added. Full URL and Structured View updated.`,
+      successMessage: `Query Parameter ${position} added. ${structuredUpdateMessage(state)}`,
       shouldClearSearch: searchTerm !== "",
     };
     dispatch({ type: "addQueryPiece" });
@@ -272,7 +299,7 @@ export function Workbench() {
           revision: state.revision,
           pieceId,
           direction,
-          successMessage: `Query Parameter "${identity}" moved from position ${target.sourcePosition} to position ${destinationPosition} of ${target.sourceTotal}. Full URL and Structured View updated.`,
+          successMessage: `Query Parameter "${identity}" moved from position ${target.sourcePosition} to position ${destinationPosition} of ${target.sourceTotal}. ${structuredUpdateMessage(state)}`,
         };
       } else {
         pendingMoveFocus.current = null;
@@ -338,30 +365,38 @@ export function Workbench() {
 
       <section aria-labelledby="full-url-heading" className={styles.panel}>
         <h2 id="full-url-heading">Full URL</h2>
-        <form
-          onSubmit={(event) => {
-            event.preventDefault();
-            apply();
+        <label htmlFor="full-url-editor">Complete HTTP or HTTPS Absolute URL</label>
+        <p id="full-url-help">
+          Paste or type one complete URL. Every valid change publishes
+          immediately to the Structured View. Enter or leaving this field
+          commits one edit; Shift+Enter does not insert a line break.
+        </p>
+        <textarea
+          id="full-url-editor"
+          value={fullUrlComposition ?? state.input}
+          onChange={(event) => {
+            const value = event.currentTarget.value;
+            if (fullUrlComposing.current) setFullUrlComposition(value);
+            else handleFullUrlChange(value);
           }}
-        >
-          <label htmlFor="full-url-editor">Complete HTTP or HTTPS Absolute URL</label>
-          <p id="full-url-help">
-            Paste one complete URL. Applying publishes all pieces together.
-          </p>
-          <textarea
-            id="full-url-editor"
-            value={state.input}
-            onChange={(event) =>
-              dispatch({ type: "inputChanged", value: event.currentTarget.value })
-            }
-            aria-describedby="full-url-help"
-            aria-invalid={state.problem ? true : undefined}
-            aria-errormessage={state.problem ? "error-full-url" : undefined}
-            maxLength={20_000}
-            dir="ltr"
-          />
-          <button type="submit">Apply URL</button>
-        </form>
+          onCompositionStart={(event) => {
+            fullUrlComposing.current = true;
+            setFullUrlComposition(event.currentTarget.value);
+          }}
+          onCompositionEnd={(event) => {
+            fullUrlComposing.current = false;
+            setFullUrlComposition(null);
+            handleFullUrlChange(event.currentTarget.value);
+          }}
+          onFocus={handleFullUrlFocus}
+          onBlur={handleFullUrlBlur}
+          onKeyDown={handleFullUrlKeyDown}
+          aria-describedby="full-url-help"
+          aria-invalid={state.problem ? true : undefined}
+          aria-errormessage={state.problem ? "error-full-url" : undefined}
+          maxLength={20_000}
+          dir="ltr"
+        />
         {state.problem ? (
           <ValidationMessage id="error-full-url">
             {state.problem.message}

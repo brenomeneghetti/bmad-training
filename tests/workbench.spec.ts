@@ -96,7 +96,6 @@ test("intake preserves lossless semantics and rejects replacement", async ({ pag
   page.on("console", (message) => diagnostics.push(message.text()));
   page.on("pageerror", (error) => diagnostics.push(error.message));
   await page.getByLabel("Complete HTTP or HTTPS Absolute URL").fill(semanticFixture);
-  await page.getByRole("button", { name: "Apply URL" }).click();
 
   await expect(
     page.getByText("13 of 13 Managed Pieces shown", { exact: true }),
@@ -124,7 +123,6 @@ test("intake preserves lossless semantics and rejects replacement", async ({ pag
   );
 
   await page.getByLabel("Complete HTTP or HTTPS Absolute URL").fill("/relative");
-  await page.getByRole("button", { name: "Apply URL" }).click();
   await expect(page.getByText(/complete HTTP or HTTPS/)).toBeVisible();
   await expect(page.locator("#managed-pieces > li")).toHaveCount(13);
   expect(requestsAfterLoad).toEqual([]);
@@ -160,7 +158,6 @@ test("Domain editing is synchronized, correctable, IME-safe, and host-only", asy
     await fullUrl.fill(
       "https://User:Pass@Example.COM:044/a%2fb//?dup=1&dup=2#Frag%2f",
     );
-    await page.getByRole("button", { name: "Apply URL" }).click();
     const rows = page.locator("#managed-pieces > li");
     const originalIds = await rows.evaluateAll((items) =>
       items.map((item) => (item as HTMLElement).dataset.pieceId),
@@ -298,20 +295,19 @@ test("Domain editing is synchronized, correctable, IME-safe, and host-only", asy
     ).toBe(5);
 
     await fullUrl.fill("/invalid");
-    await page.getByRole("button", { name: "Apply URL" }).click();
-    await expect(unicode).toBeDisabled();
-    await expect(ascii).toBeDisabled();
+    await expect(page.getByText(/complete HTTP or HTTPS/)).toBeVisible();
+    await expect(unicode).toBeEnabled();
+    await expect(ascii).toBeEnabled();
     await expect(fullUrl).toHaveValue("/invalid");
 });
 
 test("capacity view renders every row and stays usable at 320px", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 800 });
   await page.goto("/");
+  const start = Date.now();
   await page
     .getByLabel("Complete HTTP or HTTPS Absolute URL")
     .fill(createCapacityFixture());
-  const start = Date.now();
-  await page.getByRole("button", { name: "Apply URL" }).click();
   await expect(page.locator("#managed-pieces > li")).toHaveCount(263);
   expect(
     await page
@@ -539,7 +535,6 @@ test("removal preserves exact survivors, Search, focus, accessibility, and priva
   page.on("request", (request) => requests.push(request.url()));
   const fullUrl = page.getByLabel("Complete HTTP or HTTPS Absolute URL");
   await fullUrl.fill(removalFixtures.pathAndDuplicates);
-  await page.getByRole("button", { name: "Apply URL" }).click();
   const rows = page.locator("#managed-pieces > li");
   const originalIds = await rows.evaluateAll((items) =>
     items.map((item) => (item as HTMLElement).dataset.pieceId),
@@ -606,7 +601,6 @@ test("Add Query Parameter appends from either control, synchronizes Search, keep
   page.on("request", (request) => requests.push(request.url()));
   const fullUrl = page.getByLabel("Complete HTTP or HTTPS Absolute URL");
   await fullUrl.fill("https://example.com/a");
-  await page.getByRole("button", { name: "Apply URL" }).click();
   await expect(
     page.getByRole("link", { name: "Skip to Add Query Parameter" }),
   ).toHaveAttribute("href", "#add-query-after");
@@ -676,7 +670,6 @@ test("Add Query Parameter remains reachable and performant at 250+ entries", asy
   await page
     .getByLabel("Complete HTTP or HTTPS Absolute URL")
     .fill(`https://example.com/deep/path?${entries.join("&")}`);
-  await page.getByRole("button", { name: "Apply URL" }).click();
   await expect(page.locator("#managed-pieces > li")).toHaveCount(263);
 
   const addAfter = page.locator("#add-query-after");
@@ -707,7 +700,6 @@ test("reorders Query Parameters by keyboard and pointer activation, honoring bou
   page.on("request", (request) => requests.push(request.url()));
   const fullUrl = page.getByLabel("Complete HTTP or HTTPS Absolute URL");
   await fullUrl.fill("https://example.com/a?dup=1&dup=2&z=3");
-  await page.getByRole("button", { name: "Apply URL" }).click();
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
 
   const firstUp = page.getByRole("button", {
@@ -763,7 +755,6 @@ test("reorders within a 250+ parameter list, keeping boundaries reachable and pe
   await page
     .getByLabel("Complete HTTP or HTTPS Absolute URL")
     .fill(`https://example.com/deep/path?${entries.join("&")}`);
-  await page.getByRole("button", { name: "Apply URL" }).click();
   await expect(page.locator("#managed-pieces > li")).toHaveCount(263);
 
   const moveDown = page.getByRole("button", {
@@ -789,14 +780,16 @@ test("initial and populated workbench pass automated accessibility checks", asyn
   await page.goto("/");
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
 
-  await page
-    .getByLabel("Complete HTTP or HTTPS Absolute URL")
-    .fill("https://example.com/a?x=1&x=&empty");
-  await page.keyboard.press("Tab");
-  await expect(page.getByRole("button", { name: "Apply URL" })).toBeFocused();
-  await page.keyboard.press("Enter");
+  const fullUrl = page.getByLabel("Complete HTTP or HTTPS Absolute URL");
+  await fullUrl.fill("https://example.com/a?x=1&x=&empty");
   await expect(page.locator("#managed-pieces > li")).toHaveCount(5);
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+
+  await fullUrl.focus();
+  await page.keyboard.press("Tab");
+  await expect(
+    page.getByRole("button", { name: "Add Query Parameter before the list" }),
+  ).toBeFocused();
 
   await page.emulateMedia({ forcedColors: "active", reducedMotion: "reduce" });
   await page.evaluate(() => {
@@ -811,9 +804,12 @@ test("initial and populated workbench pass automated accessibility checks", asyn
     1280,
   );
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
-  await expect(page.getByRole("button", { name: "Apply URL" })).toBeEnabled();
-  await page.getByRole("button", { name: "Apply URL" }).focus();
-  await expect(page.getByRole("button", { name: "Apply URL" })).toBeFocused();
+  const addQueryBefore = page.getByRole("button", {
+    name: "Add Query Parameter before the list",
+  });
+  await expect(addQueryBefore).toBeEnabled();
+  await addQueryBefore.focus();
+  await expect(addQueryBefore).toBeFocused();
   await expect(page.locator("#full-url-help")).toBeVisible();
   await expect(page.locator("#actions-note")).toBeVisible();
   await expect(page.locator("#piece-summary")).toBeVisible();
@@ -854,7 +850,6 @@ test("reload clears URL content and returns to no session", async ({ page }) => 
   await page
     .getByLabel("Complete HTTP or HTTPS Absolute URL")
     .fill("https://example.com/private?token=secret");
-  await page.getByRole("button", { name: "Apply URL" }).click();
   await expect(
     page.getByText("3 of 3 Managed Pieces shown", { exact: true }),
   ).toBeVisible();
@@ -870,7 +865,6 @@ test("search no-results and clear remain keyboard and activation safe", async ({
   await page
     .getByLabel("Complete HTTP or HTTPS Absolute URL")
     .fill("https://example.com/a?x=1");
-  await page.getByRole("button", { name: "Apply URL" }).click();
   const search = page.getByLabel("Search Managed Pieces");
   await search.fill("unmatched");
   await expect(
@@ -897,7 +891,6 @@ test("structured editing preserves exact bytes, identity, validation, and focus"
   await page.goto("/");
   const fullUrl = page.getByLabel("Complete HTTP or HTTPS Absolute URL");
   await fullUrl.fill(structuredEditFixture);
-  await page.getByRole("button", { name: "Apply URL" }).click();
   const rows = page.locator("#managed-pieces > li");
   const originalIds = await rows.evaluateAll((items) =>
     items.map((item) => (item as HTMLElement).dataset.pieceId),
@@ -948,7 +941,6 @@ test("structured editing handles search, selections, word deletion, caret, and d
   await page.goto("/");
   const fullUrl = page.getByLabel("Complete HTTP or HTTPS Absolute URL");
   await fullUrl.fill("https://example.com/a?dup=alpha%2F😀omega&other=two");
-  await page.getByRole("button", { name: "Apply URL" }).click();
 
   const search = page.getByLabel("Search Managed Pieces");
   await search.fill("alpha");
@@ -1087,7 +1079,182 @@ test("structured editing handles search, selections, word deletion, caret, and d
   await expect(page.locator(`#${errorId}`)).toContainText("complete triplet");
 
   await fullUrl.fill("/invalid");
-  await page.getByRole("button", { name: "Apply URL" }).click();
-  await expect(value).toBeDisabled();
+  await expect(page.getByText(/complete HTTP or HTTPS/)).toBeVisible();
+  await expect(value).toBeEnabled();
   await expect(fullUrl).toHaveValue("/invalid");
+});
+
+test("Full URL edits publish continuously without an Apply step, with no Apply URL affordance anywhere", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await expect(page.getByRole("button", { name: "Apply URL" })).toHaveCount(0);
+
+  const fullUrl = page.getByLabel("Complete HTTP or HTTPS Absolute URL");
+  await fullUrl.fill("https://example.com/a/b?x=1&y=2");
+  await expect(page.locator("#managed-pieces > li")).toHaveCount(5);
+  await expect(page.getByText("5 of 5 Managed Pieces shown")).toBeVisible();
+
+  await expect(page.getByRole("button", { name: "Apply URL" })).toHaveCount(0);
+});
+
+test("Full URL retains row identity across first intake, Enter, blur, and refocus", async ({ page }) => {
+  await page.goto("/");
+  const editor = page.getByLabel("Complete HTTP or HTTPS Absolute URL");
+  await editor.fill("https://example.com/a?x=1");
+  const query = page.getByLabel("Key, Query Parameter 1 of 1");
+  const id = await query.getAttribute("id");
+  const domainId = await page.getByLabel("Unicode Domain")
+    .locator("xpath=ancestor::li").getAttribute("data-piece-id");
+  await editor.fill("https://example.com/b?x=1");
+  await expect(query).toHaveAttribute("id", id!);
+  await editor.press("Enter");
+  await editor.fill("https://example.com/c?x=1");
+  await expect(query).toHaveAttribute("id", id!);
+  await expect(page.getByLabel("Unicode Domain").locator("xpath=ancestor::li"))
+    .toHaveAttribute("data-piece-id", domainId!);
+  await editor.blur();
+  await editor.fill("https://example.com/d?x=1");
+  await expect(query).toHaveAttribute("id", id!);
+});
+
+test("Full URL composition leaves Last Valid and validation untouched until composition ends", async ({ page }) => {
+  await page.goto("/");
+  const editor = page.getByLabel("Complete HTTP or HTTPS Absolute URL");
+  await editor.fill("https://example.com/a");
+  await editor.dispatchEvent("compositionstart");
+  await editor.fill("https://");
+  await editor.dispatchEvent("keydown", { key: "Enter", isComposing: false });
+  await expect(editor).toHaveValue("https://");
+  await expect(editor).not.toHaveAttribute("aria-invalid");
+  await expect(page.getByLabel("Path Segment 1 of 1")).toHaveValue("a");
+  await editor.fill("https://example.com/final");
+  await editor.dispatchEvent("compositionend", { data: "final" });
+  await expect(page.getByLabel("Path Segment 1 of 1")).toHaveValue("final");
+});
+
+test("an invalid Draft survives structured Add with its selection, error, and focus contract", async ({ page }) => {
+  await page.goto("/");
+  const editor = page.getByLabel("Complete HTTP or HTTPS Absolute URL");
+  await editor.fill("https://example.com/a?x=1");
+  await editor.fill("https://example.com/b?x=1");
+  await editor.fill("https://");
+  await editor.evaluate((element: HTMLTextAreaElement) => element.setSelectionRange(3, 5));
+  const message = await page.locator("#error-full-url").textContent();
+  await page.getByRole("button", { name: "Add Query Parameter before the list" }).click();
+  await expect(editor).toHaveValue("https://");
+  expect(await editor.evaluate((element: HTMLTextAreaElement) =>
+    [element.selectionStart, element.selectionEnd])).toEqual([3, 5]);
+  await expect(page.locator("#error-full-url")).toHaveText(message!);
+  await expect(page.getByLabel("Key, Query Parameter 2 of 2")).toBeFocused();
+  await expect(page.getByText(/Last Valid URL and Structured View updated. Draft unchanged./))
+    .toBeVisible();
+  await editor.fill("https://example.com/corrected?x=1&y=2");
+  await expect(page.locator("#error-full-url")).toHaveCount(0);
+  await expect(page.getByLabel("Path Segment 1 of 1")).toHaveValue("corrected");
+});
+
+test("continuous Full URL reconciliation meets the response target at 20,000 characters and 260 entries", async ({ page }) => {
+  await page.goto("/");
+  const editor = page.getByLabel("Complete HTTP or HTTPS Absolute URL");
+  const input = createCapacityFixture();
+  await editor.fill(input);
+  const retained = await page.getByLabel("Key, Query Parameter 100 of 260").getAttribute("id");
+  const elapsed = await editor.evaluate(async (element: HTMLTextAreaElement) => {
+    const setter = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value")?.set;
+    if (!setter) throw new Error("Missing native textarea setter");
+    const start = performance.now();
+    setter.call(element, element.value.replace("deep/path", "deep/next"));
+    element.dispatchEvent(new Event("input", { bubbles: true }));
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    return performance.now() - start;
+  });
+  expect(elapsed).toBeLessThan(100);
+  await expect(page.getByLabel("Path Segment 2 of 2")).toHaveValue("next");
+  await expect(page.getByLabel("Key, Query Parameter 100 of 260")).toHaveAttribute("id", retained!);
+  await expect(page.locator("#managed-pieces > li")).toHaveCount(263);
+});
+
+test("Enter outside IME composition suppresses the newline and closes the focus session", async ({
+  page,
+}) => {
+  const diagnostics: string[] = [];
+  await page.goto("/");
+  page.on("pageerror", (error) => diagnostics.push(error.message));
+  const fullUrl = page.getByLabel("Complete HTTP or HTTPS Absolute URL");
+  await fullUrl.focus();
+  await page.keyboard.type("https://example.com/a");
+  await page.keyboard.press("Enter");
+  await page.keyboard.type("?b=1");
+  await expect(fullUrl).toHaveValue("https://example.com/a?b=1");
+  expect(await fullUrl.inputValue()).not.toContain("\n");
+  await expect(page.locator("#managed-pieces > li")).toHaveCount(3);
+  expect(diagnostics).toEqual([]);
+});
+
+test("Shift+Enter outside IME composition suppresses the newline without closing the focus session", async ({
+  page,
+}) => {
+  const diagnostics: string[] = [];
+  await page.goto("/");
+  page.on("pageerror", (error) => diagnostics.push(error.message));
+  const fullUrl = page.getByLabel("Complete HTTP or HTTPS Absolute URL");
+  await fullUrl.focus();
+  await page.keyboard.type("https://example.com/a");
+  await page.keyboard.press("Shift+Enter");
+  await page.keyboard.type("?b=1");
+  await expect(fullUrl).toHaveValue("https://example.com/a?b=1");
+  expect(await fullUrl.inputValue()).not.toContain("\n");
+  await expect(fullUrl).toBeFocused();
+  await expect(page.locator("#managed-pieces > li")).toHaveCount(3);
+  expect(diagnostics).toEqual([]);
+});
+
+test("Structured View editing controls stay enabled while the Full URL draft is momentarily invalid (loosened gating)", async ({
+  page,
+}) => {
+  await page.goto("/");
+  const fullUrl = page.getByLabel("Complete HTTP or HTTPS Absolute URL");
+  await fullUrl.fill("https://example.com/a?x=1");
+  await expect(page.locator("#managed-pieces > li")).toHaveCount(3);
+
+  // Corrupt the scheme by deleting the "https://" prefix via keyboard, making
+  // the draft momentarily invalid (missing scheme) without blurring.
+  await fullUrl.focus();
+  await fullUrl.press("Home");
+  for (let i = 0; i < "https://".length; i += 1) {
+    await page.keyboard.press("Delete");
+  }
+  await expect(page.locator("#error-full-url")).toBeVisible();
+
+  await expect(
+    page.getByRole("button", { name: "Add Query Parameter before the list" }),
+  ).toBeEnabled();
+  await expect(
+    page.getByRole("button", { name: /Remove Query Parameter/ }),
+  ).toBeEnabled();
+  await expect(page.locator("#managed-pieces > li")).toHaveCount(3);
+});
+
+test("blur-close and refocus round trip keeps the Structured View synchronized", async ({
+  page,
+}) => {
+  await page.goto("/");
+  const fullUrl = page.getByLabel("Complete HTTP or HTTPS Absolute URL");
+  await fullUrl.fill("https://example.com/a?x=1");
+  await expect(page.locator("#managed-pieces > li")).toHaveCount(3);
+
+  await fullUrl.fill("https://example.com/b?y=2&z=3");
+  await page.keyboard.press("Tab");
+  await expect(fullUrl).not.toBeFocused();
+  await expect(page.locator("#managed-pieces > li")).toHaveCount(4);
+  await expect(page.getByLabel("Path Segment 1 of 1")).toHaveValue("b");
+
+  await fullUrl.focus();
+  await fullUrl.fill("https://example.com/b/c?y=2&z=3&w=4");
+  await expect(page.locator("#managed-pieces > li")).toHaveCount(6);
+  await expect(page.getByLabel("Path Segment 2 of 2")).toHaveValue("c");
+  await fullUrl.blur();
+  await expect(page.locator("#managed-pieces > li")).toHaveCount(6);
+  await expect(fullUrl).toHaveValue("https://example.com/b/c?y=2&z=3&w=4");
 });

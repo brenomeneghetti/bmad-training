@@ -99,6 +99,10 @@ function DomainEditor({
       window.cancelAnimationFrame(caretFrame.current);
     }
     caretFrame.current = window.requestAnimationFrame(() => {
+      if (inputRef.current?.selectionStart !== inputRef.current?.selectionEnd) {
+        caretFrame.current = null;
+        return;
+      }
       inputRef.current?.setSelectionRange(caret, caret);
       caretFrame.current = null;
     });
@@ -361,6 +365,10 @@ function EditableToken({
       window.cancelAnimationFrame(caretFrame.current);
     }
     caretFrame.current = window.requestAnimationFrame(() => {
+      if (inputRef.current?.selectionStart !== inputRef.current?.selectionEnd) {
+        caretFrame.current = null;
+        return;
+      }
       inputRef.current?.setSelectionRange(caret, caret);
       caretFrame.current = null;
     });

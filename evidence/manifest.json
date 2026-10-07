@@ -5,7 +5,7 @@
   "evaluatorVersion": "1.0.0",
   "artifact": {
     "path": "dist",
-    "digest": "4409057915e138f47b930a642e511285eaf25d02e7936253730835a65abcf6bd",
+    "digest": "d9e09372ff31803317c77eb499636e3439fb72df0207d8ff90f42fbdffbd0f78",
     "delivery": "deployment/static-delivery.json"
   },
   "toolVersions": {
@@ -16,7 +16,7 @@
   },
   "signOff": {
     "owner": "automated-verification",
-    "recordedAt": "2026-10-06T18:16:05.000Z"
+    "recordedAt": "2026-10-07T13:44:01.000Z"
   },
   "cells": [
     {
@@ -308,6 +308,47 @@
         "src/core/session/session.test.ts",
         "tests/workbench.spec.ts",
         "deployment/static-delivery.json"
+      ]
+    },
+    {
+      "id": "story-2-6-reconciled-identity-lcs",
+      "story": "2.6",
+      "status": "pass",
+      "owner": "automated",
+      "evidence": [
+        "src/core/url/parser.test.ts",
+        "src/core/session/session.test.ts"
+      ]
+    },
+    {
+      "id": "story-2-6-focus-session-history-squash",
+      "story": "2.6",
+      "status": "pass",
+      "owner": "automated",
+      "evidence": [
+        "src/core/session/session.test.ts",
+        "src/app/workbench/Workbench.test.tsx"
+      ]
+    },
+    {
+      "id": "story-2-6-ime-safe-keyboard-loosened-gating",
+      "story": "2.6",
+      "status": "pass",
+      "owner": "automated",
+      "evidence": [
+        "src/app/workbench/Workbench.test.tsx",
+        "tests/workbench.spec.ts"
+      ]
+    },
+    {
+      "id": "story-2-6-privacy-capacity",
+      "story": "2.6",
+      "status": "pass",
+      "owner": "automated",
+      "evidence": [
+        "src/core/url/parser.test.ts",
+        "src/core/session/session.test.ts",
+        "tests/workbench.spec.ts"
       ]
     }
   ]

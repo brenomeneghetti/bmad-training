@@ -89,7 +89,9 @@ describe("session authority", () => {
       ...(second.snapshot?.path.map((piece) => piece.id) ?? []),
       ...(second.snapshot?.query.map((piece) => piece.id) ?? []),
     ];
-    expect(secondIds.every((id) => !firstIds.has(id))).toBe(true);
+    expect(second.snapshot?.domainId).toBe(first.snapshot?.domainId);
+    expect(secondIds.filter((id) => id !== first.snapshot?.domainId)
+      .every((id) => !firstIds.has(id))).toBe(true);
   });
 
   it("commits an exact structured edit atomically with one history entry", () => {
@@ -238,7 +240,7 @@ describe("session authority", () => {
     });
   });
 
-  it("rejects removal while Full URL text is unapplied or the ID is stale", () => {
+  it("removes against the Last Valid snapshot while Full URL text is an unsynced draft or invalid, but still rejects a stale ID", () => {
     const active = apply(initialSessionState, "https://example.com/a?x=1");
     const pathPiece = active.snapshot?.path[0];
     const queryPiece = active.snapshot?.query[0];
@@ -247,30 +249,22 @@ describe("session authority", () => {
       type: "inputChanged",
       value: "https://example.com/a?x=draft",
     });
-    const unavailable = sessionReducer(editing, {
+    const removedWhileEditing = sessionReducer(editing, {
       type: "removePiece",
       removal: { kind: "path", pieceId: pathPiece.id },
     });
-    expect(unavailable.input).toBe(editing.input);
-    expect(unavailable.snapshot).toBe(active.snapshot);
-    expect(unavailable.history).toBe(active.history);
-    expect(unavailable.structuredSuccess).toBeNull();
-    expect(unavailable.structuredProblem?.code).toBe(
-      "structured-edit-unavailable",
-    );
+    expect(removedWhileEditing.input).toBe(editing.input);
+    expect(removedWhileEditing.snapshot?.path).not.toContainEqual(pathPiece);
+    expect(removedWhileEditing.history).not.toBe(active.history);
+    expect(removedWhileEditing.structuredProblem).toBeNull();
 
     const invalid = apply(active, "/relative");
     const invalidRemoval = sessionReducer(invalid, {
       type: "removePiece",
       removal: { kind: "query", pieceId: queryPiece.id },
     });
-    expect(invalidRemoval.input).toBe(invalid.input);
-    expect(invalidRemoval.snapshot).toBe(active.snapshot);
-    expect(invalidRemoval.history).toBe(invalid.history);
-    expect(invalidRemoval.structuredSuccess).toBeNull();
-    expect(invalidRemoval.structuredProblem?.code).toBe(
-      "structured-edit-unavailable",
-    );
+    expect(invalidRemoval.snapshot?.query).toHaveLength(0);
+    expect(invalidRemoval.structuredProblem).toBeNull();
 
     const stale = sessionReducer(active, {
       type: "removePiece",
@@ -310,7 +304,7 @@ describe("session authority", () => {
     expect(rejected.structuredDrafts[`${pathPiece.id}:path`]?.value).toBe("%one");
   });
 
-  it("rejects removal while a replacement URL is still parsing", () => {
+  it("removes against the Last Valid snapshot while a replacement URL is still parsing", () => {
     const active = apply(initialSessionState, "https://example.com/a?x=1");
     const target = active.snapshot?.query[0];
     if (!target) throw new Error("Missing query piece");
@@ -320,17 +314,15 @@ describe("session authority", () => {
     });
     const parse = prepareParse(changed);
     const parsing = sessionReducer(changed, parse.start);
-    const rejected = sessionReducer(parsing, {
+    const removed = sessionReducer(parsing, {
       type: "removePiece",
       removal: { kind: "query", pieceId: target.id },
     });
 
     expect(parsing.phase).toBe("parsing");
-    expect(rejected.phase).toBe("parsing");
-    expect(rejected.input).toBe(changed.input);
-    expect(rejected.snapshot).toBe(active.snapshot);
-    expect(rejected.history).toBe(active.history);
-    expect(rejected.structuredSuccess).toBeNull();
+    expect(removed.snapshot?.query).toHaveLength(0);
+    expect(removed.structuredProblem).toBeNull();
+    expect(removed.history).not.toBe(active.history);
   });
 
   it("removes from a 250+ parameter URL within the local response target", () => {
@@ -395,30 +387,21 @@ describe("session authority", () => {
     expect(added.snapshot?.query[0]?.separatorBefore).toBe("");
   });
 
-  it("rejects an add while Full URL text is unapplied or parsing", () => {
+  it("adds against the Last Valid snapshot even while Full URL text is an unsynced draft, invalid, or parsing", () => {
     const active = apply(initialSessionState, "https://example.com/a?x=1");
     const editing = sessionReducer(active, {
       type: "inputChanged",
       value: "https://example.com/a?x=draft",
     });
-    const unavailable = sessionReducer(editing, { type: "addQueryPiece" });
-    expect(unavailable.input).toBe(editing.input);
-    expect(unavailable.snapshot).toBe(active.snapshot);
-    expect(unavailable.history).toBe(active.history);
-    expect(unavailable.structuredSuccess).toBeNull();
-    expect(unavailable.structuredProblem?.code).toBe(
-      "structured-edit-unavailable",
-    );
+    const addedWhileEditing = sessionReducer(editing, { type: "addQueryPiece" });
+    expect(addedWhileEditing.snapshot?.query).toHaveLength(2);
+    expect(addedWhileEditing.input).toBe(editing.input);
+    expect(addedWhileEditing.structuredProblem).toBeNull();
 
     const invalid = apply(active, "/relative");
     const invalidAdd = sessionReducer(invalid, { type: "addQueryPiece" });
-    expect(invalidAdd.input).toBe(invalid.input);
-    expect(invalidAdd.snapshot).toBe(active.snapshot);
-    expect(invalidAdd.history).toBe(invalid.history);
-    expect(invalidAdd.structuredSuccess).toBeNull();
-    expect(invalidAdd.structuredProblem?.code).toBe(
-      "structured-edit-unavailable",
-    );
+    expect(invalidAdd.snapshot?.query).toHaveLength(2);
+    expect(invalidAdd.structuredProblem).toBeNull();
 
     const changed = sessionReducer(active, {
       type: "inputChanged",
@@ -426,12 +409,9 @@ describe("session authority", () => {
     });
     const parse = prepareParse(changed);
     const parsing = sessionReducer(changed, parse.start);
-    const rejected = sessionReducer(parsing, { type: "addQueryPiece" });
-    expect(rejected.phase).toBe("parsing");
-    expect(rejected.input).toBe(changed.input);
-    expect(rejected.snapshot).toBe(active.snapshot);
-    expect(rejected.history).toBe(active.history);
-    expect(rejected.structuredSuccess).toBeNull();
+    const addedWhileParsing = sessionReducer(parsing, { type: "addQueryPiece" });
+    expect(addedWhileParsing.snapshot?.query).toHaveLength(2);
+    expect(addedWhileParsing.structuredProblem).toBeNull();
   });
 
   it("appends to a 250+ parameter URL within the local response target", () => {
@@ -581,7 +561,7 @@ describe("session authority", () => {
       },
   );
 
-  it("rejects missing, disabled, and over-capacity Domain commands", () => {
+  it("rejects missing and over-capacity Domain commands, but succeeds against Last Valid while text is an unsynced draft", () => {
       const active = apply(initialSessionState, "https://example.com/a?x=1");
       if (!active.snapshot) throw new Error("Missing active snapshot");
       const base = {
@@ -603,12 +583,13 @@ describe("session authority", () => {
         type: "inputChanged",
         value: "https://example.com/draft",
       });
-      const disabled = sessionReducer(editing, {
+      const stillEnabled = sessionReducer(editing, {
         type: "structuredEdit",
         command: { ...base, pieceId: active.snapshot.domainId },
       });
-      expect(disabled.structuredProblem?.code).toBe("structured-edit-unavailable");
-      expect(disabled.input).toBe("https://example.com/draft");
+      expect(stillEnabled.structuredProblem).toBeNull();
+      expect(stillEnabled.input).toBe(editing.input);
+      expect(stillEnabled.snapshot?.domain.unicode).toBe("faß.de");
 
       const capacity = apply(initialSessionState, createCapacityFixture());
       if (!capacity.snapshot) throw new Error("Missing capacity snapshot");
@@ -727,7 +708,7 @@ describe("session authority", () => {
     ]?.problem.code).not.toBe("url-capacity-exceeded");
   });
 
-  it("clears prior Domain success for no-op and disabled attempts", () => {
+  it("clears prior Domain success for no-op attempts but succeeds against Last Valid despite an unsynced draft", () => {
     const active = apply(initialSessionState, "https://example.com/");
     if (!active.snapshot) throw new Error("Missing active snapshot");
     const committed = sessionReducer(active, {
@@ -755,7 +736,7 @@ describe("session authority", () => {
     expect(noOp.snapshot).toBe(committed.snapshot);
     expect(noOp.history).toBe(committed.history);
 
-    const disabled = sessionReducer(
+    const stillEnabled = sessionReducer(
       { ...committed, input: `${committed.input}draft` },
       {
         type: "structuredEdit",
@@ -767,9 +748,9 @@ describe("session authority", () => {
         },
       },
     );
-    expect(disabled.structuredSuccess).toBeNull();
-    expect(disabled.snapshot).toBe(committed.snapshot);
-    expect(disabled.history).toBe(committed.history);
+    expect(stillEnabled.structuredSuccess).not.toBeNull();
+    expect(stillEnabled.snapshot?.domain.unicode).toBe("example.com");
+    expect(stillEnabled.history).not.toBe(committed.history);
   });
 
   it.each([
@@ -962,7 +943,7 @@ describe("session authority", () => {
     expect(JSON.stringify(rejected.structuredProblem)).not.toContain("secret");
   });
 
-  it("rejects structured commands while Full URL text is unapplied", () => {
+  it("applies structured commands against the Last Valid snapshot while Full URL text is an unsynced draft", () => {
     const active = apply(initialSessionState, "https://example.com/a?x=1");
     const target = active.snapshot?.query[0];
     if (!target) throw new Error("Missing fixture query piece");
@@ -970,7 +951,7 @@ describe("session authority", () => {
       type: "inputChanged",
       value: "https://example.com/a?x=draft",
     });
-    const rejected = sessionReducer(editing, {
+    const applied = sessionReducer(editing, {
       type: "structuredEdit",
       command: {
         pieceId: target.id,
@@ -981,10 +962,10 @@ describe("session authority", () => {
         insertedText: "2",
       },
     });
-    expect(rejected.input).toBe("https://example.com/a?x=draft");
-    expect(rejected.snapshot).toBe(active.snapshot);
-    expect(rejected.history).toBe(active.history);
-    expect(rejected.structuredProblem?.code).toBe("structured-edit-unavailable");
+    expect(applied.input).toBe(editing.input);
+    expect(applied.snapshot?.query[0]?.rawValue).toBe("2");
+    expect(applied.history).not.toBe(active.history);
+    expect(applied.structuredProblem).toBeNull();
   });
 
   it("does not publish or journal serialized no-ops", () => {
@@ -1145,7 +1126,7 @@ describe("session authority", () => {
     expect(downAtBottom).toBe(active);
   });
 
-  it("rejects a move while Full URL text is unapplied, stale, or still parsing", () => {
+  it("moves against the Last Valid snapshot while Full URL text is an unsynced draft or still parsing, but still rejects a stale ID", () => {
     const active = apply(initialSessionState, "https://example.com/a?x=1&y=2");
     const target = active.snapshot?.query[0];
     if (!target) throw new Error("Missing fixture query piece");
@@ -1154,17 +1135,13 @@ describe("session authority", () => {
       type: "inputChanged",
       value: "https://example.com/a?x=1&y=draft",
     });
-    const unavailable = sessionReducer(editing, {
+    const movedWhileEditing = sessionReducer(editing, {
       type: "moveQueryPiece",
       pieceId: target.id,
       direction: "down",
     });
-    expect(unavailable.snapshot).toBe(active.snapshot);
-    expect(unavailable.history).toBe(active.history);
-    expect(unavailable.structuredSuccess).toBeNull();
-    expect(unavailable.structuredProblem?.code).toBe(
-      "structured-edit-unavailable",
-    );
+    expect(movedWhileEditing.snapshot?.query[1]?.id).toBe(target.id);
+    expect(movedWhileEditing.structuredProblem).toBeNull();
 
     const stale = sessionReducer(active, {
       type: "moveQueryPiece",
@@ -1182,15 +1159,14 @@ describe("session authority", () => {
     });
     const parse = prepareParse(changed);
     const parsing = sessionReducer(changed, parse.start);
-    const rejected = sessionReducer(parsing, {
+    const movedWhileParsing = sessionReducer(parsing, {
       type: "moveQueryPiece",
       pieceId: target.id,
       direction: "down",
     });
-    expect(rejected.phase).toBe("parsing");
-    expect(rejected.snapshot).toBe(active.snapshot);
-    expect(rejected.history).toBe(active.history);
-    expect(rejected.structuredSuccess).toBeNull();
+    expect(parsing.phase).toBe("parsing");
+    expect(movedWhileParsing.snapshot?.query[1]?.id).toBe(target.id);
+    expect(movedWhileParsing.structuredProblem).toBeNull();
   });
 
   it("moves within a 250+ parameter URL within the local response target", () => {
@@ -1206,5 +1182,296 @@ describe("session authority", () => {
     expect(performance.now() - start).toBeLessThan(100);
     expect(moved.snapshot?.query).toHaveLength(260);
     expect(moved.snapshot?.query[101]?.id).toBe(target.id);
+  });
+});
+
+describe("Story 2.6: Full URL focus session", () => {
+  it("cancels a scheduled initial intake when editing closes before its first snapshot", () => {
+    const changed = sessionReducer(initialSessionState, {
+      type: "inputChanged", value: "https://example.com/a",
+    });
+    const parse = prepareParse(changed);
+    const pending = sessionReducer(changed, parse.start);
+    const closed = sessionReducer(pending, { type: "closeFullUrlEdit", reason: "blur" });
+    expect(sessionReducer(closed, parse.complete())).toBe(closed);
+    expect(closed.phase).toBe("no-session");
+    expect(closed.snapshot).toBeNull();
+  });
+  it("rejects old Domain revisions after Full URL changes the host but retains its identity", () => {
+    const initial = apply(initialSessionState, "https://example.com/a");
+    const edited = apply(initial, "https://example.org/a");
+    if (!initial.snapshot) throw new Error("Missing initial snapshot");
+    expect(edited.snapshot?.domainId).toBe(initial.snapshot.domainId);
+    const stale = sessionReducer(edited, {
+      type: "structuredEdit",
+      command: { pieceId: initial.snapshot.domainId, field: "domain-ascii",
+        tokenRevision: 0, value: "stale.example" },
+    });
+    expect(stale.structuredProblem?.code).toBe("stale-token-revision");
+    expect(stale.snapshot).toBe(edited.snapshot);
+    expect(stale.history).toBe(edited.history);
+  });
+  it("keeps first-intake identities without requiring blur and refocus", () => {
+    const focused = sessionReducer(initialSessionState, { type: "fullUrlFocusBegin" });
+    const first = apply(focused, "https://example.com/a?x=1");
+    const next = apply(first, "https://example.com/ab?x=1");
+    expect(next.snapshot?.domainId).toBe(first.snapshot?.domainId);
+    expect(next.snapshot?.query[0]?.id).toBe(first.snapshot?.query[0]?.id);
+    expect(next.fullUrlFocus?.baseline).toBe(first.snapshot);
+  });
+
+  it("preserves prior history and rebases when typing after Enter without refocusing", () => {
+    const initial = apply(initialSessionState, "https://example.com/a?x=1");
+    const changed = apply(initial, "https://example.com/b?x=1");
+    const closed = sessionReducer(changed, { type: "closeFullUrlEdit", reason: "enter" });
+    const next = apply(closed, "https://example.com/c?x=1");
+    expect(next.history).toBe(closed.history);
+    expect(next.snapshot?.domainId).toBe(closed.snapshot?.domainId);
+    expect(next.fullUrlFocus?.baseline).toBe(closed.snapshot);
+    const final = sessionReducer(next, { type: "closeFullUrlEdit", reason: "blur" });
+    expect(final.history.map((entry) => [entry.before.serialized, entry.after.serialized]))
+      .toEqual([
+        ["https://example.com/a?x=1", "https://example.com/b?x=1"],
+        ["https://example.com/b?x=1", "https://example.com/c?x=1"],
+      ]);
+  });
+
+  it.each(["add", "remove", "move", "path", "domain"] as const)(
+    "retains invalid Draft, validation, and chronological snapshots during %s",
+    (operation) => {
+      const initial = apply(initialSessionState, "https://example.com/a?x=1&y=2");
+      const valid = apply(initial, "https://example.com/b?x=1&y=2");
+      const invalid = apply(valid, "https://");
+      const snapshot = invalid.snapshot;
+      if (!snapshot) throw new Error("Missing fixture snapshot");
+      const action = operation === "add"
+        ? { type: "addQueryPiece" } as const
+        : operation === "remove"
+          ? { type: "removePiece", removal: { kind: "query", pieceId: snapshot.query[0]!.id } } as const
+          : operation === "move"
+            ? { type: "moveQueryPiece", pieceId: snapshot.query[0]!.id, direction: "down" } as const
+            : operation === "path"
+              ? { type: "structuredEdit", command: { pieceId: snapshot.path[0]!.id,
+                field: "path", tokenRevision: 0, start: 0, end: 1, insertedText: "c" } } as const
+              : { type: "structuredEdit", command: { pieceId: snapshot.domainId,
+                field: "domain-ascii", tokenRevision: 0, value: "example.org" } } as const;
+      const mutated = sessionReducer(invalid, action);
+      expect(mutated.input).toBe(invalid.input);
+      expect(mutated.problem).toBe(invalid.problem);
+      expect(mutated.phase).toBe("invalid-intake");
+      expect(mutated.snapshot).not.toBe(snapshot);
+      expect(mutated.history).toHaveLength(2);
+      expect(mutated.history[0]?.before).toBe(initial.snapshot);
+      expect(mutated.history[0]?.after).toBe(snapshot);
+      expect(mutated.history[1]?.before).toBe(snapshot);
+      expect(mutated.history[1]?.after).toBe(mutated.snapshot);
+      const corrected = apply(mutated, "https://corrected.example/final");
+      expect(corrected.fullUrlFocus?.baseline).toBe(mutated.snapshot);
+      expect(corrected.history).toBe(mutated.history);
+    },
+  );
+
+  it.each(["blur", "enter"] as const)("invalidates pending parsing when closing by %s", (reason) => {
+    const initial = apply(initialSessionState, "https://example.com/a");
+    const changed = sessionReducer(initial, { type: "inputChanged", value: "https://example.com/b" });
+    const parse = prepareParse(changed);
+    const pending = sessionReducer(changed, parse.start);
+    const closed = sessionReducer(pending, { type: "closeFullUrlEdit", reason });
+    expect(sessionReducer(closed, parse.complete())).toBe(closed);
+    expect(closed.phase).not.toBe("parsing");
+  });
+
+  it("captures a baseline/last-accepted snapshot only when a committed session already exists", () => {
+    const active = apply(initialSessionState, "https://example.com/a?x=1");
+    const focused = sessionReducer(active, { type: "fullUrlFocusBegin" });
+    expect(focused.fullUrlFocus?.baseline).toBe(active.snapshot);
+    expect(focused.fullUrlFocus?.lastAccepted).toBe(active.snapshot);
+
+    const noSnapshot = sessionReducer(initialSessionState, {
+      type: "fullUrlFocusBegin",
+    });
+    expect(noSnapshot.fullUrlFocus).toBeNull();
+  });
+
+  it("publishes every valid reparse immediately without appending history until the session closes", () => {
+    const start = apply(initialSessionState, "https://example.com/a?x=1");
+    const focused = sessionReducer(start, { type: "fullUrlFocusBegin" });
+
+    const typed1 = apply(focused, "https://example.com/ab?x=1");
+    expect(typed1.snapshot?.serialized).toBe("https://example.com/ab?x=1");
+    expect(typed1.history).toBe(start.history);
+    expect(typed1.fullUrlFocus?.baseline).toBe(start.snapshot);
+    expect(typed1.fullUrlFocus?.lastAccepted).toBe(typed1.snapshot);
+
+    const typed2 = apply(typed1, "https://example.com/abc?x=1&y=2");
+    expect(typed2.snapshot?.serialized).toBe(
+      "https://example.com/abc?x=1&y=2",
+    );
+    expect(typed2.history).toBe(start.history);
+
+    const closed = sessionReducer(typed2, {
+      type: "closeFullUrlEdit",
+      reason: "blur",
+    });
+    expect(closed.fullUrlFocus).toBeNull();
+    expect(closed.history).toHaveLength(1);
+    expect(closed.history[0]).toEqual({
+      before: start.snapshot,
+      after: typed2.snapshot,
+      pieceId: start.snapshot?.domainId,
+      field: "full-url",
+    });
+  });
+
+  it("keeps Domain ID unconditionally and reconciles Path/Query IDs by exact-token LCS across a reparse", () => {
+    const start = apply(initialSessionState, "https://example.com/a/c?x=1&y=2");
+    const domainId = start.snapshot?.domainId;
+    const aId = start.snapshot?.path[0]?.id;
+    const cId = start.snapshot?.path[1]?.id;
+    const xId = start.snapshot?.query[0]?.id;
+    const yId = start.snapshot?.query[1]?.id;
+
+    const focused = sessionReducer(start, { type: "fullUrlFocusBegin" });
+    // Removes "b"-free segment "a", inserts new "x0"/"c"-ordered segments
+    // around the retained "a" and "c", and removes "x"/"y" while inserting a
+    // new "z" between them -- relative order of retained tokens is preserved
+    // so the LCS match is unambiguous.
+    const reparsed = apply(
+      focused,
+      "https://example.com/x0/a/c/x1?x=1&z=3&y=2",
+    );
+
+    expect(reparsed.snapshot?.domainId).toBe(domainId);
+    const pathIds = reparsed.snapshot?.path.map((piece) => piece.id) ?? [];
+    expect(pathIds[1]).toBe(aId);
+    expect(pathIds[2]).toBe(cId);
+    expect(pathIds[0]).not.toBe(aId);
+    expect(pathIds[0]).not.toBe(cId);
+    expect(pathIds[3]).not.toBe(aId);
+    expect(pathIds[3]).not.toBe(cId);
+
+    const queryIds = reparsed.snapshot?.query.map((piece) => piece.id) ?? [];
+    expect(queryIds[0]).toBe(xId);
+    expect(queryIds[2]).toBe(yId);
+    expect(queryIds[1]).not.toBe(xId);
+    expect(queryIds[1]).not.toBe(yId);
+    expect(reparsed.history).toBe(start.history);
+  });
+
+  it("carries over tokenRevisions for retained IDs and resets freshly minted ones to 0", () => {
+    const start = apply(initialSessionState, "https://example.com/a?x=1");
+    const pathId = start.snapshot?.path[0]?.id;
+    if (!pathId) throw new Error("Missing path piece");
+    const edited = sessionReducer(start, {
+      type: "structuredEdit",
+      command: {
+        pieceId: pathId,
+        field: "path",
+        tokenRevision: 0,
+        start: 1,
+        end: 1,
+        insertedText: "b",
+      },
+    });
+    expect(edited.snapshot?.path[0]?.rawSegment).toBe("ab");
+    expect(edited.tokenRevisions[`${pathId}:path`]).toBe(1);
+
+    const focused = sessionReducer(edited, { type: "fullUrlFocusBegin" });
+    const reparsed = apply(focused, "https://example.com/ab?x=1&y=2");
+    expect(reparsed.snapshot?.path[0]?.id).toBe(pathId);
+    expect(reparsed.tokenRevisions[`${pathId}:path`]).toBe(1);
+    const newQueryId = reparsed.snapshot?.query[1]?.id;
+    expect(newQueryId).toBeDefined();
+    expect(reparsed.tokenRevisions[`${newQueryId}:query-key`]).toBe(0);
+    expect(reparsed.tokenRevisions[`${newQueryId}:query-value`]).toBe(0);
+  });
+
+  it("appends no history entry when nothing changed before close", () => {
+    const start = apply(initialSessionState, "https://example.com/a?x=1");
+    const focused = sessionReducer(start, { type: "fullUrlFocusBegin" });
+    const closed = sessionReducer(focused, {
+      type: "closeFullUrlEdit",
+      reason: "blur",
+    });
+    expect(closed.history).toBe(start.history);
+    expect(closed.fullUrlFocus).toBeNull();
+  });
+
+  it("closes the Full URL session and appends its entry before a structured mutation applies, as a separate chronological entry", () => {
+    const start = apply(initialSessionState, "https://example.com/a?x=1");
+    const focused = sessionReducer(start, { type: "fullUrlFocusBegin" });
+    const typed = apply(focused, "https://example.com/ab?x=1");
+    expect(typed.history).toHaveLength(0);
+
+    const targetQuery = typed.snapshot?.query[0];
+    if (!targetQuery) throw new Error("Missing query piece");
+    const afterMutation = sessionReducer(typed, {
+      type: "removePiece",
+      removal: { kind: "query", pieceId: targetQuery.id },
+    });
+
+    expect(afterMutation.fullUrlFocus).toBeNull();
+    expect(afterMutation.history).toHaveLength(2);
+    expect(afterMutation.history[0]).toEqual({
+      before: start.snapshot,
+      after: typed.snapshot,
+      pieceId: start.snapshot?.domainId,
+      field: "full-url",
+    });
+    expect(afterMutation.history[1]?.field).toBe("remove-query");
+    expect(afterMutation.history[1]?.before).toBe(typed.snapshot);
+  });
+
+  it("discards a stale scheduled parse completion that arrives after newer input or a mutation", () => {
+    const start = apply(initialSessionState, "https://example.com/a?x=1");
+    const focused = sessionReducer(start, { type: "fullUrlFocusBegin" });
+    const changed = sessionReducer(focused, {
+      type: "inputChanged",
+      value: "https://example.com/ab?x=1",
+    });
+    const parse = prepareParse(changed);
+    const parsing = sessionReducer(changed, parse.start);
+
+    const supersededByNewInput = sessionReducer(parsing, {
+      type: "inputChanged",
+      value: "https://example.com/abc?x=1",
+    });
+    const stale = sessionReducer(supersededByNewInput, parse.complete());
+    expect(stale).toBe(supersededByNewInput);
+    expect(stale.snapshot).toBe(start.snapshot);
+    expect(stale.fullUrlFocus?.lastAccepted).toBe(start.snapshot);
+  });
+
+  it("reconciles a 250+ parameter, 20,000-character capacity edit within the local response target", () => {
+    const fixture = createCapacityFixture();
+    const [schemeAndPath, rest] = fixture.split("?");
+    const [queryPart, fragmentPart] = rest.split("#");
+    const entries = queryPart.split("&");
+    // Drop the first entry and append a new one; every other entry keeps its
+    // relative order, so the LCS match stays unambiguous at full capacity.
+    const modifiedEntries = [...entries.slice(1), "extra=1"];
+    const modified = `${schemeAndPath}?${modifiedEntries.join("&")}#${fragmentPart}`;
+
+    const start = apply(initialSessionState, fixture);
+    const focused = sessionReducer(start, { type: "fullUrlFocusBegin" });
+    const changed = sessionReducer(focused, {
+      type: "inputChanged",
+      value: modified,
+    });
+    const parse = prepareParse(changed);
+    const parsing = sessionReducer(changed, parse.start);
+    const startTime = performance.now();
+    const reparsed = sessionReducer(parsing, parse.complete());
+    expect(performance.now() - startTime).toBeLessThan(100);
+    expect(reparsed.history).toBe(start.history);
+    expect(reparsed.snapshot?.query).toHaveLength(260);
+    for (let index = 0; index < 259; index += 1) {
+      expect(reparsed.snapshot?.query[index]?.id).toBe(
+        start.snapshot?.query[index + 1]?.id,
+      );
+    }
+    expect(reparsed.snapshot?.query[259]?.id).not.toBe(
+      start.snapshot?.query[0]?.id,
+    );
   });
 });
