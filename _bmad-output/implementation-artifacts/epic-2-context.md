@@ -15,6 +15,7 @@ Enable developers to edit, add, remove, reorder, or replace URL content through 
 - Story 2.5: Reorder Query Parameters by Keyboard
 - Story 2.6: Edit the Full URL as One Continuous Intent
 - Story 2.7: Keep Working Through an Invalid Full URL Draft
+- Story 2.8: Close Deferred Verification Gaps
 
 ## Requirements & Constraints
 
@@ -55,3 +56,4 @@ Enable developers to edit, add, remove, reorder, or replace URL content through 
 - Stories 2.3–2.5 depend on the exact snapshot/history and focus-intent contracts needed for later Undo behavior.
 - Stories 2.6 and 2.7 share the Full URL session lifecycle, stale-parse protection, and close-and-rebase transition; Story 2.7 extends structured mutations from Stories 2.1–2.5 to operate safely while a Draft is invalid.
 - Completion requires the shared parser/serializer, IDN, accessibility, privacy, capacity, and browser evidence mapped to each delivered story; later Epic 3 recovery and export behavior relies on the exact snapshots and chronological mutation entries produced here.
+- On 2026-10-07 the user closed the committed original Story 2.7 and discarded its uncommitted verification follow-up. Draft Story 2.8 owns execution-proof binding, complete regression inventory, runner lifecycle and cross-engine fixes. Its approved MVP targets are installed Playwright Chromium/Firefox/WebKit, with test-only installations allowed; the released-browser OS/mobile matrix and observed screen-reader coverage remain deferred, and real 400% zoom is post-MVP. No discarded follow-up run counts as delivered evidence. Story 3.6 consumes this foundation for release gating.

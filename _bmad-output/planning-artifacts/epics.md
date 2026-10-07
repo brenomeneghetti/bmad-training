@@ -852,6 +852,43 @@ So that I can continue useful work without losing the draft, corrupting Last Val
 **Then** Draft stays exact, accepted mutations meet response targets, Last Valid and journal remain restorable, and no freeze, partial state, stale branch, layout blockage, or URL-bearing external sink occurs
 **And** required FR11–FR12, NFR4–NFR10, NFR12–NFR17, AG-1 close-and-rebase, and invalid-Draft UX evidence cells pass.
 
+### Story 2.8: Close Deferred Verification Gaps
+
+As a web developer,
+I want the existing editing flows backed by complete, reproducible execution evidence,
+So that passing source-file references cannot substitute for verified behavior.
+
+**Scope decision (2026-10-07):** Original Story 2.7 is done at commit `39ba84aca82cb9f0021f99e71048de5f269707e0`. Its uncommitted verification follow-up was cancelled and discarded. This new story owns that follow-up's requirements and review issues; no discarded implementation or run is delivered evidence.
+
+**Acceptance Criteria:**
+
+**Given** the 36 mandatory cells and an independently maintained complete regression inventory
+**When** the evidence producer runs lint, build, unit, validator and browser checks
+**Then** every cell references content-addressed, actually passing execution reports for the exact tested source, artifact and delivery configuration
+**And** missing, failed, skipped, incomplete, wrong-command, wrong-engine, tampered, stale or escaping-path evidence fails explicitly without reusing stale success.
+
+**Given** the approved MVP targets are installed Playwright Chromium, Firefox and WebKit
+**When** invalid-Draft, correction, structured editing, Search, selection, focus, IME and capacity scenarios execute
+**Then** identical semantic and response assertions pass on all three engines without weakening the 100 ms, 20,000-character or 260-entry requirements
+**And** actual engine/tool versions are recorded; WebKit is not described as released Safari.
+
+**Given** reports are retained or the runner fails, overlaps another run, or is interrupted
+**When** evidence is validated or execution terminates
+**Then** unchanged moved checkouts retain valid evidence, full file/suite/test identities are enforced, cancellation cannot publish success, owned work is cleaned up, and another active runner's publication is not deleted
+**And** failure diagnostics are correctly typed and stale-workspace recovery is documented.
+
+**Given** an earlier composition completes without an immediate duplicate input
+**When** the opposite Domain form changes and a later ordinary input matches that earlier result
+**Then** the legitimate edit publishes rather than being suppressed by a stale guard
+**And** immediate and delayed native post-composition events still commit once and preserve synchronization feedback.
+
+**Given** released-browser latest-two-major Windows/macOS/mobile or observed screen-reader checks have not run
+**When** MVP completion is reported
+**Then** they remain explicitly deferred with operator checklists, not passing coverage
+**And** real 400% browser zoom remains post-MVP; viewport, device scale, axe and forced-colors emulation do not claim equivalence.
+
+**Implementation handoff:** [Draft Story 2.8](../implementation-artifacts/spec-2-8-close-deferred-verification-gaps.md) records the full review backlog and test-only installation authorization. Story 3.6 remains responsible for the broader trusted release/promotion gate and must consume, not duplicate, this execution-proof foundation.
+
 ## Epic 3: Recover and Export a Trusted Result
 
 A developer can reverse every committed change to the exact Initial URL, copy the correct current valid result, recover safely from clipboard failure, and receive accessible truthful feedback for every outcome.

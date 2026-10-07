@@ -124,3 +124,10 @@ context:
 - `node evidence/validate.mjs`: all 36 mandatory cells passed with rebuilt digest `fca2461405256da16e43c3e33fb241dc1787e371dd1aa18609618c7f05d49669`.
 - All 13 review findings were triaged: 10 patch findings addressed; three inherited release/verification gaps recorded in deferred-work.md. No dependencies or browser tools were installed.
 - This verification does not establish latest-two-major browser coverage, true 400% browser zoom, manual screen-reader announcements, or immutable execution-record binding. Sprint tracking remains `review`.
+
+### Scope closure 2026-10-07
+
+- The user closed original Story 2.7 at its already committed implementation, `39ba84aca82cb9f0021f99e71048de5f269707e0`, and explicitly requested deletion of the uncommitted verification-gap follow-up.
+- Original review fixes and their historical passing results above remain intact. The follow-up's code, generated execution records, cross-engine changes and repository-local compatibility libraries are discarded, not delivered or claimed as passing evidence.
+- All follow-up scope and review issues move to [draft Story 2.8](spec-2-8-close-deferred-verification-gaps.md). Original Story 2.7 and sprint tracking are `done` by this explicit scope decision; the inherited execution-binding, browser-matrix and manual-accessibility gaps remain open under 2.8.
+- Restored-tree verification: application code, tests, tooling and evidence files match the original commit exactly. `pnpm test` passed 248 unit/component and 9 validator tests; lint/build and all 26 configured Chromium browser tests passed. The rebuilt original artifact validates all 36 cells with digest `fca2461405256da16e43c3e33fb241dc1787e371dd1aa18609618c7f05d49669`. This remains the original source-reference evidence gate, not execution-bound proof or broader browser/manual coverage.

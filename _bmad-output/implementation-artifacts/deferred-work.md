@@ -43,3 +43,7 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-2-7-keep-working-through-an-invalid-full-url-draft.md`
   summary: Complete true 400% browser-zoom and manual assistive-technology validation of independent errors, Last Valid source changes and operation focus.
   evidence: Added automated forced-colors and text-spacing coverage at 320 CSS pixels, but neither axe nor headless viewport emulation establishes real browser-zoom and screen-reader announcement behavior.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-2-8-close-deferred-verification-gaps.md`
+  summary: Story 2.8 owns the cancelled verification follow-up and every finding from its independent review.
+  evidence: On 2026-10-07 the user explicitly discarded the uncommitted follow-up, closed original Story 2.7 at commit `39ba84aca82cb9f0021f99e71048de5f269707e0`, and moved the scope to 2.8. The draft preserves all 17 review findings, execution/inventory integrity, runner lifecycle, relocation, cross-engine/IME/caret/capacity investigation and truthful manual-coverage deferrals. Prior generated runs are discarded, not passing deliverable evidence; Story 3.6 consumes the eventual proof foundation for release gating.

@@ -29,7 +29,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 # - Retrospective appends its action items to action_items; the status view surfaces open ones
 generated: 09-29-2026 20:17
-last_updated: 10-07-2026 11:03
+last_updated: 10-07-2026 13:46
 project: bmad-training
 project_key: NOKEY
 tracking_system: file-system
@@ -52,7 +52,9 @@ development_status:
   2-4-add-a-query-parameter-from-either-list-boundary: done
   2-5-reorder-query-parameters-by-keyboard: done
   2-6-edit-the-full-url-as-one-continuous-intent: review
-  2-7-keep-working-through-an-invalid-full-url-draft: review
+  # Original committed scope closed by user; verification follow-up moved to Story 2.8.
+  2-7-keep-working-through-an-invalid-full-url-draft: done
+  2-8-close-deferred-verification-gaps: backlog
   epic-2-retrospective: optional
 
   epic-3: backlog
