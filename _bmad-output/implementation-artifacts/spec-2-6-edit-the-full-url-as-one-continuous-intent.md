@@ -176,3 +176,7 @@ The initial independent review was interrupted before its verification-gap layer
 - `node evidence/validate.mjs` -- validates 32 mandatory evidence cells against artifact `d9e09372ff31803317c77eb499636e3439fb72df0207d8ff90f42fbdffbd0f78`.
 - `pnpm exec playwright test tests/workbench.spec.ts` -- 22/22 Chromium browser tests pass. The previously failing structured-selection fixture additionally passed 12 repetitions after its race fix.
 - `pnpm run lint` and `git diff --check` -- clean.
+
+## Human Acceptance
+
+- 2026-10-08 12:27 -03:00: The user accepted Story 2.6 and explicitly requested closing Epic 2 tracking. Sprint tracking advances Story 2.6 from `review` to `done` and Epic 2 from `in-progress` to `done`, with all eight stories accepted. The approved Chromium-only MVP scope and documented browser/manual/zoom deferrals remain unchanged; the optional epic retrospective is not marked complete.

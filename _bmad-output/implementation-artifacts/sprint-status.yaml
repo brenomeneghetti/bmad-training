@@ -29,7 +29,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 # - Retrospective appends its action items to action_items; the status view surfaces open ones
 generated: 09-29-2026 20:17
-last_updated: 10-07-2026 20:58
+last_updated: 10-08-2026 12:27
 project: bmad-training
 project_key: NOKEY
 tracking_system: file-system
@@ -44,14 +44,16 @@ development_status:
   1-6-find-and-clear-managed-pieces: done
   epic-1-retrospective: optional
 
-  epic-2: in-progress
+  # All eight stories accepted; Chromium-only MVP scope and documented deferrals unchanged.
+  epic-2: done
   2-1-edit-path-and-query-text-without-rewriting-untouched-content: done
   # Independent review waived by user on 2026-10-06; automated verification passed.
   2-2-edit-either-internationalized-domain-form-safely: done
   2-3-remove-one-specific-managed-piece: done
   2-4-add-a-query-parameter-from-either-list-boundary: done
   2-5-reorder-query-parameters-by-keyboard: done
-  2-6-edit-the-full-url-as-one-continuous-intent: review
+  # Human review accepted by the user on 2026-10-08.
+  2-6-edit-the-full-url-as-one-continuous-intent: done
   # Original committed scope closed by user; verification follow-up moved to Story 2.8.
   2-7-keep-working-through-an-invalid-full-url-draft: done
   # Chromium-only MVP evidence passes; additional browsers deferred to Epic 4.
