@@ -114,3 +114,7 @@ The three independent reviewers could not access the system-temp diff. Repositor
 - Parent matrix audit checked every Story 3.1 identity against the final native reports: all mutation variants, coalesced chronology, nonzero revisions, empty/stale commands, parse invalidation, draft cleanup, fresh-ID branching, invalid Draft selection/Search, native-event composition/settlement, detached-editor cleanup, pointer cancellation, accessibility and exact capacity restoration passed. No synthetic event test claims real OS IME coverage.
 - Intermediate run `f9a81983-5433-4310-817f-f3f91683eb7b` rejected the independently edited inventory's noncanonical ordering. Exact identities/multiplicities matched; canonical sorting of that reviewed inventory (not learning identities from the report) resolved the contract violation. Its retained attempt remains failure diagnostics, not current proof.
 - Both working-tree and staged `git diff --check` pass with the narrowly scoped native-log attributes. Direct review was authorized after independent-review tool failures; verified defects are repaired, and sprint status is `review` pending human acceptance.
+
+## Human Acceptance
+
+- 2026-10-08 13:37 -03:00: The user accepted Story 3.1. Sprint tracking advances from `review` to `done`; Epic 3 remains `in-progress`, and Stories 3.2-3.6 remain in backlog. The approved Chromium-only MVP scope, composition policy and documented deferrals remain unchanged.
