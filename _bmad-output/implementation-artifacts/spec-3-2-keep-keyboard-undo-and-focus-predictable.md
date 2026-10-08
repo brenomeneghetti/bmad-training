@@ -112,3 +112,7 @@ No intent gaps/irreversibles. Cross-layer footprint requires dispatch. Reuse mou
 - Final parent verification after authorized direct review/repairs: `pnpm run evidence:run` and `node evidence/validate.mjs` pass. Run [86e55871](../../evidence/runs/86e55871-e1cc-428a-85fe-777267ec623f/playwright.json) binds 310 Vitest, 53 Node and 39 Chromium executions (402 total), all passing, to 44 mandatory cells. Source digest `aaef70366a3ddf785137c809a91f00fab57942f5d69e7fc231a88c17556eb1fa`; artifact digest `b72896ba0e23de2c49ed3112b686471496af2cfad8a19ea7bafa022ddf3c2aa5`.
 - Final matrix audit includes actual platform detection and both-path filtered Add, in addition to every mutation destination, native ownership/excluded chords, composition settlement/detachment, invalid backward Draft selection/validation, guarded serial effects and private complete capacity restoration below 100 ms. No new behavior defect was reproduced; both verification gaps are repaired.
 - Build workflow complete; sprint tracking remains `review` pending human acceptance. Independent blind/edge-case layers remain blocked, with direct review explicitly authorized by the user. No new work was deferred; existing Epic 4/manual coverage deferrals remain.
+
+## Human Acceptance
+
+- 2026-10-08 14:22 -03:00: The user approved Story 3.2. Sprint tracking advances from `review` to `done`; Epic 3 remains `in-progress`, and Stories 3.3-3.6 remain in backlog. The authorized direct-review outcome, independent-review blockers, Chromium-only MVP scope and existing coverage deferrals remain unchanged.
