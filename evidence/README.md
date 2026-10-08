@@ -1,4 +1,4 @@
-# Epic 2 execution evidence
+# URL Workbench execution evidence
 
 `pnpm run evidence:run` performs a fresh build, lint, full Vitest suite, full
 Node integrity/lifecycle suite and all Chromium workbench tests,
@@ -42,9 +42,18 @@ the available native JSON reports and separate command diagnostics under
 - `inventory.json` lists every exact runner/file/full-title/project identity
   and multiplicity, **including tests not mapped to cells**. It is a reviewed
   expectation; the producer never learns expected coverage from its own run.
-- `coverage.json` maps all 36 mandatory cells to exact executed identities,
+- `coverage.json` maps all 40 mandatory cells to exact executed identities,
   including the approved Chromium browser project. File existence and matching aggregate counts
   cannot substitute for these identities.
+- Story 3.1 adds exact-history restoration, guarded Draft preservation,
+  accessible visible Undo, and private capacity restoration cells. Undo browser
+  tests exercise every mutation type, exact IDs/values, branching, pointer
+  cancellation, inactive focus, Search and invalid Draft selection, plus
+  20,000-character/260-entry restoration measured below 100 ms.
+  Visible Undo is inactive during text composition and re-enables when it
+  settles. Composition tests use synthetic native events, not real OS IMEs.
+  Native command logs retain original whitespace; `.gitattributes` excludes
+  only those retained text reports from whitespace checks, without altering proof.
 - Native reports, diagnostics and observed version command outcomes are hashed.
   Every command is bound to the same source/build/delivery identities. Paths
   reject traversal, absolute paths, symlinks and special files before reading.

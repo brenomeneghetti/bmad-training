@@ -14,6 +14,104 @@ import { Workbench } from "./Workbench";
 describe("URL Workbench", () => {
   afterEach(() => vi.useRealTimers());
 
+  it.each(["Domain", "token", "Full URL"] as const)(
+    "Story 3.1 Undo stays inactive during %s composition and re-enables after settlement",
+    (kind) => {
+      render(<Workbench />);
+      const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
+      fireEvent.change(editor, { target: { value: "https://example.com/a?x=1" } });
+      const domain = screen.getByLabelText("ASCII/Punycode Domain");
+      fireEvent.change(domain, { target: { value: "example.org" } });
+      const composing = kind === "Domain" ? domain
+        : kind === "token" ? screen.getByLabelText("Value, Query Parameter 1 of 1")
+        : editor;
+      const value = kind === "Domain" ? "example.net" : kind === "token" ? "new" : "https://";
+      const undo = screen.getByRole("button", { name: "Undo" });
+      fireEvent.compositionStart(composing);
+      fireEvent.input(composing, { target: { value }, isComposing: true });
+      expect(undo).toHaveAttribute("aria-disabled", "true");
+      expect(screen.getByText("Undo inactive: finish text composition first.")).toBeVisible();
+      fireEvent.click(undo);
+      expect(composing).toHaveValue(value);
+      if (kind !== "Full URL") expect(editor).toHaveValue("https://example.org/a?x=1");
+      expect(screen.queryByText(/Undid /)).not.toBeInTheDocument();
+      fireEvent.compositionEnd(composing, { data: value });
+      expect(undo).toHaveAttribute("aria-disabled", "false");
+      fireEvent.click(undo);
+      expect(editor).toHaveValue(kind === "Full URL" ? "https://" : "https://example.org/a?x=1");
+      if (kind === "Full URL") {
+        expect(domain).toHaveValue("example.com");
+        expect(screen.getByText(/Draft URL is unchanged/)).toBeVisible();
+      }
+    },
+  );
+
+  it("Story 3.1 Undo restores visible values and remains focusable when inactive without pointer-down activation", async () => {
+    const user = userEvent.setup();
+    render(<Workbench />);
+    const undo = screen.getByRole("button", { name: "Undo" });
+    expect(undo).toHaveAttribute("aria-disabled", "true");
+    expect(undo).not.toBeDisabled();
+    const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
+    fireEvent.change(editor, { target: { value: "https://xn--fa-hia.de/a?flag&empty=#Frag%2f" } });
+    expect(undo).toHaveAttribute("aria-disabled", "true");
+    fireEvent.change(screen.getByLabelText("Value, Query Parameter 2 of 2"), { target: { value: "changed" } });
+    fireEvent.pointerDown(undo);
+    fireEvent.pointerCancel(undo);
+    expect(editor).toHaveValue("https://xn--fa-hia.de/a?flag&empty=changed#Frag%2f");
+    undo.focus();
+    await user.keyboard("{Enter}");
+    expect(editor).toHaveValue("https://xn--fa-hia.de/a?flag&empty=#Frag%2f");
+    expect(screen.getByLabelText("Unicode Domain")).toHaveValue("faß.de");
+    expect(screen.getByLabelText("Value, Query Parameter 2 of 2")).toHaveValue("");
+    expect(undo).toHaveFocus();
+    expect(undo).toHaveAttribute("aria-disabled", "true");
+    expect(screen.getByText("Undo inactive: no URL changes to undo.")).toBeVisible();
+    await user.keyboard("{Enter}");
+    expect(undo).toHaveFocus();
+    expect(screen.getByText(/Undid Query Parameter value edit/)).toBeVisible();
+  });
+
+  it("Story 3.1 Undo re-enables when a composing editor is removed without compositionend", () => {
+    render(<Workbench />);
+    const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
+    fireEvent.change(editor, { target: { value: "https://example.com/a?x=1" } });
+    const value = screen.getByLabelText("Value, Query Parameter 1 of 1");
+    fireEvent.compositionStart(value);
+    fireEvent.input(value, { target: { value: "unfinished" }, isComposing: true });
+    const undo = screen.getByRole("button", { name: "Undo" });
+    expect(undo).toHaveAttribute("aria-disabled", "true");
+    fireEvent.click(screen.getByRole("button", { name: /Remove Query Parameter at position 1 of 1/ }));
+    expect(value).not.toBeInTheDocument();
+    expect(undo).toHaveAttribute("aria-disabled", "false");
+    fireEvent.click(undo);
+    expect(editor).toHaveValue("https://example.com/a?x=1");
+    expect(screen.getByLabelText("Value, Query Parameter 1 of 1")).toHaveValue("1");
+  });
+
+  it("Story 3.1 Undo keeps invalid Draft selection validation and Search while deriving restored rows", () => {
+    render(<Workbench />);
+    const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL") as HTMLTextAreaElement;
+    fireEvent.change(editor, { target: { value: "https://example.com/a?x=1&y=2" } });
+    fireEvent.change(editor, { target: { value: "https://example.com/b?x=1&y=2" } });
+    fireEvent.change(editor, { target: { value: "https://" } });
+    const error = document.getElementById("error-full-url")!.textContent;
+    const search = screen.getByLabelText("Search Managed Pieces");
+    fireEvent.change(search, { target: { value: "a" } });
+    editor.focus();
+    editor.setSelectionRange(2, 5, "backward");
+    const undo = screen.getByRole("button", { name: "Undo" });
+    fireEvent.pointerDown(undo);
+    fireEvent.click(undo);
+    expect(editor).toHaveValue("https://");
+    expect([editor.selectionStart, editor.selectionEnd, editor.selectionDirection]).toEqual([2, 5, "backward"]);
+    expect(editor).toHaveFocus();
+    expect(document.getElementById("error-full-url")).toHaveTextContent(error!);
+    expect(search).toHaveValue("a");
+    expect(screen.getByLabelText("Path Segment 1 of 1")).toHaveValue("a");
+    expect(screen.getByText(/Undid Full URL edit.*Draft URL is unchanged/)).toBeVisible();
+  });
+
   it("expires Domain composition suppression after the other representation changes", () => {
     render(<Workbench />);
     const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");

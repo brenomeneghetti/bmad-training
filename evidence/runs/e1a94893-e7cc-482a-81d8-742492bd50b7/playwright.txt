@@ -1,0 +1,72 @@
+argv: ["pnpm","exec","playwright","test","tests/workbench.spec.ts","--reporter=json"]
+exitCode: 1
+signal: null
+
+Running 34 tests using 1 worker
+
+[1/34] [chromium] › tests/workbench.spec.ts:25:1 › Story 3.1 visible Undo restores every committed mutation exactly and branches with fresh IDs
+[2/34] [chromium] › tests/workbench.spec.ts:81:1 › Story 3.1 Undo preserves invalid Draft selection errors Search and accessible cancellation
+[3/34] [chromium] › tests/workbench.spec.ts:118:1 › Story 3.1 Undo restores capacity privately under 100 ms with complete rows
+[4/34] [chromium] › tests/workbench.spec.ts:156:1 › Token final beforeinput publishes composition once and preserves normalized prefix caret
+[5/34] [chromium] › tests/workbench.spec.ts:193:3 › Domain composition publishes once with immediate final input and preserves later edits and selection
+[6/34] [chromium] › tests/workbench.spec.ts:231:3 › Token composition retains Last Valid until end with immediate final input and later edits
+[7/34] [chromium] › tests/workbench.spec.ts:193:3 › Domain composition publishes once with delayed final input and preserves later edits and selection
+[8/34] [chromium] › tests/workbench.spec.ts:231:3 › Token composition retains Last Valid until end with delayed final input and later edits
+[9/34] [chromium] › tests/workbench.spec.ts:265:1 › intake preserves lossless semantics and rejects replacement
+[10/34] [chromium] › tests/workbench.spec.ts:400:3 › Story 2.7 invalid Draft source, independent feedback and keyboard mutations remain accessible at 320px
+[11/34] [chromium] › tests/workbench.spec.ts:460:3 › Story 2.7 invalid Draft capacity preserves all identities and measured edit/reorder response
+[12/34] [chromium] › tests/workbench.spec.ts:534:1 › Story 2.7 capacity rejection preserves invalid Draft, selection, identities and focus
+[13/34] [chromium] › tests/workbench.spec.ts:572:1 › Story 2.7 invalid Draft feedback reflows with forced colors and increased text spacing
+[14/34] [chromium] › tests/workbench.spec.ts:613:1 › Domain editing is synchronized, correctable, IME-safe, and host-only
+[15/34] [chromium] › tests/workbench.spec.ts:764:1 › capacity view renders every row and stays usable at 320px
+[16/34] [chromium] › tests/workbench.spec.ts:991:1 › removal preserves exact survivors, Search, focus, accessibility, and privacy
+[17/34] [chromium] › tests/workbench.spec.ts:1057:1 › Add Query Parameter appends from either control, synchronizes Search, keeps focus, and stays private at capacity
+[18/34] [chromium] › tests/workbench.spec.ts:1123:1 › Add Query Parameter remains reachable and performant at 250+ entries
+[19/34] [chromium] › tests/workbench.spec.ts:1156:1 › reorders Query Parameters by keyboard and pointer activation, honoring boundaries, Search, duplicates, and capacity
+[20/34] [chromium] › tests/workbench.spec.ts:1208:1 › reorders within a 250+ parameter list, keeping boundaries reachable and performant
+[21/34] [chromium] › tests/workbench.spec.ts:1238:1 › initial and populated workbench pass automated accessibility checks
+  1) [chromium] › tests/workbench.spec.ts:1238:1 › initial and populated workbench pass automated accessibility checks 
+
+    Error: expect(locator).toBeFocused() failed
+
+    Locator:  getByRole('button', { name: 'Add Query Parameter before the list' })
+    Expected: focused
+    Received: inactive
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toBeFocused" getByRole('button', { name: 'Add Query Parameter before the list' }) with timeout 5000ms
+      - waiting for getByRole('button', { name: 'Add Query Parameter before the list' })
+        14 × locator resolved to <button type="button" id="add-query-before" aria-label="Add Query Parameter before the list">Add Query Parameter</button>
+           - unexpected value "inactive"
+
+
+      1251 |   await expect(
+      1252 |     page.getByRole("button", { name: "Add Query Parameter before the list" }),
+    > 1253 |   ).toBeFocused();
+           |     ^
+      1254 |
+      1255 |   await page.emulateMedia({ forcedColors: "active", reducedMotion: "reduce" });
+      1256 |   await page.evaluate(() => {
+        at /home/blackdude/Documents/OEProjects/bmad-training/tests/workbench.spec.ts:1253:5
+
+    Error Context: test-results/workbench-initial-and-popu-e10d7-omated-accessibility-checks-chromium/error-context.md
+
+
+[22/34] [chromium] › tests/workbench.spec.ts:1302:1 › reload clears URL content and returns to no session
+[23/34] [chromium] › tests/workbench.spec.ts:1315:1 › search no-results and clear remain keyboard and activation safe
+[24/34] [chromium] › tests/workbench.spec.ts:1342:1 › structured editing preserves exact bytes, identity, validation, and focus
+[25/34] [chromium] › tests/workbench.spec.ts:1391:1 › structured editing handles search, selections, word deletion, caret, and drafts
+[26/34] [chromium] › tests/workbench.spec.ts:1550:1 › Full URL edits publish continuously without an Apply step, with no Apply URL affordance anywhere
+[27/34] [chromium] › tests/workbench.spec.ts:1564:1 › Full URL retains row identity across first intake, Enter, blur, and refocus
+[28/34] [chromium] › tests/workbench.spec.ts:1584:1 › Full URL composition leaves Last Valid and validation untouched until composition ends
+[29/34] [chromium] › tests/workbench.spec.ts:1607:1 › an invalid Draft survives structured Add with its selection, error, and focus contract
+[30/34] [chromium] › tests/workbench.spec.ts:1628:1 › continuous Full URL reconciliation meets the response target at 20,000 characters and 260 entries
+[31/34] [chromium] › tests/workbench.spec.ts:1649:1 › Enter outside IME composition suppresses the newline and closes the focus session
+[32/34] [chromium] › tests/workbench.spec.ts:1666:1 › Shift+Enter outside IME composition suppresses the newline without closing the focus session
+[33/34] [chromium] › tests/workbench.spec.ts:1684:1 › Structured View editing controls stay enabled while the Full URL draft is momentarily invalid (loosened gating)
+[34/34] [chromium] › tests/workbench.spec.ts:1710:1 › blur-close and refocus round trip keeps the Structured View synchronized
+  1 failed
+    [chromium] › tests/workbench.spec.ts:1238:1 › initial and populated workbench pass automated accessibility checks 
+  33 passed (29.6s)
+

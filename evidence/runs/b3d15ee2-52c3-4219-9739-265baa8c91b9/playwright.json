@@ -1,0 +1,1580 @@
+{
+  "config": {
+    "argv": [
+      "/home/blackdude/.config/nvm/versions/node/v24.15.0/bin/node",
+      "/home/blackdude/Documents/OEProjects/bmad-training/node_modules/@playwright/test/cli.js",
+      "test",
+      "tests/workbench.spec.ts",
+      "--reporter=json"
+    ],
+    "configFile": "/home/blackdude/Documents/OEProjects/bmad-training/playwright.config.ts",
+    "rootDir": "/home/blackdude/Documents/OEProjects/bmad-training/tests",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/home/blackdude/Documents/OEProjects/bmad-training/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/home/blackdude/Documents/OEProjects/bmad-training/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.63.0",
+    "workers": 1,
+    "webServer": {
+      "command": "pnpm vite preview --host 127.0.0.1 --port 4173",
+      "port": 4173,
+      "reuseExistingServer": false
+    }
+  },
+  "suites": [
+    {
+      "title": "workbench.spec.ts",
+      "file": "workbench.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "Story 3.1 visible Undo restores every committed mutation exactly and branches with fresh IDs",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "engine",
+                  "description": "chromium:153.0.8010.12"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1386,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-08T16:09:08.353Z",
+                  "annotations": [
+                    {
+                      "type": "engine",
+                      "description": "chromium:153.0.8010.12"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "921e070f285a8b470d11-950cd2ce98171d4fe84a",
+          "file": "workbench.spec.ts",
+          "line": 25,
+          "column": 1
+        },
+        {
+          "title": "Story 3.1 Undo preserves invalid Draft selection errors Search and accessible cancellation",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "engine",
+                  "description": "chromium:153.0.8010.12"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1203,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-08T16:09:09.848Z",
+                  "annotations": [
+                    {
+                      "type": "engine",
+                      "description": "chromium:153.0.8010.12"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "921e070f285a8b470d11-0eb8a943c743a3a86ad0",
+          "file": "workbench.spec.ts",
+          "line": 81,
+          "column": 1
+        },
+        {
+          "title": "Story 3.1 Undo restores capacity privately under 100 ms with complete rows",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "engine",
+                  "description": "chromium:153.0.8010.12"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 597,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-08T16:09:11.064Z",
+                  "annotations": [
+                    {
+                      "type": "engine",
+                      "description": "chromium:153.0.8010.12"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "921e070f285a8b470d11-57abbc59696ca8dd3da6",
+          "file": "workbench.spec.ts",
+          "line": 118,
+          "column": 1
+        },
+        {
+          "title": "Token final beforeinput publishes composition once and preserves normalized prefix caret",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "engine",
+                  "description": "chromium:153.0.8010.12"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 641,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-08T16:09:11.675Z",
+                  "annotations": [
+                    {
+                      "type": "engine",
+                      "description": "chromium:153.0.8010.12"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "921e070f285a8b470d11-aaa8832575556fa2f8d0",
+          "file": "workbench.spec.ts",
+          "line": 156,
+          "column": 1
+        },
+        {
+          "title": "Domain composition publishes once with immediate final input and preserves later edits and selection",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "engine",
+                  "description": "chromium:153.0.8010.12"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 360,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-08T16:09:12.331Z",
+                  "annotations": [
+                    {
+                      "type": "engine",
+                      "description": "chromium:153.0.8010.12"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "921e070f285a8b470d11-b7e629e95f4f56a23f47",
+          "file": "workbench.spec.ts",
+          "line": 193,
+          "column": 3
+        },
+        {
+          "title": "Token composition retains Last Valid until end with immediate final input and later edits",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "engine",
+                  "description": "chromium:153.0.8010.12"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 262,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-08T16:09:12.709Z",
+                  "annotations": [
+                    {
+                      "type": "engine",
+                      "description": "chromium:153.0.8010.12"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "921e070f285a8b470d11-8a33f9be19723b8a6127",
+          "file": "workbench.spec.ts",
+          "line": 231,
+          "column": 3
+        },
+        {
+          "title": "Domain composition publishes once with delayed final input and preserves later edits and selection",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "engine",
+                  "description": "chromium:153.0.8010.12"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 346,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-08T16:09:12.989Z",
+                  "annotations": [
+                    {
+                      "type": "engine",
+                      "description": "chromium:153.0.8010.12"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "921e070f285a8b470d11-8fc58a262bcf2ac5bc19",
+          "file": "workbench.spec.ts",
+          "line": 193,
+          "column": 3
+        },
+        {
+          "title": "Token composition retains Last Valid until end with delayed final input and later edits",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "engine",
+                  "description": "chromium:153.0.8010.12"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 246,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-08T16:09:13.349Z",
+                  "annotations": [
+                    {
+                      "type": "engine",
+                      "description": "chromium:153.0.8010.12"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "921e070f285a8b470d11-3534d47203c12242c9e8",
+          "file": "workbench.spec.ts",
+          "line": 231,
+          "column": 3
+        },
+        {
+          "title": "intake preserves lossless semantics and rejects replacement",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "engine",
+                  "description": "chromium:153.0.8010.12"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 499,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-08T16:09:13.610Z",
+                  "annotations": [
+                    {
+                      "type": "engine",
+                      "description": "chromium:153.0.8010.12"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "921e070f285a8b470d11-ff7604fa901002a758b0",
+          "file": "workbench.spec.ts",
+          "line": 265,
+          "column": 1
+        },
+        {
+          "title": "Story 2.7 invalid Draft source, independent feedback and keyboard mutations remain accessible at 320px",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "engine",
+                  "description": "chromium:153.0.8010.12"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1909,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-08T16:09:14.127Z",
+                  "annotations": [
+                    {
+                      "type": "engine",
+                      "description": "chromium:153.0.8010.12"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "921e070f285a8b470d11-3a102868eebc7f24be50",
+          "file": "workbench.spec.ts",
+          "line": 400,
+          "column": 3
+        },
+        {
+          "title": "Story 2.7 invalid Draft capacity preserves all identities and measured edit/reorder response",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "engine",
+                  "description": "chromium:153.0.8010.12"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 574,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-08T16:09:16.051Z",
+                  "annotations": [
+                    {
+                      "type": "engine",
+                      "description": "chromium:153.0.8010.12"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "921e070f285a8b470d11-bbdf2ce08606bed1a90e",
+          "file": "workbench.spec.ts",
+          "line": 460,
+          "column": 3
+        },
+        {
+          "title": "Story 2.7 capacity rejection preserves invalid Draft, selection, identities and focus",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "engine",
+                  "description": "chromium:153.0.8010.12"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 790,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-08T16:09:16.637Z",
+                  "annotations": [
+                    {
+                      "type": "engine",
+                      "description": "chromium:153.0.8010.12"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "921e070f285a8b470d11-38b8b5a962eba6c783b3",
+          "file": "workbench.spec.ts",
+          "line": 534,
+          "column": 1
+        },
+        {
+          "title": "Story 2.7 invalid Draft feedback reflows with forced colors and increased text spacing",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "engine",
+                  "description": "chromium:153.0.8010.12"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1086,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-08T16:09:17.437Z",
+                  "annotations": [
+                    {
+                      "type": "engine",
+                      "description": "chromium:153.0.8010.12"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "921e070f285a8b470d11-65e26fbe229b1541b2a2",
+          "file": "workbench.spec.ts",
+          "line": 572,
+          "column": 1
+        },
+        {
+          "title": "Domain editing is synchronized, correctable, IME-safe, and host-only",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "engine",
+                  "description": "chromium:153.0.8010.12"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 444,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-08T16:09:18.537Z",
+                  "annotations": [
+                    {
+                      "type": "engine",
+                      "description": "chromium:153.0.8010.12"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "921e070f285a8b470d11-45900a530a9da20afdcd",
+          "file": "workbench.spec.ts",
+          "line": 613,
+          "column": 1
+        },
+        {
+          "title": "capacity view renders every row and stays usable at 320px",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "engine",
+                  "description": "chromium:153.0.8010.12"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 904,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-08T16:09:18.993Z",
+                  "annotations": [
+                    {
+                      "type": "engine",
+                      "description": "chromium:153.0.8010.12"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "921e070f285a8b470d11-ae4db289b1752bf3a88b",
+          "file": "workbench.spec.ts",
+          "line": 764,
+          "column": 1
+        },
+        {
+          "title": "removal preserves exact survivors, Search, focus, accessibility, and privacy",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "engine",
+                  "description": "chromium:153.0.8010.12"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1576,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-08T16:09:19.911Z",
+                  "annotations": [
+                    {
+                      "type": "engine",
+                      "description": "chromium:153.0.8010.12"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "921e070f285a8b470d11-6b631f9053d259e35eb2",
+          "file": "workbench.spec.ts",
+          "line": 991,
+          "column": 1
+        },
+        {
+          "title": "Add Query Parameter appends from either control, synchronizes Search, keeps focus, and stays private at capacity",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "engine",
+                  "description": "chromium:153.0.8010.12"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1516,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-08T16:09:21.504Z",
+                  "annotations": [
+                    {
+                      "type": "engine",
+                      "description": "chromium:153.0.8010.12"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "921e070f285a8b470d11-30c0a21a6757ccc1badd",
+          "file": "workbench.spec.ts",
+          "line": 1057,
+          "column": 1
+        },
+        {
+          "title": "Add Query Parameter remains reachable and performant at 250+ entries",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "engine",
+                  "description": "chromium:153.0.8010.12"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 413,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-08T16:09:23.030Z",
+                  "annotations": [
+                    {
+                      "type": "engine",
+                      "description": "chromium:153.0.8010.12"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "921e070f285a8b470d11-345d7be599b3da4770e9",
+          "file": "workbench.spec.ts",
+          "line": 1123,
+          "column": 1
+        },
+        {
+          "title": "reorders Query Parameters by keyboard and pointer activation, honoring boundaries, Search, duplicates, and capacity",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "engine",
+                  "description": "chromium:153.0.8010.12"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1672,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-08T16:09:23.455Z",
+                  "annotations": [
+                    {
+                      "type": "engine",
+                      "description": "chromium:153.0.8010.12"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "921e070f285a8b470d11-fa4f2874e9ad3be45f32",
+          "file": "workbench.spec.ts",
+          "line": 1156,
+          "column": 1
+        },
+        {
+          "title": "reorders within a 250+ parameter list, keeping boundaries reachable and performant",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "engine",
+                  "description": "chromium:153.0.8010.12"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 424,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-08T16:09:25.138Z",
+                  "annotations": [
+                    {
+                      "type": "engine",
+                      "description": "chromium:153.0.8010.12"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "921e070f285a8b470d11-ff05668210fca3e43902",
+          "file": "workbench.spec.ts",
+          "line": 1208,
+          "column": 1
+        },
+        {
+          "title": "initial and populated workbench pass automated accessibility checks",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "engine",
+                  "description": "chromium:153.0.8010.12"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2010,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-08T16:09:25.571Z",
+                  "annotations": [
+                    {
+                      "type": "engine",
+                      "description": "chromium:153.0.8010.12"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "921e070f285a8b470d11-09be36fc0d20d2996caf",
+          "file": "workbench.spec.ts",
+          "line": 1238,
+          "column": 1
+        },
+        {
+          "title": "reload clears URL content and returns to no session",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "engine",
+                  "description": "chromium:153.0.8010.12"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 253,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-08T16:09:27.592Z",
+                  "annotations": [
+                    {
+                      "type": "engine",
+                      "description": "chromium:153.0.8010.12"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "921e070f285a8b470d11-b3e01ce932b7c40eb133",
+          "file": "workbench.spec.ts",
+          "line": 1305,
+          "column": 1
+        },
+        {
+          "title": "search no-results and clear remain keyboard and activation safe",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "engine",
+                  "description": "chromium:153.0.8010.12"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 285,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-08T16:09:27.857Z",
+                  "annotations": [
+                    {
+                      "type": "engine",
+                      "description": "chromium:153.0.8010.12"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "921e070f285a8b470d11-0a39e2cdfb9e9f623d9b",
+          "file": "workbench.spec.ts",
+          "line": 1318,
+          "column": 1
+        },
+        {
+          "title": "structured editing preserves exact bytes, identity, validation, and focus",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "engine",
+                  "description": "chromium:153.0.8010.12"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 323,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-08T16:09:28.154Z",
+                  "annotations": [
+                    {
+                      "type": "engine",
+                      "description": "chromium:153.0.8010.12"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "921e070f285a8b470d11-4dcec7befdb06d1361e0",
+          "file": "workbench.spec.ts",
+          "line": 1345,
+          "column": 1
+        },
+        {
+          "title": "structured editing handles search, selections, word deletion, caret, and drafts",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "engine",
+                  "description": "chromium:153.0.8010.12"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 557,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-08T16:09:28.489Z",
+                  "annotations": [
+                    {
+                      "type": "engine",
+                      "description": "chromium:153.0.8010.12"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "921e070f285a8b470d11-2361b5e9dc2c1bbb0a27",
+          "file": "workbench.spec.ts",
+          "line": 1394,
+          "column": 1
+        },
+        {
+          "title": "Full URL edits publish continuously without an Apply step, with no Apply URL affordance anywhere",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "engine",
+                  "description": "chromium:153.0.8010.12"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 215,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-08T16:09:29.060Z",
+                  "annotations": [
+                    {
+                      "type": "engine",
+                      "description": "chromium:153.0.8010.12"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "921e070f285a8b470d11-9d69abbaaee6d6b2c743",
+          "file": "workbench.spec.ts",
+          "line": 1553,
+          "column": 1
+        },
+        {
+          "title": "Full URL retains row identity across first intake, Enter, blur, and refocus",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "engine",
+                  "description": "chromium:153.0.8010.12"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 258,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-08T16:09:29.287Z",
+                  "annotations": [
+                    {
+                      "type": "engine",
+                      "description": "chromium:153.0.8010.12"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "921e070f285a8b470d11-3f6f10aa286ba1c2da20",
+          "file": "workbench.spec.ts",
+          "line": 1567,
+          "column": 1
+        },
+        {
+          "title": "Full URL composition leaves Last Valid and validation untouched until composition ends",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "engine",
+                  "description": "chromium:153.0.8010.12"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 250,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-08T16:09:29.557Z",
+                  "annotations": [
+                    {
+                      "type": "engine",
+                      "description": "chromium:153.0.8010.12"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "921e070f285a8b470d11-ac55638cd11d6f67dab7",
+          "file": "workbench.spec.ts",
+          "line": 1587,
+          "column": 1
+        },
+        {
+          "title": "an invalid Draft survives structured Add with its selection, error, and focus contract",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "engine",
+                  "description": "chromium:153.0.8010.12"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 349,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-08T16:09:29.818Z",
+                  "annotations": [
+                    {
+                      "type": "engine",
+                      "description": "chromium:153.0.8010.12"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "921e070f285a8b470d11-c5653e596393bf485f09",
+          "file": "workbench.spec.ts",
+          "line": 1610,
+          "column": 1
+        },
+        {
+          "title": "continuous Full URL reconciliation meets the response target at 20,000 characters and 260 entries",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "engine",
+                  "description": "chromium:153.0.8010.12"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 388,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-08T16:09:30.178Z",
+                  "annotations": [
+                    {
+                      "type": "engine",
+                      "description": "chromium:153.0.8010.12"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "921e070f285a8b470d11-dfb7d4df53368338c332",
+          "file": "workbench.spec.ts",
+          "line": 1631,
+          "column": 1
+        },
+        {
+          "title": "Enter outside IME composition suppresses the newline and closes the focus session",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "engine",
+                  "description": "chromium:153.0.8010.12"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 294,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-08T16:09:30.578Z",
+                  "annotations": [
+                    {
+                      "type": "engine",
+                      "description": "chromium:153.0.8010.12"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "921e070f285a8b470d11-726b35ab165000369d68",
+          "file": "workbench.spec.ts",
+          "line": 1652,
+          "column": 1
+        },
+        {
+          "title": "Shift+Enter outside IME composition suppresses the newline without closing the focus session",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "engine",
+                  "description": "chromium:153.0.8010.12"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 285,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-08T16:09:30.883Z",
+                  "annotations": [
+                    {
+                      "type": "engine",
+                      "description": "chromium:153.0.8010.12"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "921e070f285a8b470d11-2153a997a14256a957be",
+          "file": "workbench.spec.ts",
+          "line": 1669,
+          "column": 1
+        },
+        {
+          "title": "Structured View editing controls stay enabled while the Full URL draft is momentarily invalid (loosened gating)",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "engine",
+                  "description": "chromium:153.0.8010.12"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 267,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-08T16:09:31.178Z",
+                  "annotations": [
+                    {
+                      "type": "engine",
+                      "description": "chromium:153.0.8010.12"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "921e070f285a8b470d11-f14ee28e536e658e9f5b",
+          "file": "workbench.spec.ts",
+          "line": 1687,
+          "column": 1
+        },
+        {
+          "title": "blur-close and refocus round trip keeps the Structured View synchronized",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "engine",
+                  "description": "chromium:153.0.8010.12"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 262,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-08T16:09:31.455Z",
+                  "annotations": [
+                    {
+                      "type": "engine",
+                      "description": "chromium:153.0.8010.12"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "921e070f285a8b470d11-1ccb7d6cffab883a9556",
+          "file": "workbench.spec.ts",
+          "line": 1713,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-08T16:09:07.088Z",
+    "duration": 24693.994,
+    "expected": 34,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

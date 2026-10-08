@@ -5,7 +5,7 @@ const root = resolve(import.meta.dirname, "..");
 try {
   const result = await validateEvidence(root);
   console.log(
-    `Validated ${result.cellCount} mandatory evidence cells and ${result.testCount} exact executed tests for artifact ${result.artifactDigest}.`,
+    `Validated ${result.cellCount} mandatory evidence cells and ${result.testCount} exact executed tests on the approved Chromium MVP target for artifact ${result.artifactDigest}.`,
   );
 } catch (error) {
   console.error(error.code === "ENOENT"

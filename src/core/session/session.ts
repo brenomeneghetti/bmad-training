@@ -35,6 +35,7 @@ export interface StructuredDraft {
 
 export interface MutationEntry {
   readonly before: LosslessUrl;
+  readonly beforeTokenRevisions: Readonly<Record<string, number>>;
   readonly after: LosslessUrl;
   readonly pieceId: StructuredCommand["pieceId"];
   readonly field:
@@ -71,11 +72,13 @@ export interface SessionState {
   readonly pendingInput: string | null;
   readonly fullUrlFocus: {
     readonly baseline: LosslessUrl;
+    readonly baselineTokenRevisions: Readonly<Record<string, number>>;
     readonly lastAccepted: LosslessUrl;
   } | null;
 }
 
 export type SessionAction =
+  | { readonly type: "undo"; readonly revision: number }
   | { readonly type: "inputChanged"; readonly value: string }
   | { readonly type: "parseStarted"; readonly input: string; readonly generation: number }
   | {
@@ -321,6 +324,7 @@ const closeFullUrlEditIfOpen = (
       ...state.history,
       {
         before: focus.baseline,
+        beforeTokenRevisions: focus.baselineTokenRevisions,
         after: focus.lastAccepted,
         pieceId: focus.baseline.domainId,
         field: "full-url",
@@ -349,11 +353,70 @@ const structuredPublication = (state: SessionState, snapshot: LosslessUrl) => {
   };
 };
 
+export const canUndo = (state: SessionState): boolean =>
+  state.history.length > 0 ||
+  (state.fullUrlFocus !== null &&
+    state.fullUrlFocus.baseline !== state.fullUrlFocus.lastAccepted);
+
+const fieldValues = (snapshot: LosslessUrl): Readonly<Record<string, string>> =>
+  Object.fromEntries([
+    [structuredFieldKey(snapshot.domainId, "domain-unicode"), snapshot.rawHost],
+    [structuredFieldKey(snapshot.domainId, "domain-ascii"), snapshot.rawHost],
+    ...snapshot.path.map((piece) => [structuredFieldKey(piece.id, "path"), piece.rawSegment]),
+    ...snapshot.query.flatMap((piece) => [
+      [structuredFieldKey(piece.id, "query-key"), piece.rawKey],
+      [structuredFieldKey(piece.id, "query-value"), `${piece.equalsPresent}:${piece.rawValue}`],
+    ]),
+  ]);
+
+const undoLabels: Record<MutationEntry["field"], string> = {
+  "domain-unicode": "Unicode Domain edit",
+  "domain-ascii": "ASCII/Punycode Domain edit",
+  path: "Path Segment edit",
+  "query-key": "Query Parameter key edit",
+  "query-value": "Query Parameter value edit",
+  "remove-path": "Path Segment removal",
+  "remove-query": "Query Parameter removal",
+  "add-query": "Query Parameter addition",
+  "reorder-query": "Query Parameter reorder",
+  "full-url": "Full URL edit",
+};
+
 export const sessionReducer = (
   state: SessionState,
   action: SessionAction,
 ): SessionState => {
   switch (action.type) {
+    case "undo": {
+      if (action.revision !== state.revision || !canUndo(state)) return state;
+      const closed = closeFullUrlEditIfOpen(state, "mutation");
+      const entry = closed.history.at(-1)!;
+      const previousValues = fieldValues(state.snapshot!);
+      const restoredValues = fieldValues(entry.before);
+      const structuredDrafts = Object.fromEntries(
+        Object.entries(state.structuredDrafts).filter(([key]) =>
+          restoredValues[key] !== undefined &&
+          restoredValues[key] === previousValues[key] &&
+          entry.beforeTokenRevisions[key] === state.tokenRevisions[key]),
+      );
+      const structuredProblem = Object.values(structuredDrafts)
+        .find((draft) => draft.problem === state.structuredProblem)?.problem ?? null;
+      const preservesDraft = state.input !== state.snapshot!.serialized;
+      return {
+        ...closed,
+        ...structuredPublication(closed, entry.before),
+        tokenRevisions: entry.beforeTokenRevisions,
+        structuredDrafts,
+        structuredProblem,
+        structuredSuccess: `Undid ${undoLabels[entry.field]}. ${
+          preservesDraft
+            ? "Last Valid URL and Structured View restored. Draft URL is unchanged."
+            : "Full URL and Structured View restored."
+        }`,
+        history: closed.history.slice(0, -1),
+        revision: state.revision + 1,
+      };
+    }
     case "inputChanged":
       return {
         ...state,
@@ -365,7 +428,7 @@ export const sessionReducer = (
               : "no-session",
         input: action.value,
         fullUrlFocus: state.fullUrlFocus ?? (state.snapshot
-          ? { baseline: state.snapshot, lastAccepted: state.snapshot }
+          ? { baseline: state.snapshot, baselineTokenRevisions: state.tokenRevisions, lastAccepted: state.snapshot }
           : null),
         generation: state.generation + 1,
         pendingInput: null,
@@ -451,6 +514,7 @@ export const sessionReducer = (
           nextPieceId: state.nextPieceId + mintedCount,
         };
       }
+      const intakeTokenRevisions = revisionsFor(action.result.value);
       return {
         ...state,
         phase: "active",
@@ -458,6 +522,7 @@ export const sessionReducer = (
         lastValidSnapshot: action.result.value,
         fullUrlFocus: {
           baseline: action.result.value,
+          baselineTokenRevisions: intakeTokenRevisions,
           lastAccepted: action.result.value,
         },
         pendingInput: null,
@@ -465,7 +530,7 @@ export const sessionReducer = (
         structuredProblem: null,
         structuredSuccess: null,
         structuredDrafts: {},
-        tokenRevisions: revisionsFor(action.result.value),
+        tokenRevisions: intakeTokenRevisions,
         history: [],
         epoch: state.epoch + 1,
         revision: state.revision + 1,
@@ -525,6 +590,7 @@ export const sessionReducer = (
           ...closed.history,
           {
             before: state.snapshot,
+            beforeTokenRevisions: state.tokenRevisions,
             after: result.value,
             pieceId: action.removal.pieceId,
             field,
@@ -564,6 +630,7 @@ export const sessionReducer = (
           ...closed.history,
           {
             before: state.snapshot,
+            beforeTokenRevisions: state.tokenRevisions,
             after: result.value,
             pieceId,
             field: "add-query",
@@ -615,6 +682,7 @@ export const sessionReducer = (
           ...closed.history,
           {
             before: state.snapshot,
+            beforeTokenRevisions: state.tokenRevisions,
             after: result.value,
             pieceId: action.pieceId,
             field: "reorder-query",
@@ -770,6 +838,7 @@ export const sessionReducer = (
             ...closed.history,
             {
               before: state.snapshot,
+              beforeTokenRevisions: state.tokenRevisions,
               after: result.value,
               pieceId: action.command.pieceId,
               field: action.command.field,
@@ -872,6 +941,7 @@ export const sessionReducer = (
           ...closed.history,
           {
             before: state.snapshot,
+            beforeTokenRevisions: state.tokenRevisions,
             after: result.value,
             pieceId: action.command.pieceId,
             field: action.command.field,
@@ -885,6 +955,7 @@ export const sessionReducer = (
         ...state,
         fullUrlFocus: {
           baseline: state.snapshot,
+          baselineTokenRevisions: state.tokenRevisions,
           lastAccepted: state.snapshot,
         },
       };

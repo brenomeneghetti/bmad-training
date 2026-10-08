@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  canUndo,
   initialSessionState,
   prepareParse,
   sessionReducer,
@@ -13,6 +14,158 @@ const apply = (state: SessionState, input: string) => {
   const parse = prepareParse(changed);
   return sessionReducer(sessionReducer(changed, parse.start), parse.complete());
 };
+
+describe("Story 3.1 Undo", () => {
+  it.each(["domain-unicode", "domain-ascii", "path", "query-key", "query-value", "add", "remove-path", "remove-query", "move", "full-url"] as const)(
+    "restores exact model and revision map for %s",
+    (kind) => {
+      const initial = apply(initialSessionState, "https://xn--fa-hia.de/a%2fb//?dup=1&dup=2&flag&empty=#Frag%2f");
+      const a = sessionReducer(initial, { type: "closeFullUrlEdit", reason: "blur" });
+      const snapshot = a.snapshot!;
+      const query = snapshot.query[1]!;
+      const action: SessionAction = kind === "add" ? { type: "addQueryPiece" }
+        : kind === "move" ? { type: "moveQueryPiece", pieceId: query.id, direction: "up" }
+        : kind === "remove-path" ? { type: "removePiece", removal: { kind: "path", pieceId: snapshot.path[0]!.id } }
+        : kind === "remove-query" ? { type: "removePiece", removal: { kind: "query", pieceId: query.id } }
+        : kind === "domain-unicode" || kind === "domain-ascii"
+          ? { type: "structuredEdit", command: { field: kind, pieceId: snapshot.domainId, tokenRevision: 0, value: "example.org" } }
+          : { type: "structuredEdit", command: { field: kind === "full-url" ? "path" : kind,
+            pieceId: kind === "path" || kind === "full-url" ? snapshot.path[0]!.id : query.id,
+            tokenRevision: 0, start: 0, end: 1, insertedText: "z" } };
+      const changed = kind === "full-url" ? apply(apply(a, a.input.replace("/a", "/b")), a.input.replace("/a", "/c"))
+        : sessionReducer(a, action);
+      expect(canUndo(changed)).toBe(true);
+      const restored = sessionReducer(changed, { type: "undo", revision: changed.revision });
+      expect(restored.snapshot).toBe(snapshot);
+      expect(restored.lastValidSnapshot).toBe(snapshot);
+      expect(restored.tokenRevisions).toBe(a.tokenRevisions);
+      expect(restored.input).toBe(a.input);
+      expect(restored.history).toHaveLength(0);
+      expect(restored.fullUrlFocus).toBeNull();
+      expect(restored.revision).toBe(changed.revision + 1);
+      expect(restored.generation).toBeGreaterThan(changed.generation);
+      expect(restored.nextPieceId).toBe(changed.nextPieceId);
+      expect(canUndo(restored)).toBe(false);
+      expect(restored.structuredSuccess).toContain("Undid");
+    },
+  );
+
+  it("guards empty and stale commands before closing and invalidates pending parsing", () => {
+    const a = apply(initialSessionState, "https://example.com/a?x=1");
+    expect(canUndo(a)).toBe(false);
+    expect(sessionReducer(a, { type: "undo", revision: a.revision })).toBe(a);
+    const changed = apply(a, "https://example.com/b?x=1");
+    const input = sessionReducer(changed, { type: "inputChanged", value: "https://example.com/c?x=1" });
+    const parse = prepareParse(input);
+    const pending = sessionReducer(input, parse.start);
+    expect(sessionReducer(pending, { type: "undo", revision: a.revision })).toBe(pending);
+    const restored = sessionReducer(pending, { type: "undo", revision: pending.revision });
+    expect(restored.snapshot).toBe(a.snapshot);
+    expect(restored.input).toBe(input.input);
+    expect(restored.pendingInput).toBeNull();
+    expect(restored.fullUrlFocus).toBeNull();
+    expect(sessionReducer(restored, parse.complete())).toBe(restored);
+    expect(sessionReducer(restored, { type: "undo", revision: restored.revision })).toBe(restored);
+  });
+
+  it("reverses coalesced chronology E D C A while preserving invalid Draft and validation", () => {
+    const a = apply(initialSessionState, "https://example.com/a?dup=1&dup=2&flag&empty=#Frag%2f");
+    const b = apply(a, a.input.replace("/a?", "/b?"));
+    const c = apply(b, b.input.replace("/b?", "/c?"));
+    const target = c.snapshot!.query[1]!.id;
+    const d = sessionReducer(c, { type: "moveQueryPiece", pieceId: target, direction: "up" });
+    const e = sessionReducer(d, { type: "removePiece", removal: { kind: "query", pieceId: target } });
+    const f = apply(e, e.snapshot!.serialized.replace("/c?", "/f?"));
+    let state = apply(f, "https://");
+    const problem = state.problem;
+    for (const expected of [e, d, c, a]) {
+      state = sessionReducer(state, { type: "undo", revision: state.revision });
+      expect(state.snapshot).toBe(expected.snapshot);
+      expect(state.tokenRevisions).toBe(expected.tokenRevisions);
+      expect(state.input).toBe("https://");
+      expect(state.problem).toBe(problem);
+      expect(state.structuredSuccess).toContain("Draft URL is unchanged.");
+    }
+    expect(canUndo(state)).toBe(false);
+  });
+
+  it("preserves unaffected drafts, clears restored field errors, and branches with fresh IDs", () => {
+    const a = apply(initialSessionState, "https://example.com/a?x=1&y=2");
+    const id = a.snapshot!.query[0]!.id;
+    const other = a.snapshot!.query[1]!.id;
+    const edited = sessionReducer(a, { type: "structuredEdit", command: {
+      pieceId: id, field: "query-value", tokenRevision: 0, start: 0, end: 1, insertedText: "new",
+    } });
+    let state = edited;
+    for (const target of [other, id]) {
+      state = sessionReducer(state, { type: "structuredEdit", command: {
+        pieceId: target, field: "query-value", tokenRevision: target === id ? 1 : 0,
+        start: 0, end: 0, insertedText: "%",
+      } });
+    }
+    const unaffectedDraft = state.structuredDrafts[`${other}:query-value`];
+    const restored = sessionReducer(state, { type: "undo", revision: state.revision });
+    expect(restored.structuredDrafts).toEqual({ [`${other}:query-value`]: unaffectedDraft });
+    expect(restored.structuredProblem).toBeNull();
+    expect(restored.tokenRevisions).toBe(a.tokenRevisions);
+    const added = sessionReducer(restored, { type: "addQueryPiece" });
+    const addedId = added.snapshot!.query.at(-1)!.id;
+    const undo = sessionReducer(added, { type: "undo", revision: added.revision });
+    const branch = sessionReducer(undo, { type: "addQueryPiece" });
+    expect(branch.snapshot!.query.at(-1)!.id).not.toBe(addedId);
+    expect(branch.history).toHaveLength(1);
+    expect(branch.history[0]!.before).toBe(restored.snapshot);
+    const edit = sessionReducer(undo, { type: "structuredEdit", command: {
+      pieceId: id, field: "query-value", tokenRevision: 0, start: 0, end: 1, insertedText: "branch",
+    } });
+    expect(edit.snapshot!.query[0]!.rawValue).toBe("branch");
+    expect(edit.history).toHaveLength(1);
+  });
+
+  it("restores a 20,000-character 260-entry snapshot under 100 ms without allocation", () => {
+    const a = apply(initialSessionState, createCapacityFixture());
+    const removed = sessionReducer(a, { type: "removePiece", removal: {
+      kind: "query", pieceId: a.snapshot!.query[259]!.id,
+    } });
+    const start = performance.now();
+    const restored = sessionReducer(removed, { type: "undo", revision: removed.revision });
+    expect(performance.now() - start).toBeLessThan(100);
+    expect(restored.snapshot).toBe(a.snapshot);
+    expect(restored.tokenRevisions).toBe(a.tokenRevisions);
+    expect(restored.snapshot!.query).toHaveLength(260);
+    expect(restored.nextPieceId).toBe(removed.nextPieceId);
+  });
+
+  it("restores nonzero revision maps and malformed accepted source bytes through branched history", () => {
+    const source = "https://user:p%2f@XN--FA-HIA.DE:0443/a%zz//?dup=1&&dup=2&flag&empty=#Frag%2f";
+    const initial = apply(initialSessionState, source);
+    const domain = sessionReducer(initial, { type: "structuredEdit", command: {
+      pieceId: initial.snapshot!.domainId, field: "domain-ascii", tokenRevision: 0, value: "example.org",
+    } });
+    const id = domain.snapshot!.query[0]!.id;
+    const edited = sessionReducer(domain, { type: "structuredEdit", command: {
+      pieceId: id, field: "query-value", tokenRevision: 0, start: 0, end: 1, insertedText: "two",
+    } });
+    expect(edited.tokenRevisions[`${id}:query-value`]).toBe(1);
+    const again = sessionReducer(edited, { type: "structuredEdit", command: {
+      pieceId: id, field: "query-value", tokenRevision: 1, start: 0, end: 3, insertedText: "three",
+    } });
+    const restored = sessionReducer(again, { type: "undo", revision: again.revision });
+    expect(restored.snapshot).toBe(edited.snapshot);
+    expect(restored.tokenRevisions).toBe(edited.tokenRevisions);
+    const full = apply(restored, restored.input.replace("example.org", "example.net"));
+    const restoredFull = sessionReducer(full, { type: "undo", revision: full.revision });
+    expect(restoredFull.snapshot).toBe(edited.snapshot);
+    expect(restoredFull.tokenRevisions).toBe(edited.tokenRevisions);
+    const restoredDomain = sessionReducer(restoredFull, { type: "undo", revision: restoredFull.revision });
+    expect(restoredDomain.snapshot).toBe(domain.snapshot);
+    expect(restoredDomain.tokenRevisions).toBe(domain.tokenRevisions);
+    const restoredInitial = sessionReducer(restoredDomain, { type: "undo", revision: restoredDomain.revision });
+    expect(restoredInitial.snapshot).toBe(initial.snapshot);
+    expect(restoredInitial.tokenRevisions).toBe(initial.tokenRevisions);
+    expect(restoredInitial.input).toBe(source);
+  });
+});
 
 describe("session authority", () => {
   it("publishes valid intake atomically and preserves it after rejection", () => {
@@ -335,6 +488,7 @@ describe("session authority", () => {
     expect(removed.history).toHaveLength(1);
     expect(removed.history[0]).toEqual({
       before: active.snapshot,
+      beforeTokenRevisions: active.tokenRevisions,
       after: removed.snapshot,
       pieceId: target.id,
       field: "remove-query",
@@ -422,6 +576,7 @@ describe("session authority", () => {
     expect(removed.history).toHaveLength(1);
     expect(removed.history[0]).toEqual({
       before: active.snapshot,
+      beforeTokenRevisions: active.tokenRevisions,
       after: removed.snapshot,
       pieceId: target.id,
       field: "remove-path",
@@ -556,6 +711,7 @@ describe("session authority", () => {
     expect(added.history).toHaveLength(1);
     expect(added.history[0]).toEqual({
       before: active.snapshot,
+      beforeTokenRevisions: active.tokenRevisions,
       after: added.snapshot,
       pieceId: newPiece.id,
       field: "add-query",
@@ -1264,6 +1420,7 @@ describe("session authority", () => {
     expect(moved.history).toHaveLength(1);
     expect(moved.history[0]).toEqual({
       before: active.snapshot,
+      beforeTokenRevisions: active.tokenRevisions,
       after: moved.snapshot,
       pieceId: target.id,
       field: "reorder-query",
@@ -1505,6 +1662,7 @@ describe("Story 2.6: Full URL focus session", () => {
     expect(closed.history).toHaveLength(1);
     expect(closed.history[0]).toEqual({
       before: start.snapshot,
+      beforeTokenRevisions: start.tokenRevisions,
       after: typed2.snapshot,
       pieceId: start.snapshot?.domainId,
       field: "full-url",
@@ -1602,6 +1760,7 @@ describe("Story 2.6: Full URL focus session", () => {
     expect(afterMutation.history).toHaveLength(2);
     expect(afterMutation.history[0]).toEqual({
       before: start.snapshot,
+      beforeTokenRevisions: start.tokenRevisions,
       after: typed.snapshot,
       pieceId: start.snapshot?.domainId,
       field: "full-url",

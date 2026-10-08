@@ -22,6 +22,168 @@ test.beforeEach(async ({ browser, browserName }, testInfo) => {
   testInfo.annotations.push({ type: "engine", description: `${browserName}:${browser.version()}` });
 });
 
+test("Story 3.1 Undo remains inactive during native composition in every URL editor", async ({ page }) => {
+  for (const field of ["ASCII/Punycode Domain", "Value, Query Parameter 1 of 1", "Complete HTTP or HTTPS Absolute URL"]) {
+    await page.goto("/");
+    const editor = page.getByLabel("Complete HTTP or HTTPS Absolute URL");
+    const undo = page.getByRole("button", { name: "Undo", exact: true });
+    await editor.fill("https://example.com/a?x=1");
+    await page.getByLabel("ASCII/Punycode Domain").fill("example.org");
+    const composing = page.getByLabel(field);
+    await composing.focus();
+    const next = field === "ASCII/Punycode Domain" ? "example.net"
+      : field === "Value, Query Parameter 1 of 1" ? "new" : "https://";
+    await composing.evaluate((input: HTMLInputElement | HTMLTextAreaElement, value) => {
+      const prototype = input instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
+      input.dispatchEvent(new CompositionEvent("compositionstart", { bubbles: true }));
+      Object.getOwnPropertyDescriptor(prototype, "value")!.set!.call(input, value);
+      input.dispatchEvent(new InputEvent("input", { bubbles: true, isComposing: true, inputType: "insertCompositionText" }));
+    }, next);
+    await expect(undo).toHaveAttribute("aria-disabled", "true");
+    await expect(page.getByText("Undo inactive: finish text composition first.")).toBeVisible();
+    await undo.evaluate((button: HTMLButtonElement) => button.click());
+    await expect(composing).toHaveValue(next);
+    await expect(page.getByText(/Undid /)).toHaveCount(0);
+    await composing.evaluate((input, value) => {
+      input.dispatchEvent(new CompositionEvent("compositionend", { bubbles: true, data: value }));
+    }, next);
+    await expect(undo).toHaveAttribute("aria-disabled", "false");
+    await undo.click();
+    await expect(editor).toHaveValue(field === "Complete HTTP or HTTPS Absolute URL" ? "https://" : "https://example.org/a?x=1");
+  }
+});
+
+test("Story 3.1 visible Undo restores every committed mutation exactly and branches with fresh IDs", async ({ page }) => {
+  await page.goto("/");
+  const editor = page.getByLabel("Complete HTTP or HTTPS Absolute URL");
+  const undo = page.getByRole("button", { name: "Undo", exact: true });
+  const initial = "https://xn--fa-hia.de/a%2fb//?dup=1&dup=2&flag&empty=#Frag%2f";
+  await editor.fill(initial);
+  await expect(undo).toHaveAttribute("aria-disabled", "true");
+  const capture = async () => ({
+    url: await editor.inputValue(),
+    rows: await page.locator("#managed-pieces > li").evaluateAll((rows) =>
+      rows.map((row) => ({
+        id: row.getAttribute("data-piece-id"),
+        values: [...row.querySelectorAll("input")].map((input) => input.value),
+      }))),
+  });
+  const snapshots = [await capture()];
+  const operations = [
+    async () => { await page.getByLabel("Path Segment 1 of 3").fill("edited%2F"); },
+    async () => { await page.getByLabel("Key, Query Parameter 1 of 4").fill("new"); },
+    async () => { await page.getByLabel("Value, Query Parameter 1 of 4").fill("value"); },
+    async () => { await page.getByLabel("Unicode Domain").fill("例え.jp"); },
+    async () => { await page.getByLabel("ASCII/Punycode Domain").fill("example.org"); },
+    async () => { await page.locator("#add-query-before").click(); },
+    async () => { await page.getByRole("button", { name: /Move Query Parameter at position 2 of 5 up/ }).click(); },
+    async () => { await page.getByRole("button", { name: /Remove Query Parameter at position 2 of 5/ }).click(); },
+    async () => { await page.getByRole("button", { name: /Remove Path Segment at position 1 of 3/ }).click(); },
+    async () => {
+      const url = await editor.inputValue();
+      await editor.fill(url.replace("example.org", "example.net"));
+      await editor.fill(url.replace("example.org", "example.com"));
+    },
+  ];
+  for (const operation of operations) {
+    await operation();
+    snapshots.push(await capture());
+  }
+  for (const expected of snapshots.slice(0, -1).reverse()) {
+    await undo.click();
+    await expect(editor).toHaveValue(expected.url);
+    expect(await capture()).toEqual(expected);
+  }
+  await expect(undo).toHaveAttribute("aria-disabled", "true");
+  await undo.focus();
+  await page.keyboard.press("Enter");
+  await expect(undo).toBeFocused();
+  await expect(editor).toHaveValue(initial);
+  await page.locator("#add-query-before").click();
+  const firstAdded = (await capture()).rows.at(-1)!.id;
+  await undo.click();
+  await page.locator("#add-query-before").click();
+  expect((await capture()).rows.at(-1)!.id).not.toBe(firstAdded);
+  await undo.click();
+  await expect(editor).toHaveValue(initial);
+  await expect(undo).toHaveAttribute("aria-disabled", "true");
+});
+
+test("Story 3.1 Undo preserves invalid Draft selection errors Search and accessible cancellation", async ({ page }) => {
+  await page.goto("/");
+  const editor = page.getByLabel("Complete HTTP or HTTPS Absolute URL");
+  const undo = page.getByRole("button", { name: "Undo", exact: true });
+  await editor.fill("https://example.com/a?x=1&y=2");
+  await editor.fill("https://example.com/b?x=1&y=2");
+  await editor.fill("https://");
+  const error = await page.locator("#error-full-url").textContent();
+  await page.getByLabel("Search Managed Pieces").fill("a");
+  await editor.focus();
+  await editor.evaluate((input: HTMLTextAreaElement) => input.setSelectionRange(2, 5, "backward"));
+  await undo.dispatchEvent("pointerdown", { pointerId: 1, pointerType: "mouse" });
+  await undo.dispatchEvent("pointercancel", { pointerId: 1, pointerType: "mouse" });
+  await expect(page.getByLabel("Path Segment 1 of 1")).toHaveCount(0);
+  await expect(editor).toHaveValue("https://");
+  await undo.click();
+  await expect(editor).toBeFocused();
+  await expect(editor).toHaveValue("https://");
+  expect(await editor.evaluate((input: HTMLTextAreaElement) =>
+    [input.selectionStart, input.selectionEnd, input.selectionDirection])).toEqual([2, 5, "backward"]);
+  expect(await page.locator("#error-full-url").textContent()).toBe(error);
+  await expect(page.getByLabel("Search Managed Pieces")).toHaveValue("a");
+  await expect(page.getByLabel("Path Segment 1 of 1")).toHaveValue("a");
+  await expect(page.getByText(/Undid Full URL edit.*Draft URL is unchanged/)).toBeVisible();
+  await expect(undo).toHaveAttribute("aria-disabled", "true");
+  await page.getByRole("button", { name: "Clear Search" }).click();
+  await expect(page.locator("#managed-pieces > li")).toHaveCount(4);
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  await page.setViewportSize({ width: 320, height: 800 });
+  await page.emulateMedia({ forcedColors: "active" });
+  await expect(undo).toBeVisible();
+  await undo.focus();
+  await page.keyboard.press("Enter");
+  await expect(undo).toBeFocused();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
+test("Story 3.1 Undo restores capacity privately under 100 ms with complete rows", async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(window, "__undoSinks", { value: [] });
+    const sinks = (window as unknown as { __undoSinks: string[] }).__undoSinks;
+    Storage.prototype.setItem = () => { sinks.push("storage"); };
+    IDBFactory.prototype.open = () => { sinks.push("indexedDB"); throw new Error("unexpected sink"); };
+    CacheStorage.prototype.open = async () => { sinks.push("cache"); throw new Error("unexpected sink"); };
+    Navigator.prototype.sendBeacon = () => { sinks.push("beacon"); return false; };
+    window.fetch = async () => { sinks.push("fetch"); throw new Error("unexpected sink"); };
+  });
+  await page.goto("/");
+  const requests: string[] = [];
+  const diagnostics: string[] = [];
+  page.on("request", (request) => requests.push(request.url()));
+  page.on("console", (message) => diagnostics.push(message.text()));
+  page.on("pageerror", (error) => diagnostics.push(error.message));
+  const editor = page.getByLabel("Complete HTTP or HTTPS Absolute URL");
+  const url = createCapacityFixture();
+  await editor.fill(url);
+  const ids = await page.locator("#managed-pieces > li").evaluateAll((rows) => rows.map((row) => row.getAttribute("data-piece-id")));
+  await page.getByRole("button", { name: /Remove Query Parameter at position 260 of 260/ }).click();
+  const elapsed = await page.getByRole("button", { name: "Undo", exact: true }).evaluate((button: HTMLButtonElement) => {
+    const start = performance.now();
+    button.click();
+    return performance.now() - start;
+  });
+  expect(elapsed).toBeLessThan(100);
+  await expect(editor).toHaveValue(url);
+  await expect(page.locator("#managed-pieces > li")).toHaveCount(ids.length);
+  expect(await page.locator("#managed-pieces > li").evaluateAll((rows) => rows.map((row) => row.getAttribute("data-piece-id")))).toEqual(ids);
+  expect(await page.evaluate(() => (window as unknown as { __undoSinks: string[] }).__undoSinks)).toEqual([]);
+  expect(await page.evaluate(() => [localStorage.length, sessionStorage.length, document.cookie, location.search])).toEqual([0, 0, "", ""]);
+  expect(requests).toEqual([]);
+  expect(diagnostics).toEqual([]);
+  await page.setViewportSize({ width: 320, height: 800 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
 test("Token final beforeinput publishes composition once and preserves normalized prefix caret", async ({ page }) => {
   for (const inputType of ["insertFromComposition", "insertText"]) {
     for (const delayed of [false, true]) {
@@ -1116,6 +1278,9 @@ test("initial and populated workbench pass automated accessibility checks", asyn
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
 
   await fullUrl.focus();
+  await page.keyboard.press("Tab");
+  await expect(page.getByRole("button", { name: "Undo", exact: true })).toBeFocused();
+  await expect(page.getByRole("button", { name: "Undo", exact: true })).toHaveAttribute("aria-disabled", "true");
   await page.keyboard.press("Tab");
   await expect(
     page.getByRole("button", { name: "Add Query Parameter before the list" }),

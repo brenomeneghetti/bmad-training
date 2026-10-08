@@ -58,3 +58,19 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-2-8-close-deferred-verification-gaps.md`
   summary: Unverified medium risk: evidence commands have no producer-wide execution deadline.
   evidence: Review identified that a naturally stalled supported command could retain ownership indefinitely, but no such hang was reproduced. The real-child regression proves bounded cancellation and descendant escalation, not a timeout policy. Establish reproducible supported-command stalls and appropriate command budgets before adding configurable deadlines.
+
+- source_spec: none
+  summary: Implement Story 3.2 keyboard Undo arbitration and operation-specific focus.
+  evidence: On 2026-10-08 the user selected Story 3.1 first; keyboard/focus behavior is separately shippable after exact visible Undo.
+- source_spec: none
+  summary: Implement Story 3.3 truthful Copy of the latest valid URL.
+  evidence: On 2026-10-08 the user selected Story 3.1 first; clipboard export is an independent user-facing goal.
+- source_spec: none
+  summary: Implement Story 3.4 clipboard failure and race recovery.
+  evidence: On 2026-10-08 the user selected Story 3.1 first; clipboard recovery builds on the separately delivered Copy action.
+- source_spec: none
+  summary: Implement Story 3.5 accessible outcome feedback without focus loss.
+  evidence: On 2026-10-08 the user selected Story 3.1 first; shared outcome scheduling is separately shippable from exact Undo restoration.
+- source_spec: none
+  summary: Implement Story 3.6 trusted release evidence gating.
+  evidence: On 2026-10-08 the user selected Story 3.1 first; release gating consumes the editing/recovery implementations and existing execution-proof foundation.

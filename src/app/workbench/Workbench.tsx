@@ -9,6 +9,7 @@ import {
 } from "react";
 import { createIdAllocator } from "../../core/contracts";
 import {
+  canUndo,
   initialSessionState,
   prepareParse,
   sessionReducer,
@@ -24,6 +25,9 @@ import { flushSync } from "react-dom";
 export function Workbench() {
   const [state, dispatch] = useReducer(sessionReducer, initialSessionState);
   const [searchTerm, setSearchTerm] = useState("");
+  const workbenchRef = useRef<HTMLElement>(null);
+  const composingTarget = useRef<EventTarget | null>(null);
+  const [workbenchComposing, setWorkbenchComposing] = useState(false);
   const [fullUrlComposition, setFullUrlComposition] = useState<string | null>(null);
   const fullUrlComposing = useRef(false);
   const fullUrlEditorRef = useRef<HTMLTextAreaElement>(null);
@@ -85,6 +89,34 @@ export function Workbench() {
     pendingMoveFocus.current = null;
     pendingFocusAfterSearchClear.current = null;
   };
+
+  useLayoutEffect(() => {
+    const workbench = workbenchRef.current;
+    if (!workbench) return;
+    const start = (event: CompositionEvent) => {
+      composingTarget.current = event.target;
+      setWorkbenchComposing(true);
+    };
+    const end = (event: CompositionEvent) => {
+      if (composingTarget.current !== event.target) return;
+      composingTarget.current = null;
+      setWorkbenchComposing(false);
+    };
+    workbench.addEventListener("compositionstart", start, true);
+    workbench.addEventListener("compositionend", end, true);
+    return () => {
+      workbench.removeEventListener("compositionstart", start, true);
+      workbench.removeEventListener("compositionend", end, true);
+    };
+  }, []);
+
+  useLayoutEffect(() => {
+    const target = composingTarget.current;
+    if (target instanceof Node && !workbenchRef.current?.contains(target)) {
+      composingTarget.current = null;
+      setWorkbenchComposing(false);
+    }
+  });
 
   useLayoutEffect(() => {
     const pending = pendingRemovalFocus.current;
@@ -403,6 +435,7 @@ export function Workbench() {
 
   return (
     <main
+      ref={workbenchRef}
       className={styles.workbench}
       onFocusCapture={cancelPendingOperationFocus}
       onChangeCapture={cancelPendingOperationFocus}
@@ -466,7 +499,17 @@ export function Workbench() {
         className={`${styles.panel} ${styles.actionBar}`}
       >
         <h2 id="actions-heading">Actions</h2>
-        <button type="button" disabled>
+        <button
+          type="button"
+          aria-disabled={workbenchComposing || !canUndo(state)}
+          aria-describedby="undo-help"
+          onPointerDown={(event) => event.preventDefault()}
+          onClick={() => {
+            if (composingTarget.current !== null || !canUndo(state)) return;
+            cancelPendingOperationFocus();
+            flushSync(() => dispatch({ type: "undo", revision: state.revision }));
+          }}
+        >
           Undo
         </button>
         <button type="button" disabled>
@@ -482,9 +525,12 @@ export function Workbench() {
         >
           Add Query Parameter
         </button>
-        <p id="actions-note">
-          Undo and Copy are not available yet.
+        <p id="undo-help">
+          {workbenchComposing
+            ? "Undo inactive: finish text composition first."
+            : canUndo(state) ? "Undo the latest URL change." : "Undo inactive: no URL changes to undo."}
         </p>
+        <p id="actions-note">Copy is not available yet.</p>
         <div role="status" aria-live="polite" aria-atomic="true">
           {state.phase === "active"
             ? `URL parsed. ${

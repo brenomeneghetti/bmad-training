@@ -1,5 +1,56 @@
 [
   {
+    "id": "story-3-1-exact-history",
+    "story": "3.1",
+    "tests": [
+      { "runner": "vitest", "file": "src/core/session/session.test.ts", "title": "Story 3.1 Undo restores nonzero revision maps and malformed accepted source bytes through branched history", "project": "vitest" },
+      { "runner": "playwright", "file": "tests/workbench.spec.ts", "title": "Story 3.1 visible Undo restores every committed mutation exactly and branches with fresh IDs", "project": "chromium" },
+      { "runner": "vitest", "file": "src/core/session/session.test.ts", "title": "Story 3.1 Undo restores exact model and revision map for domain-unicode", "project": "vitest" },
+      { "runner": "vitest", "file": "src/core/session/session.test.ts", "title": "Story 3.1 Undo restores exact model and revision map for domain-ascii", "project": "vitest" },
+      { "runner": "vitest", "file": "src/core/session/session.test.ts", "title": "Story 3.1 Undo restores exact model and revision map for path", "project": "vitest" },
+      { "runner": "vitest", "file": "src/core/session/session.test.ts", "title": "Story 3.1 Undo restores exact model and revision map for query-key", "project": "vitest" },
+      { "runner": "vitest", "file": "src/core/session/session.test.ts", "title": "Story 3.1 Undo restores exact model and revision map for query-value", "project": "vitest" },
+      { "runner": "vitest", "file": "src/core/session/session.test.ts", "title": "Story 3.1 Undo restores exact model and revision map for add", "project": "vitest" },
+      { "runner": "vitest", "file": "src/core/session/session.test.ts", "title": "Story 3.1 Undo restores exact model and revision map for remove-path", "project": "vitest" },
+      { "runner": "vitest", "file": "src/core/session/session.test.ts", "title": "Story 3.1 Undo restores exact model and revision map for remove-query", "project": "vitest" },
+      { "runner": "vitest", "file": "src/core/session/session.test.ts", "title": "Story 3.1 Undo restores exact model and revision map for move", "project": "vitest" },
+      { "runner": "vitest", "file": "src/core/session/session.test.ts", "title": "Story 3.1 Undo restores exact model and revision map for full-url", "project": "vitest" },
+      { "runner": "vitest", "file": "src/core/session/session.test.ts", "title": "Story 3.1 Undo reverses coalesced chronology E D C A while preserving invalid Draft and validation", "project": "vitest" },
+      { "runner": "vitest", "file": "src/core/session/session.test.ts", "title": "Story 3.1 Undo preserves unaffected drafts, clears restored field errors, and branches with fresh IDs", "project": "vitest" }
+    ]
+  },
+  {
+    "id": "story-3-1-guard-draft",
+    "story": "3.1",
+    "tests": [
+      { "runner": "vitest", "file": "src/app/workbench/Workbench.test.tsx", "title": "URL Workbench Story 3.1 Undo re-enables when a composing editor is removed without compositionend", "project": "vitest" },
+      { "runner": "playwright", "file": "tests/workbench.spec.ts", "title": "Story 3.1 Undo remains inactive during native composition in every URL editor", "project": "chromium" },
+      { "runner": "vitest", "file": "src/app/workbench/Workbench.test.tsx", "title": "URL Workbench Story 3.1 Undo stays inactive during Domain composition and re-enables after settlement", "project": "vitest" },
+      { "runner": "vitest", "file": "src/app/workbench/Workbench.test.tsx", "title": "URL Workbench Story 3.1 Undo stays inactive during token composition and re-enables after settlement", "project": "vitest" },
+      { "runner": "vitest", "file": "src/app/workbench/Workbench.test.tsx", "title": "URL Workbench Story 3.1 Undo stays inactive during Full URL composition and re-enables after settlement", "project": "vitest" },
+      { "runner": "playwright", "file": "tests/workbench.spec.ts", "title": "Story 3.1 Undo preserves invalid Draft selection errors Search and accessible cancellation", "project": "chromium" },
+      { "runner": "vitest", "file": "src/core/session/session.test.ts", "title": "Story 3.1 Undo guards empty and stale commands before closing and invalidates pending parsing", "project": "vitest" },
+      { "runner": "vitest", "file": "src/core/session/session.test.ts", "title": "Story 3.1 Undo reverses coalesced chronology E D C A while preserving invalid Draft and validation", "project": "vitest" },
+      { "runner": "vitest", "file": "src/app/workbench/Workbench.test.tsx", "title": "URL Workbench Story 3.1 Undo keeps invalid Draft selection validation and Search while deriving restored rows", "project": "vitest" }
+    ]
+  },
+  {
+    "id": "story-3-1-accessible-action",
+    "story": "3.1",
+    "tests": [
+      { "runner": "playwright", "file": "tests/workbench.spec.ts", "title": "Story 3.1 Undo preserves invalid Draft selection errors Search and accessible cancellation", "project": "chromium" },
+      { "runner": "vitest", "file": "src/app/workbench/Workbench.test.tsx", "title": "URL Workbench Story 3.1 Undo restores visible values and remains focusable when inactive without pointer-down activation", "project": "vitest" }
+    ]
+  },
+  {
+    "id": "story-3-1-privacy-capacity",
+    "story": "3.1",
+    "tests": [
+      { "runner": "playwright", "file": "tests/workbench.spec.ts", "title": "Story 3.1 Undo restores capacity privately under 100 ms with complete rows", "project": "chromium" },
+      { "runner": "vitest", "file": "src/core/session/session.test.ts", "title": "Story 3.1 Undo restores a 20,000-character 260-entry snapshot under 100 ms without allocation", "project": "vitest" }
+    ]
+  },
+  {
     "id": "story-1-1-static-foundation",
     "story": "1.1",
     "tests": [

@@ -1,8 +1,8 @@
 {
   "schemaVersion": 2,
-  "runId": "a4465d2f-ffe5-4dac-9dda-b15d3bf08199",
-  "sourceDigest": "34e11b85c0c78e57114beb1f09a83f31bc1178cec6a3c6eabcade86b82fc9788",
-  "recordedAt": "2026-10-08T16:32:51.143Z",
+  "status": "incomplete",
+  "runId": "f9a81983-5433-4310-817f-f3f91683eb7b",
+  "sourceDigest": "16fda0a04ca27e9b71734039b6c7975127a22cbb6b7399d3c7c499594e9aca94",
   "toolVersions": {
     "node": "24.21.0",
     "pnpm": "12.5.1",
@@ -12,22 +12,22 @@
   "observations": [
     {
       "tool": "node",
-      "path": "evidence/runs/a4465d2f-ffe5-4dac-9dda-b15d3bf08199/version-node.json",
+      "path": "evidence/runs/f9a81983-5433-4310-817f-f3f91683eb7b/version-node.json",
       "hash": "87d39dc21731a58144d23fe92a6f663c2d110422f5b7c5a2fba4890a4fe19071"
     },
     {
       "tool": "pnpm",
-      "path": "evidence/runs/a4465d2f-ffe5-4dac-9dda-b15d3bf08199/version-pnpm.json",
+      "path": "evidence/runs/f9a81983-5433-4310-817f-f3f91683eb7b/version-pnpm.json",
       "hash": "c89d0cd1f956e5604f6731034875148293c910cfb6853d260af8507877fa5a37"
     },
     {
       "tool": "vitest",
-      "path": "evidence/runs/a4465d2f-ffe5-4dac-9dda-b15d3bf08199/version-vitest.json",
+      "path": "evidence/runs/f9a81983-5433-4310-817f-f3f91683eb7b/version-vitest.json",
       "hash": "32d2c279089110c9f194b70d464194d25ab41f1d8e20c03b2e49befe9fc4e008"
     },
     {
       "tool": "playwright",
-      "path": "evidence/runs/a4465d2f-ffe5-4dac-9dda-b15d3bf08199/version-playwright.json",
+      "path": "evidence/runs/f9a81983-5433-4310-817f-f3f91683eb7b/version-playwright.json",
       "hash": "27c3337c251581211e3dda313513cb35f87ecd28192bdf5c76b31902247ba535"
     }
   ],
@@ -42,11 +42,11 @@
       "exitCode": 0,
       "signal": null,
       "checkoutRoot": "/home/blackdude/Documents/OEProjects/bmad-training",
-      "sourceDigest": "34e11b85c0c78e57114beb1f09a83f31bc1178cec6a3c6eabcade86b82fc9788",
+      "sourceDigest": "16fda0a04ca27e9b71734039b6c7975127a22cbb6b7399d3c7c499594e9aca94",
       "artifactDigest": "b4e8c5d85e9be8862aeac5cac914337db04cb188cea61bf60c4537a664db28db",
       "log": {
-        "path": "evidence/runs/a4465d2f-ffe5-4dac-9dda-b15d3bf08199/build.txt",
-        "hash": "e232a5ab5b94c1bcf0fa0e0342f85ab1b80574425c5865660604b92342f29b81"
+        "path": "evidence/runs/f9a81983-5433-4310-817f-f3f91683eb7b/build.txt",
+        "hash": "6d86449fd1570eae54553128c57d9df83a13ebaf94653924139eae12331a5598"
       }
     },
     {
@@ -59,10 +59,10 @@
       "exitCode": 0,
       "signal": null,
       "checkoutRoot": "/home/blackdude/Documents/OEProjects/bmad-training",
-      "sourceDigest": "34e11b85c0c78e57114beb1f09a83f31bc1178cec6a3c6eabcade86b82fc9788",
+      "sourceDigest": "16fda0a04ca27e9b71734039b6c7975127a22cbb6b7399d3c7c499594e9aca94",
       "artifactDigest": "b4e8c5d85e9be8862aeac5cac914337db04cb188cea61bf60c4537a664db28db",
       "log": {
-        "path": "evidence/runs/a4465d2f-ffe5-4dac-9dda-b15d3bf08199/lint.txt",
+        "path": "evidence/runs/f9a81983-5433-4310-817f-f3f91683eb7b/lint.txt",
         "hash": "0451eeae0fb3805b52968919f11e151ec67d44c8226ed695adfe15d8a0f9a80f"
       }
     },
@@ -79,15 +79,15 @@
       "exitCode": 0,
       "signal": null,
       "checkoutRoot": "/home/blackdude/Documents/OEProjects/bmad-training",
-      "sourceDigest": "34e11b85c0c78e57114beb1f09a83f31bc1178cec6a3c6eabcade86b82fc9788",
+      "sourceDigest": "16fda0a04ca27e9b71734039b6c7975127a22cbb6b7399d3c7c499594e9aca94",
       "artifactDigest": "b4e8c5d85e9be8862aeac5cac914337db04cb188cea61bf60c4537a664db28db",
       "log": {
-        "path": "evidence/runs/a4465d2f-ffe5-4dac-9dda-b15d3bf08199/vitest.txt",
+        "path": "evidence/runs/f9a81983-5433-4310-817f-f3f91683eb7b/vitest.txt",
         "hash": "bdb86b1e5e1a6d8e04bf3724857dc63dab73fb2d4f54964df707b6abb0a5e632"
       },
       "report": {
-        "path": "evidence/runs/a4465d2f-ffe5-4dac-9dda-b15d3bf08199/vitest.json",
-        "hash": "675389dfa096229bb515c29cf61763953137d70051910e58d3e659ed15c51ca4"
+        "path": "evidence/runs/f9a81983-5433-4310-817f-f3f91683eb7b/vitest.json",
+        "hash": "f6febf8ad65d4131c13b82fdd35b6438915735c122995e573524f2af00539ba5"
       }
     },
     {
@@ -102,14 +102,14 @@
       "exitCode": 0,
       "signal": null,
       "checkoutRoot": "/home/blackdude/Documents/OEProjects/bmad-training",
-      "sourceDigest": "34e11b85c0c78e57114beb1f09a83f31bc1178cec6a3c6eabcade86b82fc9788",
+      "sourceDigest": "16fda0a04ca27e9b71734039b6c7975127a22cbb6b7399d3c7c499594e9aca94",
       "artifactDigest": "b4e8c5d85e9be8862aeac5cac914337db04cb188cea61bf60c4537a664db28db",
       "log": {
-        "path": "evidence/runs/a4465d2f-ffe5-4dac-9dda-b15d3bf08199/node.txt",
+        "path": "evidence/runs/f9a81983-5433-4310-817f-f3f91683eb7b/node.txt",
         "hash": "20840a9a04244ced5a2521063b93a6c3af45af00ee5b40dea241a0b71167dd93"
       },
       "report": {
-        "path": "evidence/runs/a4465d2f-ffe5-4dac-9dda-b15d3bf08199/node.json",
+        "path": "evidence/runs/f9a81983-5433-4310-817f-f3f91683eb7b/node.json",
         "hash": "dd597b63ad041a4484366ac2d1691bdeb9a9b3a077cb17db172a9eca43ed33f8"
       }
     },
@@ -126,15 +126,15 @@
       "exitCode": 0,
       "signal": null,
       "checkoutRoot": "/home/blackdude/Documents/OEProjects/bmad-training",
-      "sourceDigest": "34e11b85c0c78e57114beb1f09a83f31bc1178cec6a3c6eabcade86b82fc9788",
+      "sourceDigest": "16fda0a04ca27e9b71734039b6c7975127a22cbb6b7399d3c7c499594e9aca94",
       "artifactDigest": "b4e8c5d85e9be8862aeac5cac914337db04cb188cea61bf60c4537a664db28db",
       "log": {
-        "path": "evidence/runs/a4465d2f-ffe5-4dac-9dda-b15d3bf08199/playwright.txt",
-        "hash": "8462352a627e9ac6983f483c4b2cd354edeb555b5602d1f5e1aeee5df6f2fa28"
+        "path": "evidence/runs/f9a81983-5433-4310-817f-f3f91683eb7b/playwright.txt",
+        "hash": "8c52a3a0c5f039a71cf433bdabce6ee713b714d29f32303fcd50b5e0cbfc632e"
       },
       "report": {
-        "path": "evidence/runs/a4465d2f-ffe5-4dac-9dda-b15d3bf08199/playwright.json",
-        "hash": "a2deb87c209bfdd548e3bdcf6f4bbfef1d5147988ef960314176d656ffbb3e3e"
+        "path": "evidence/runs/f9a81983-5433-4310-817f-f3f91683eb7b/playwright.json",
+        "hash": "2851bf03e3b4e7d073a1f96ebb089e6fc44f69ca05dc74c0ad493df6ea2e7c0f"
       }
     }
   ],
@@ -142,5 +142,9 @@
     "path": "dist",
     "delivery": "deployment/static-delivery.json",
     "digest": "b4e8c5d85e9be8862aeac5cac914337db04cb188cea61bf60c4537a664db28db"
+  },
+  "failure": {
+    "code": "VALIDATION_FAILED",
+    "message": "Exact inventory/multiplicity mismatch: vitest"
   }
 }

@@ -43,6 +43,10 @@ export const requiredCells = new Map([
   ["story-2-7-reversible-chronology", "2.7"],
   ["story-2-7-feedback-focus-races", "2.7"],
   ["story-2-7-privacy-capacity", "2.7"],
+  ["story-3-1-exact-history", "3.1"],
+  ["story-3-1-guard-draft", "3.1"],
+  ["story-3-1-accessible-action", "3.1"],
+  ["story-3-1-privacy-capacity", "3.1"],
 ]);
 
 const requiredCsp = new Map([

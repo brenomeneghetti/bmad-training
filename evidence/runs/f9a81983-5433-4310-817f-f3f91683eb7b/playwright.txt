@@ -1,0 +1,43 @@
+argv: ["pnpm","exec","playwright","test","tests/workbench.spec.ts","--reporter=json"]
+exitCode: 0
+signal: null
+
+Running 35 tests using 1 worker
+
+[1/35] [chromium] › tests/workbench.spec.ts:25:1 › Story 3.1 Undo remains inactive during native composition in every URL editor
+[2/35] [chromium] › tests/workbench.spec.ts:56:1 › Story 3.1 visible Undo restores every committed mutation exactly and branches with fresh IDs
+[3/35] [chromium] › tests/workbench.spec.ts:112:1 › Story 3.1 Undo preserves invalid Draft selection errors Search and accessible cancellation
+[4/35] [chromium] › tests/workbench.spec.ts:149:1 › Story 3.1 Undo restores capacity privately under 100 ms with complete rows
+[5/35] [chromium] › tests/workbench.spec.ts:187:1 › Token final beforeinput publishes composition once and preserves normalized prefix caret
+[6/35] [chromium] › tests/workbench.spec.ts:224:3 › Domain composition publishes once with immediate final input and preserves later edits and selection
+[7/35] [chromium] › tests/workbench.spec.ts:262:3 › Token composition retains Last Valid until end with immediate final input and later edits
+[8/35] [chromium] › tests/workbench.spec.ts:224:3 › Domain composition publishes once with delayed final input and preserves later edits and selection
+[9/35] [chromium] › tests/workbench.spec.ts:262:3 › Token composition retains Last Valid until end with delayed final input and later edits
+[10/35] [chromium] › tests/workbench.spec.ts:296:1 › intake preserves lossless semantics and rejects replacement
+[11/35] [chromium] › tests/workbench.spec.ts:431:3 › Story 2.7 invalid Draft source, independent feedback and keyboard mutations remain accessible at 320px
+[12/35] [chromium] › tests/workbench.spec.ts:491:3 › Story 2.7 invalid Draft capacity preserves all identities and measured edit/reorder response
+[13/35] [chromium] › tests/workbench.spec.ts:565:1 › Story 2.7 capacity rejection preserves invalid Draft, selection, identities and focus
+[14/35] [chromium] › tests/workbench.spec.ts:603:1 › Story 2.7 invalid Draft feedback reflows with forced colors and increased text spacing
+[15/35] [chromium] › tests/workbench.spec.ts:644:1 › Domain editing is synchronized, correctable, IME-safe, and host-only
+[16/35] [chromium] › tests/workbench.spec.ts:795:1 › capacity view renders every row and stays usable at 320px
+[17/35] [chromium] › tests/workbench.spec.ts:1022:1 › removal preserves exact survivors, Search, focus, accessibility, and privacy
+[18/35] [chromium] › tests/workbench.spec.ts:1088:1 › Add Query Parameter appends from either control, synchronizes Search, keeps focus, and stays private at capacity
+[19/35] [chromium] › tests/workbench.spec.ts:1154:1 › Add Query Parameter remains reachable and performant at 250+ entries
+[20/35] [chromium] › tests/workbench.spec.ts:1187:1 › reorders Query Parameters by keyboard and pointer activation, honoring boundaries, Search, duplicates, and capacity
+[21/35] [chromium] › tests/workbench.spec.ts:1239:1 › reorders within a 250+ parameter list, keeping boundaries reachable and performant
+[22/35] [chromium] › tests/workbench.spec.ts:1269:1 › initial and populated workbench pass automated accessibility checks
+[23/35] [chromium] › tests/workbench.spec.ts:1336:1 › reload clears URL content and returns to no session
+[24/35] [chromium] › tests/workbench.spec.ts:1349:1 › search no-results and clear remain keyboard and activation safe
+[25/35] [chromium] › tests/workbench.spec.ts:1376:1 › structured editing preserves exact bytes, identity, validation, and focus
+[26/35] [chromium] › tests/workbench.spec.ts:1425:1 › structured editing handles search, selections, word deletion, caret, and drafts
+[27/35] [chromium] › tests/workbench.spec.ts:1584:1 › Full URL edits publish continuously without an Apply step, with no Apply URL affordance anywhere
+[28/35] [chromium] › tests/workbench.spec.ts:1598:1 › Full URL retains row identity across first intake, Enter, blur, and refocus
+[29/35] [chromium] › tests/workbench.spec.ts:1618:1 › Full URL composition leaves Last Valid and validation untouched until composition ends
+[30/35] [chromium] › tests/workbench.spec.ts:1641:1 › an invalid Draft survives structured Add with its selection, error, and focus contract
+[31/35] [chromium] › tests/workbench.spec.ts:1662:1 › continuous Full URL reconciliation meets the response target at 20,000 characters and 260 entries
+[32/35] [chromium] › tests/workbench.spec.ts:1683:1 › Enter outside IME composition suppresses the newline and closes the focus session
+[33/35] [chromium] › tests/workbench.spec.ts:1700:1 › Shift+Enter outside IME composition suppresses the newline without closing the focus session
+[34/35] [chromium] › tests/workbench.spec.ts:1718:1 › Structured View editing controls stay enabled while the Full URL draft is momentarily invalid (loosened gating)
+[35/35] [chromium] › tests/workbench.spec.ts:1744:1 › blur-close and refocus round trip keeps the Structured View synchronized
+  35 passed (25.7s)
+

@@ -541,6 +541,48 @@
   {
     "runner": "vitest",
     "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench Story 3.1 Undo keeps invalid Draft selection validation and Search while deriving restored rows",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench Story 3.1 Undo re-enables when a composing editor is removed without compositionend",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench Story 3.1 Undo restores visible values and remains focusable when inactive without pointer-down activation",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench Story 3.1 Undo stays inactive during Domain composition and re-enables after settlement",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench Story 3.1 Undo stays inactive during Full URL composition and re-enables after settlement",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
+    "title": "URL Workbench Story 3.1 Undo stays inactive during token composition and re-enables after settlement",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/app/workbench/Workbench.test.tsx",
     "title": "URL Workbench suppresses commits during IME composition and commits once at its end",
     "project": "vitest",
     "multiplicity": 1
@@ -1240,6 +1282,111 @@
   },
   {
     "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "Story 3.1 Undo guards empty and stale commands before closing and invalidates pending parsing",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "Story 3.1 Undo preserves unaffected drafts, clears restored field errors, and branches with fresh IDs",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "Story 3.1 Undo restores a 20,000-character 260-entry snapshot under 100 ms without allocation",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "Story 3.1 Undo restores exact model and revision map for add",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "Story 3.1 Undo restores exact model and revision map for domain-ascii",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "Story 3.1 Undo restores exact model and revision map for domain-unicode",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "Story 3.1 Undo restores exact model and revision map for full-url",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "Story 3.1 Undo restores exact model and revision map for move",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "Story 3.1 Undo restores exact model and revision map for path",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "Story 3.1 Undo restores exact model and revision map for query-key",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "Story 3.1 Undo restores exact model and revision map for query-value",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "Story 3.1 Undo restores exact model and revision map for remove-path",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "Story 3.1 Undo restores exact model and revision map for remove-query",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "Story 3.1 Undo restores nonzero revision maps and malformed accepted source bytes through branched history",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
+    "file": "src/core/session/session.test.ts",
+    "title": "Story 3.1 Undo reverses coalesced chronology E D C A while preserving invalid Draft and validation",
+    "project": "vitest",
+    "multiplicity": 1
+  },
+  {
+    "runner": "vitest",
     "file": "src/core/url/codec.test.ts",
     "title": "raw component insertion codec rejects a UTF-16 boundary inside a surrogate pair",
     "project": "vitest",
@@ -1885,7 +2032,7 @@
   {
     "runner": "node",
     "file": "evidence/validate.test.mjs",
-    "title": "accepts complete clean-checkout proof with exact inventory and all 36 cells",
+    "title": "accepts complete clean-checkout proof with exact inventory and all 40 cells",
     "project": "node",
     "multiplicity": 1
   },
@@ -2061,6 +2208,34 @@
     "runner": "node",
     "file": "evidence/validate.test.mjs",
     "title": "rejects isolated wrong-argv proof mutation",
+    "project": "node",
+    "multiplicity": 1
+  },
+  {
+    "runner": "node",
+    "file": "evidence/validate.test.mjs",
+    "title": "rejects missing Story 3.1 accessible-action evidence after rehashing",
+    "project": "node",
+    "multiplicity": 1
+  },
+  {
+    "runner": "node",
+    "file": "evidence/validate.test.mjs",
+    "title": "rejects missing Story 3.1 exact-history evidence after rehashing",
+    "project": "node",
+    "multiplicity": 1
+  },
+  {
+    "runner": "node",
+    "file": "evidence/validate.test.mjs",
+    "title": "rejects missing Story 3.1 guard-draft evidence after rehashing",
+    "project": "node",
+    "multiplicity": 1
+  },
+  {
+    "runner": "node",
+    "file": "evidence/validate.test.mjs",
+    "title": "rejects missing Story 3.1 privacy-capacity evidence after rehashing",
     "project": "node",
     "multiplicity": 1
   },
@@ -2257,6 +2432,34 @@
     "runner": "playwright",
     "file": "tests/workbench.spec.ts",
     "title": "Story 2.7 invalid Draft source, independent feedback and keyboard mutations remain accessible at 320px",
+    "project": "chromium",
+    "multiplicity": 1
+  },
+  {
+    "runner": "playwright",
+    "file": "tests/workbench.spec.ts",
+    "title": "Story 3.1 Undo preserves invalid Draft selection errors Search and accessible cancellation",
+    "project": "chromium",
+    "multiplicity": 1
+  },
+  {
+    "runner": "playwright",
+    "file": "tests/workbench.spec.ts",
+    "title": "Story 3.1 Undo remains inactive during native composition in every URL editor",
+    "project": "chromium",
+    "multiplicity": 1
+  },
+  {
+    "runner": "playwright",
+    "file": "tests/workbench.spec.ts",
+    "title": "Story 3.1 Undo restores capacity privately under 100 ms with complete rows",
+    "project": "chromium",
+    "multiplicity": 1
+  },
+  {
+    "runner": "playwright",
+    "file": "tests/workbench.spec.ts",
+    "title": "Story 3.1 visible Undo restores every committed mutation exactly and branches with fresh IDs",
     "project": "chromium",
     "multiplicity": 1
   },
