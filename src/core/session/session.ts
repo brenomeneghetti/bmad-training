@@ -14,6 +14,7 @@ import {
   type QueryPiece,
   type TokenEdit,
 } from "../url";
+import type { FocusEffect, FocusTarget } from "./effects";
 
 export interface StructuredEditCommand extends TokenEdit {
   readonly tokenRevision: number;
@@ -34,6 +35,7 @@ export interface StructuredDraft {
 }
 
 export interface MutationEntry {
+  readonly direction?: "up" | "down";
   readonly before: LosslessUrl;
   readonly beforeTokenRevisions: Readonly<Record<string, number>>;
   readonly after: LosslessUrl;
@@ -55,6 +57,10 @@ export type SessionPhase =
   | "invalid-intake";
 
 export interface SessionState {
+  readonly effects: readonly FocusEffect[];
+  readonly nextEffectId: number;
+  readonly lastAcknowledgedEffectId: number;
+  readonly interaction: number;
   readonly phase: SessionPhase;
   readonly input: string;
   readonly snapshot: LosslessUrl | null;
@@ -78,6 +84,9 @@ export interface SessionState {
 }
 
 export type SessionAction =
+  | { readonly type: "cancelFocus" }
+  | { readonly type: "claimFocus"; readonly effectId: number }
+  | { readonly type: "acknowledgeFocus"; readonly effectId: number; readonly filtered?: boolean }
   | { readonly type: "undo"; readonly revision: number }
   | { readonly type: "inputChanged"; readonly value: string }
   | { readonly type: "parseStarted"; readonly input: string; readonly generation: number }
@@ -104,6 +113,10 @@ export type SessionAction =
     };
 
 export const initialSessionState: SessionState = {
+  effects: [],
+  nextEffectId: 1,
+  lastAcknowledgedEffectId: 0,
+  interaction: 0,
   phase: "no-session",
   input: "",
   snapshot: null,
@@ -382,11 +395,55 @@ const undoLabels: Record<MutationEntry["field"], string> = {
   "full-url": "Full URL edit",
 };
 
-export const sessionReducer = (
+const undoTarget = (entry: MutationEntry): FocusTarget => {
+  if (entry.field === "full-url") return { kind: "full-url" };
+  const order = [entry.before.domainId, ...entry.before.path.map((piece) => piece.id),
+    ...entry.before.query.map((piece) => piece.id)];
+  if (entry.field === "add-query") {
+    const afterOrder = [entry.after.domainId, ...entry.after.path.map((piece) => piece.id),
+      ...entry.after.query.map((piece) => piece.id)];
+    const index = afterOrder.indexOf(entry.pieceId);
+    const candidates = [...afterOrder.slice(index + 1), ...afterOrder.slice(0, index).reverse()]
+      .filter((id) => order.includes(id));
+    return { kind: "nearest", candidates };
+  }
+  return {
+    kind: "piece", pieceId: entry.pieceId, order,
+    control: entry.field === "remove-path" || entry.field === "remove-query" ? "remove"
+      : entry.field === "reorder-query" ? entry.direction ?? "up" : entry.field,
+  };
+};
+
+const sessionTransition = (
   state: SessionState,
   action: SessionAction,
 ): SessionState => {
   switch (action.type) {
+    case "cancelFocus":
+      return { ...state, interaction: state.interaction + 1 };
+    case "claimFocus": {
+      const effect = state.effects[0];
+      if (!effect || effect.effectId !== action.effectId || effect.status !== "pending") return state;
+      const target = effect.target;
+      const mountedIds = new Set(state.snapshot
+        ? [state.snapshot.domainId, ...state.snapshot.path.map((piece) => piece.id),
+            ...state.snapshot.query.map((piece) => piece.id)] as readonly string[]
+        : []);
+      const valid = effect.epoch === state.epoch && effect.stateRevision === state.revision &&
+        effect.interaction === state.interaction && state.snapshot !== null &&
+        (target.kind === "full-url" || (target.kind === "piece"
+          ? mountedIds.has(target.pieceId) && target.order.every((id) => mountedIds.has(id))
+          : target.candidates.every((id) => mountedIds.has(id))));
+      return { ...state, effects: [{ ...effect, status: valid ? "claimed" : "rejected" }, ...state.effects.slice(1)] };
+    }
+    case "acknowledgeFocus": {
+      const effect = state.effects[0];
+      if (!effect || effect.effectId !== action.effectId || effect.status === "pending") return state;
+      return { ...state, effects: state.effects.slice(1), lastAcknowledgedEffectId: effect.effectId,
+        structuredSuccess: action.filtered && effect.status === "claimed"
+          ? `${state.structuredSuccess} Restored target is hidden by Search. Focus moved to the nearest visible field or Full URL; Search is unchanged.`
+          : state.structuredSuccess };
+    }
     case "undo": {
       if (action.revision !== state.revision || !canUndo(state)) return state;
       const closed = closeFullUrlEditIfOpen(state, "mutation");
@@ -415,6 +472,12 @@ export const sessionReducer = (
         }`,
         history: closed.history.slice(0, -1),
         revision: state.revision + 1,
+        effects: [...state.effects, {
+          kind: "focus", effectId: state.nextEffectId, epoch: state.epoch,
+          stateRevision: state.revision + 1, interaction: state.interaction,
+          target: undoTarget(entry), status: "pending",
+        }],
+        nextEffectId: state.nextEffectId + 1,
       };
     }
     case "inputChanged":
@@ -686,6 +749,7 @@ export const sessionReducer = (
             after: result.value,
             pieceId: action.pieceId,
             field: "reorder-query",
+            direction: action.direction,
           },
         ],
       };
@@ -963,6 +1027,15 @@ export const sessionReducer = (
     case "closeFullUrlEdit":
       return closeFullUrlEditIfOpen(state, action.reason);
   }
+};
+
+export const sessionReducer = (state: SessionState, action: SessionAction): SessionState => {
+  const next = sessionTransition(state, action);
+  if (next !== state && ["inputChanged", "structuredEdit", "removePiece", "addQueryPiece",
+    "moveQueryPiece", "fullUrlFocusBegin"].includes(action.type)) {
+    return { ...next, interaction: state.interaction + 1 };
+  }
+  return next;
 };
 
 export const prepareParse = (state: SessionState) => {

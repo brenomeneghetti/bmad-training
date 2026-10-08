@@ -14,6 +14,104 @@ import { Workbench } from "./Workbench";
 describe("URL Workbench", () => {
   afterEach(() => vi.useRealTimers());
 
+  it("Story 3.2 shortcut protects native editors and selection then restores once outside editors", () => {
+    render(<Workbench />);
+    const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
+    fireEvent.change(editor, { target: { value: "https://example.com/a?x=1" } });
+    const value = screen.getByLabelText("Value, Query Parameter 1 of 1");
+    fireEvent.change(value, { target: { value: "2" } });
+    value.focus();
+    expect(fireEvent.keyDown(value, { key: "z", ctrlKey: true })).toBe(true);
+    expect(editor).toHaveValue("https://example.com/a?x=2");
+    const undo = screen.getByRole("button", { name: "Undo" });
+    undo.focus();
+    expect(fireEvent.keyDown(undo, { key: "z", ctrlKey: true })).toBe(false);
+    expect(editor).toHaveValue("https://example.com/a?x=1");
+    expect(value).toHaveFocus();
+    expect(screen.getAllByText(/Undid Query Parameter value edit/)).toHaveLength(1);
+  });
+
+  it.each(["MacIntel", "Win32", "Linux x86_64"])(
+    "Story 3.2 Workbench detects %s primary modifier and restores exact state and focus",
+    (platform) => {
+      const platformGetter = vi.spyOn(navigator, "platform", "get").mockReturnValue(platform);
+      try {
+        render(<Workbench />);
+        const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
+        fireEvent.change(editor, { target: { value: "https://example.com/a?x=1" } });
+        const value = screen.getByLabelText("Value, Query Parameter 1 of 1");
+        fireEvent.change(value, { target: { value: "2" } });
+        const primary = { ctrlKey: platform !== "MacIntel", metaKey: platform === "MacIntel" };
+        value.focus();
+        expect(fireEvent.keyDown(value, { key: "z", ...primary })).toBe(true);
+        expect(editor).toHaveValue("https://example.com/a?x=2");
+        const undo = screen.getByRole("button", { name: "Undo" });
+        undo.focus();
+        expect(fireEvent.keyDown(undo, {
+          key: "z", ctrlKey: !primary.ctrlKey, metaKey: !primary.metaKey,
+        })).toBe(true);
+        expect(editor).toHaveValue("https://example.com/a?x=2");
+        expect(undo).toHaveFocus();
+        expect(screen.queryByText(/Undid /)).not.toBeInTheDocument();
+        expect(fireEvent.keyDown(undo, { key: "z", ...primary })).toBe(false);
+        expect(editor).toHaveValue("https://example.com/a?x=1");
+        expect(value).toHaveFocus();
+        expect(undo).toHaveAttribute("aria-disabled", "true");
+        expect(screen.getAllByText(/Undid Query Parameter value edit/)).toHaveLength(1);
+      } finally {
+        platformGetter.mockRestore();
+      }
+    },
+  );
+
+  it("Story 3.2 filtered restoration uses next then previous visible field and retains invalid Draft selection", () => {
+    render(<Workbench />);
+    const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL") as HTMLTextAreaElement;
+    fireEvent.change(editor, { target: { value: "https://example.com/a?x=1&y=2" } });
+    fireEvent.click(screen.getByRole("button", { name: /Remove Query Parameter at position 1 of 2/ }));
+    fireEvent.change(editor, { target: { value: "https://" } });
+    editor.setSelectionRange(2, 5, "backward");
+    const error = document.getElementById("error-full-url")!.textContent;
+    const search = screen.getByLabelText("Search Managed Pieces");
+    fireEvent.change(search, { target: { value: "y" } });
+    fireEvent.click(screen.getByRole("button", { name: "Undo" }));
+    expect(screen.getByLabelText("Key, Query Parameter 2 of 2")).toHaveFocus();
+    expect(search).toHaveValue("y");
+    expect(editor).toHaveValue("https://");
+    expect([editor.selectionStart, editor.selectionEnd, editor.selectionDirection]).toEqual([2, 5, "backward"]);
+    expect(document.getElementById("error-full-url")).toHaveTextContent(error!);
+    expect(screen.getByText(/Restored target is hidden by Search/)).toBeVisible();
+    expect(screen.getByText(/Draft URL is unchanged/)).toBeVisible();
+  });
+
+  it("Story 3.2 composition anywhere gates both Undo paths until settlement or detachment", async () => {
+    render(<Workbench />);
+    const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
+    fireEvent.change(editor, { target: { value: "https://example.com/a?x=1" } });
+    fireEvent.click(screen.getByRole("button", { name: /Add Query Parameter before/ }));
+    const search = screen.getByLabelText("Search Managed Pieces");
+    fireEvent.compositionStart(search);
+    const undo = screen.getByRole("button", { name: "Undo" });
+    undo.focus();
+    expect(fireEvent.keyDown(undo, { key: "z", ctrlKey: true })).toBe(true);
+    fireEvent.click(undo);
+    expect(editor).toHaveValue("https://example.com/a?x=1&");
+    fireEvent.compositionEnd(search);
+    expect(fireEvent.keyDown(undo, { key: "z", ctrlKey: true })).toBe(false);
+    expect(editor).toHaveValue("https://example.com/a?x=1");
+    fireEvent.click(screen.getByRole("button", { name: /Add Query Parameter before/ }));
+    const external = document.createElement("input");
+    document.body.append(external);
+    fireEvent.compositionStart(external);
+    expect(undo).toHaveAttribute("aria-disabled", "true");
+    fireEvent.click(undo);
+    expect(editor).toHaveValue("https://example.com/a?x=1&");
+    await act(async () => external.remove());
+    expect(undo).toHaveAttribute("aria-disabled", "false");
+    fireEvent.click(undo);
+    expect(editor).toHaveValue("https://example.com/a?x=1");
+  });
+
   it.each(["Domain", "token", "Full URL"] as const)(
     "Story 3.1 Undo stays inactive during %s composition and re-enables after settlement",
     (kind) => {
@@ -64,9 +162,10 @@ describe("URL Workbench", () => {
     expect(editor).toHaveValue("https://xn--fa-hia.de/a?flag&empty=#Frag%2f");
     expect(screen.getByLabelText("Unicode Domain")).toHaveValue("faß.de");
     expect(screen.getByLabelText("Value, Query Parameter 2 of 2")).toHaveValue("");
-    expect(undo).toHaveFocus();
+    expect(screen.getByLabelText("Value, Query Parameter 2 of 2")).toHaveFocus();
     expect(undo).toHaveAttribute("aria-disabled", "true");
     expect(screen.getByText("Undo inactive: no URL changes to undo.")).toBeVisible();
+    undo.focus();
     await user.keyboard("{Enter}");
     expect(undo).toHaveFocus();
     expect(screen.getByText(/Undid Query Parameter value edit/)).toBeVisible();

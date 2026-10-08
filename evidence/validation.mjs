@@ -47,6 +47,10 @@ export const requiredCells = new Map([
   ["story-3-1-guard-draft", "3.1"],
   ["story-3-1-accessible-action", "3.1"],
   ["story-3-1-privacy-capacity", "3.1"],
+  ["story-3-2-input-arbiter", "3.2"],
+  ["story-3-2-logical-focus", "3.2"],
+  ["story-3-2-draft-filter", "3.2"],
+  ["story-3-2-serial-effects", "3.2"],
 ]);
 
 const requiredCsp = new Map([

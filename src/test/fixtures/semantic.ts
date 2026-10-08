@@ -4,6 +4,12 @@ export const semanticFixture =
 export const structuredEditFixture =
   "https://User@example.com:044/a%2fb//tail?dup=1&dup=2&flag&empty=#Frag%2f";
 
+export const undoFocusFixture = "https://xn--fa-hia.de/a?x=1&y=2#Frag%2f";
+export const undoFocusKinds = [
+  "domain-unicode", "domain-ascii", "path", "query-key", "query-value",
+  "add", "remove-path", "remove-query", "move-up", "move-down", "full-url",
+] as const;
+
 export const structuredEditExpected = {
   pathUnicode:
     "https://User@example.com:044/a%2fb/%F0%9F%98%80%2Ftail?dup=1&dup=2&flag&empty=#Frag%2f",

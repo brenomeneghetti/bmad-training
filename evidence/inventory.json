@@ -1,4 +1,23 @@
 [
+  { "runner": "vitest", "file": "src/app/workbench/inputArbiter.test.ts", "title": "Story 3.2 input arbiter honors inherited editability plaintext-only and nested noneditable islands", "project": "vitest", "multiplicity": 1 },
+  { "runner": "vitest", "file": "src/app/workbench/inputArbiter.test.ts", "title": "Story 3.2 input arbiter leaves excluded Alt chord untouched", "project": "vitest", "multiplicity": 1 },
+  { "runner": "vitest", "file": "src/app/workbench/inputArbiter.test.ts", "title": "Story 3.2 input arbiter leaves excluded combined modifiers chord untouched", "project": "vitest", "multiplicity": 1 },
+  { "runner": "vitest", "file": "src/app/workbench/inputArbiter.test.ts", "title": "Story 3.2 input arbiter leaves excluded composition chord untouched", "project": "vitest", "multiplicity": 1 },
+  { "runner": "vitest", "file": "src/app/workbench/inputArbiter.test.ts", "title": "Story 3.2 input arbiter leaves excluded IME keycode chord untouched", "project": "vitest", "multiplicity": 1 },
+  { "runner": "vitest", "file": "src/app/workbench/inputArbiter.test.ts", "title": "Story 3.2 input arbiter leaves excluded no modifier chord untouched", "project": "vitest", "multiplicity": 1 },
+  { "runner": "vitest", "file": "src/app/workbench/inputArbiter.test.ts", "title": "Story 3.2 input arbiter leaves excluded Shift chord untouched", "project": "vitest", "multiplicity": 1 },
+  { "runner": "vitest", "file": "src/app/workbench/inputArbiter.test.ts", "title": "Story 3.2 input arbiter leaves excluded uppercase chord untouched", "project": "vitest", "multiplicity": 1 },
+  { "runner": "vitest", "file": "src/app/workbench/inputArbiter.test.ts", "title": "Story 3.2 input arbiter leaves excluded wrong primary chord untouched", "project": "vitest", "multiplicity": 1 },
+  { "runner": "vitest", "file": "src/app/workbench/inputArbiter.test.ts", "title": "Story 3.2 input arbiter protects empty history composition prevented events AltGraph and wrong mac modifier", "project": "vitest", "multiplicity": 1 },
+  { "runner": "vitest", "file": "src/app/workbench/inputArbiter.test.ts", "title": "Story 3.2 input arbiter protects native active ownership including selection endpoints", "project": "vitest", "multiplicity": 1 },
+  { "runner": "vitest", "file": "src/app/workbench/inputArbiter.test.ts", "title": "Story 3.2 input arbiter protects native anchor ownership including selection endpoints", "project": "vitest", "multiplicity": 1 },
+  { "runner": "vitest", "file": "src/app/workbench/inputArbiter.test.ts", "title": "Story 3.2 input arbiter protects native focus ownership including selection endpoints", "project": "vitest", "multiplicity": 1 },
+  { "runner": "vitest", "file": "src/app/workbench/inputArbiter.test.ts", "title": "Story 3.2 input arbiter protects native host ownership including selection endpoints", "project": "vitest", "multiplicity": 1 },
+  { "runner": "vitest", "file": "src/app/workbench/inputArbiter.test.ts", "title": "Story 3.2 input arbiter protects native input ownership including selection endpoints", "project": "vitest", "multiplicity": 1 },
+  { "runner": "vitest", "file": "src/app/workbench/inputArbiter.test.ts", "title": "Story 3.2 input arbiter protects native select ownership including selection endpoints", "project": "vitest", "multiplicity": 1 },
+  { "runner": "vitest", "file": "src/app/workbench/inputArbiter.test.ts", "title": "Story 3.2 input arbiter protects native textarea ownership including selection endpoints", "project": "vitest", "multiplicity": 1 },
+  { "runner": "vitest", "file": "src/app/workbench/inputArbiter.test.ts", "title": "Story 3.2 input arbiter routes exactly once under independent mac policy", "project": "vitest", "multiplicity": 1 },
+  { "runner": "vitest", "file": "src/app/workbench/inputArbiter.test.ts", "title": "Story 3.2 input arbiter routes exactly once under independent other policy", "project": "vitest", "multiplicity": 1 },
   {
     "runner": "vitest",
     "file": "src/app/workbench/Workbench.test.tsx",
@@ -580,6 +599,12 @@
     "project": "vitest",
     "multiplicity": 1
   },
+  { "runner": "vitest", "file": "src/app/workbench/Workbench.test.tsx", "title": "URL Workbench Story 3.2 composition anywhere gates both Undo paths until settlement or detachment", "project": "vitest", "multiplicity": 1 },
+  { "runner": "vitest", "file": "src/app/workbench/Workbench.test.tsx", "title": "URL Workbench Story 3.2 filtered restoration uses next then previous visible field and retains invalid Draft selection", "project": "vitest", "multiplicity": 1 },
+  { "runner": "vitest", "file": "src/app/workbench/Workbench.test.tsx", "title": "URL Workbench Story 3.2 shortcut protects native editors and selection then restores once outside editors", "project": "vitest", "multiplicity": 1 },
+  { "runner": "vitest", "file": "src/app/workbench/Workbench.test.tsx", "title": "URL Workbench Story 3.2 Workbench detects Linux x86_64 primary modifier and restores exact state and focus", "project": "vitest", "multiplicity": 1 },
+  { "runner": "vitest", "file": "src/app/workbench/Workbench.test.tsx", "title": "URL Workbench Story 3.2 Workbench detects MacIntel primary modifier and restores exact state and focus", "project": "vitest", "multiplicity": 1 },
+  { "runner": "vitest", "file": "src/app/workbench/Workbench.test.tsx", "title": "URL Workbench Story 3.2 Workbench detects Win32 primary modifier and restores exact state and focus", "project": "vitest", "multiplicity": 1 },
   {
     "runner": "vitest",
     "file": "src/app/workbench/Workbench.test.tsx",
@@ -1385,6 +1410,12 @@
     "project": "vitest",
     "multiplicity": 1
   },
+  { "runner": "vitest", "file": "src/core/session/session.test.ts", "title": "Story 3.2 focus authority queues monotonic revisioned targets and guards serial claim duplicate acknowledgement and missing identity", "project": "vitest", "multiplicity": 1 },
+  { "runner": "vitest", "file": "src/core/session/session.test.ts", "title": "Story 3.2 focus authority rejects obsolete focus after newer composition without replacement", "project": "vitest", "multiplicity": 1 },
+  { "runner": "vitest", "file": "src/core/session/session.test.ts", "title": "Story 3.2 focus authority rejects obsolete focus after newer epoch without replacement", "project": "vitest", "multiplicity": 1 },
+  { "runner": "vitest", "file": "src/core/session/session.test.ts", "title": "Story 3.2 focus authority rejects obsolete focus after newer focus without replacement", "project": "vitest", "multiplicity": 1 },
+  { "runner": "vitest", "file": "src/core/session/session.test.ts", "title": "Story 3.2 focus authority rejects obsolete focus after newer input without replacement", "project": "vitest", "multiplicity": 1 },
+  { "runner": "vitest", "file": "src/core/session/session.test.ts", "title": "Story 3.2 focus authority rejects obsolete focus after newer revision without replacement", "project": "vitest", "multiplicity": 1 },
   {
     "runner": "vitest",
     "file": "src/core/url/codec.test.ts",
@@ -1917,6 +1948,11 @@
     "project": "vitest",
     "multiplicity": 1
   },
+  { "runner": "vitest", "file": "src/platform/effects/index.test.ts", "title": "Story 3.2 effects acknowledge adapter failure without starting the next effect", "project": "vitest", "multiplicity": 1 },
+  { "runner": "vitest", "file": "src/platform/effects/index.test.ts", "title": "Story 3.2 effects claim immediately and acknowledge serially exactly once including rejection", "project": "vitest", "multiplicity": 1 },
+  { "runner": "vitest", "file": "src/platform/focus/index.test.ts", "title": "Story 3.2 focus retains restored next then previous source order and filtering fallback", "project": "vitest", "multiplicity": 1 },
+  { "runner": "vitest", "file": "src/platform/focus/index.test.ts", "title": "Story 3.2 focus scrolls before focus and uses enabled reorder fallbacks", "project": "vitest", "multiplicity": 1 },
+  { "runner": "vitest", "file": "src/platform/focus/index.test.ts", "title": "Story 3.2 missing mounted targets touch no DOM and enqueue no replacement", "project": "vitest", "multiplicity": 1 },
   {
     "runner": "node",
     "file": "evidence/run.test.mjs",
@@ -2032,7 +2068,7 @@
   {
     "runner": "node",
     "file": "evidence/validate.test.mjs",
-    "title": "accepts complete clean-checkout proof with exact inventory and all 40 cells",
+    "title": "accepts complete clean-checkout proof with exact inventory and all 44 cells",
     "project": "node",
     "multiplicity": 1
   },
@@ -2239,6 +2275,10 @@
     "project": "node",
     "multiplicity": 1
   },
+  { "runner": "node", "file": "evidence/validate.test.mjs", "title": "rejects missing Story 3.2 draft-filter evidence after rehashing", "project": "node", "multiplicity": 1 },
+  { "runner": "node", "file": "evidence/validate.test.mjs", "title": "rejects missing Story 3.2 input-arbiter evidence after rehashing", "project": "node", "multiplicity": 1 },
+  { "runner": "node", "file": "evidence/validate.test.mjs", "title": "rejects missing Story 3.2 logical-focus evidence after rehashing", "project": "node", "multiplicity": 1 },
+  { "runner": "node", "file": "evidence/validate.test.mjs", "title": "rejects missing Story 3.2 serial-effects evidence after rehashing", "project": "node", "multiplicity": 1 },
   {
     "runner": "node",
     "file": "evidence/validate.test.mjs",
@@ -2463,6 +2503,10 @@
     "project": "chromium",
     "multiplicity": 1
   },
+  { "runner": "playwright", "file": "tests/workbench.spec.ts", "title": "Story 3.2 both Undo paths restore every operation-specific focus without new history", "project": "chromium", "multiplicity": 1 },
+  { "runner": "playwright", "file": "tests/workbench.spec.ts", "title": "Story 3.2 filtering retains Search invalid Draft backward selection and validation on both paths", "project": "chromium", "multiplicity": 1 },
+  { "runner": "playwright", "file": "tests/workbench.spec.ts", "title": "Story 3.2 routing leaves native ownership excluded chords and composition untouched", "project": "chromium", "multiplicity": 1 },
+  { "runner": "playwright", "file": "tests/workbench.spec.ts", "title": "Story 3.2 shortcut dense Undo focuses privately below 100 ms with all 260 entries", "project": "chromium", "multiplicity": 1 },
   {
     "runner": "playwright",
     "file": "tests/workbench.spec.ts",

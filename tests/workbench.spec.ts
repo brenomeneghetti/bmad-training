@@ -6,6 +6,8 @@ import {
   removalFixtures,
   semanticFixture,
   structuredEditFixture,
+  undoFocusFixture,
+  undoFocusKinds,
 } from "../src/test/fixtures/semantic";
 import delivery from "../deployment/static-delivery.json" with { type: "json" };
 
@@ -20,6 +22,213 @@ interface PrivacyProbe {
 
 test.beforeEach(async ({ browser, browserName }, testInfo) => {
   testInfo.annotations.push({ type: "engine", description: `${browserName}:${browser.version()}` });
+});
+
+test("Story 3.2 both Undo paths restore every operation-specific focus without new history", async ({ page }) => {
+  for (const path of ["visible", "shortcut"]) {
+    for (const kind of undoFocusKinds) {
+      await page.goto("/");
+      const editor = page.getByLabel("Complete HTTP or HTTPS Absolute URL");
+      const undo = page.getByRole("button", { name: "Undo", exact: true });
+      await editor.fill(undoFocusFixture);
+      await undo.focus();
+      const ids = await page.locator("#managed-pieces > li").evaluateAll((rows) =>
+        rows.map((row) => row.getAttribute("data-piece-id")!));
+      const [domain, segment, first, second] = ids;
+      let destination = "";
+      if (kind === "domain-unicode" || kind === "domain-ascii") {
+        destination = `${kind === "domain-unicode" ? "unicode" : "ascii"}-${domain}`;
+        await page.locator(`#${destination}`).fill("example.org");
+      } else if (kind === "path" || kind === "query-key" || kind === "query-value") {
+        destination = `${kind}-${kind === "path" ? segment : first}`;
+        await page.locator(`#${destination}`).fill("changed");
+      } else if (kind === "add") {
+        await page.locator("#add-query-before").click();
+        destination = `query-key-${second}`;
+      } else if (kind === "remove-path" || kind === "remove-query") {
+        destination = `remove-${kind === "remove-path" ? segment : first}`;
+        await page.locator(`#${destination}`).click();
+      } else if (kind === "move-up" || kind === "move-down") {
+        const id = kind === "move-up" ? second : first;
+        destination = `${kind}-${id}`;
+        await page.locator(`#${destination}`).click();
+      } else {
+        await editor.fill(undoFocusFixture.replace("/a?", "/changed?"));
+        destination = "full-url-editor";
+      }
+      if (path === "visible") await undo.click();
+      else {
+        await undo.focus();
+        await page.keyboard.press("Control+z");
+      }
+      await expect(editor).toHaveValue(undoFocusFixture);
+      await expect(page.locator(`#${destination}`)).toBeFocused();
+      await expect(undo).toHaveAttribute("aria-disabled", "true");
+      await expect(page.getByText(/Undid /)).toHaveCount(1);
+      expect(await page.locator("#managed-pieces > li").evaluateAll((rows) =>
+        rows.map((row) => row.getAttribute("data-piece-id")))).toEqual(ids);
+    }
+  }
+});
+
+test("Story 3.2 routing leaves native ownership excluded chords and composition untouched", async ({ page }) => {
+  await page.goto("/");
+  const editor = page.getByLabel("Complete HTTP or HTTPS Absolute URL");
+  const undo = page.getByRole("button", { name: "Undo", exact: true });
+  await editor.fill(undoFocusFixture);
+  await page.locator("#add-query-before").click();
+  const changed = await editor.inputValue();
+  await undo.focus();
+  const excluded = await undo.evaluate((button) => [
+    { key: "Z", ctrlKey: true }, { key: "z", ctrlKey: true, shiftKey: true },
+    { key: "z", ctrlKey: true, altKey: true }, { key: "z", metaKey: true },
+    { key: "z", ctrlKey: true, isComposing: true }, { key: "z" },
+  ].map((init) => {
+    const event = new KeyboardEvent("keydown", { ...init, bubbles: true, cancelable: true });
+    button.dispatchEvent(event);
+    return event.defaultPrevented;
+  }));
+  expect(excluded).toEqual([false, false, false, false, false, false]);
+  for (const label of ["Complete HTTP or HTTPS Absolute URL", "Unicode Domain", "Key, Query Parameter 1 of 3", "Search Managed Pieces"]) {
+    const field = page.getByLabel(label);
+    await field.focus();
+    expect(await field.evaluate((input) => input.dispatchEvent(new KeyboardEvent("keydown", {
+      key: "z", ctrlKey: true, bubbles: true, cancelable: true,
+    })))).toBe(true);
+  }
+  await expect(editor).toHaveValue(changed);
+  await undo.focus();
+  expect(await page.evaluate(() => {
+    const host = document.createElement("div");
+    host.contentEditable = "true";
+    host.innerHTML = '<span>editable</span><span contenteditable="false"><b>island</b></span>';
+    document.body.append(host);
+    const button = [...document.querySelectorAll("button")].find((item) => item.textContent === "Undo")!;
+    const selection = document.getSelection()!;
+    const protectedEvents: boolean[] = [];
+    const dispatch = (target: Element) => {
+      const event = new KeyboardEvent("keydown", { key: "z", ctrlKey: true, bubbles: true, cancelable: true });
+      target.dispatchEvent(event);
+      protectedEvents.push(event.defaultPrevented);
+    };
+    dispatch(host.firstElementChild!);
+    selection.setBaseAndExtent(host.firstElementChild!.firstChild!, 0, button.firstChild!, 1);
+    dispatch(button);
+    selection.setBaseAndExtent(button.firstChild!, 0, host.firstElementChild!.firstChild!, 1);
+    dispatch(button);
+    selection.removeAllRanges();
+    host.remove();
+    return protectedEvents;
+  })).toEqual([false, false, false]);
+  const search = page.getByLabel("Search Managed Pieces");
+  await search.dispatchEvent("compositionstart");
+  await undo.focus();
+  expect(await undo.evaluate((button: HTMLButtonElement) => {
+    const event = new KeyboardEvent("keydown", { key: "z", ctrlKey: true, bubbles: true, cancelable: true });
+    button.dispatchEvent(event);
+    button.click();
+    return event.defaultPrevented;
+  })).toBe(false);
+  await expect(editor).toHaveValue(changed);
+  await search.dispatchEvent("compositionend");
+  await page.keyboard.press("Control+z");
+  await expect(editor).toHaveValue(undoFocusFixture);
+  await expect(page.getByLabel("Key, Query Parameter 2 of 2")).toBeFocused();
+});
+
+test("Story 3.2 filtering retains Search invalid Draft backward selection and validation on both paths", async ({ page }) => {
+  for (const path of ["visible", "shortcut"]) {
+    for (const searchTerm of ["y", "faß", "no-matches"]) {
+      await page.goto("/");
+      const editor = page.getByLabel("Complete HTTP or HTTPS Absolute URL");
+      const undo = page.getByRole("button", { name: "Undo", exact: true });
+      await editor.fill(undoFocusFixture);
+      await page.getByRole("button", { name: /Remove Query Parameter at position 1 of 2/ }).click();
+      await editor.fill("https://");
+      await editor.evaluate((input: HTMLTextAreaElement) => input.setSelectionRange(2, 5, "backward"));
+      const error = await page.locator("#error-full-url").textContent();
+      const search = page.getByLabel("Search Managed Pieces");
+      await search.fill(searchTerm);
+      if (path === "visible") await undo.click();
+      else { await undo.focus(); await page.keyboard.press("Control+z"); }
+      const destination = searchTerm === "y" ? page.getByLabel("Key, Query Parameter 2 of 2")
+        : searchTerm === "faß" ? page.getByLabel("Unicode Domain") : editor;
+      await expect(destination).toBeFocused();
+      await expect(search).toHaveValue(searchTerm);
+      await expect(editor).toHaveValue("https://");
+      expect(await editor.evaluate((input: HTMLTextAreaElement) =>
+        [input.selectionStart, input.selectionEnd, input.selectionDirection])).toEqual([2, 5, "backward"]);
+      expect(await page.locator("#error-full-url").textContent()).toBe(error);
+      await expect(page.getByText(/Restored target is hidden by Search/)).toBeVisible();
+      await expect(page.getByText(/Draft URL is unchanged/)).toBeVisible();
+    }
+    for (const searchTerm of ["x", "no-matches"]) {
+      await page.goto("/");
+      const editor = page.getByLabel("Complete HTTP or HTTPS Absolute URL");
+      const undo = page.getByRole("button", { name: "Undo", exact: true });
+      await editor.fill(undoFocusFixture);
+      await page.locator("#add-query-before").click();
+      await editor.fill("https://");
+      await editor.evaluate((input: HTMLTextAreaElement) => input.setSelectionRange(2, 5, "backward"));
+      const error = await page.locator("#error-full-url").textContent();
+      const search = page.getByLabel("Search Managed Pieces");
+      await search.fill(searchTerm);
+      if (path === "visible") await undo.click();
+      else { await undo.focus(); await page.keyboard.press("Control+z"); }
+      const destination = searchTerm === "x" ? page.getByLabel("Key, Query Parameter 1 of 2") : editor;
+      await expect(destination).toBeFocused();
+      await expect(search).toHaveValue(searchTerm);
+      await expect(editor).toHaveValue("https://");
+      expect(await editor.evaluate((input: HTMLTextAreaElement) =>
+        [input.selectionStart, input.selectionEnd, input.selectionDirection])).toEqual([2, 5, "backward"]);
+      expect(await page.locator("#error-full-url").textContent()).toBe(error);
+      await expect(page.getByText(/Undid Query Parameter addition.*Draft URL is unchanged/)).toBeVisible();
+      await expect(page.getByText(/Restored target is hidden by Search/)).toBeVisible();
+      await expect(undo).toHaveAttribute("aria-disabled", "true");
+    }
+  }
+});
+
+test("Story 3.2 shortcut dense Undo focuses privately below 100 ms with all 260 entries", async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(window, "__focusSinks", { value: [] });
+    const sinks = (window as unknown as { __focusSinks: string[] }).__focusSinks;
+    Storage.prototype.setItem = () => { sinks.push("storage"); };
+    IDBFactory.prototype.open = () => { sinks.push("indexedDB"); throw new Error("unexpected sink"); };
+    CacheStorage.prototype.open = async () => { sinks.push("cache"); throw new Error("unexpected sink"); };
+    Navigator.prototype.sendBeacon = () => { sinks.push("beacon"); return false; };
+    window.fetch = async () => { sinks.push("fetch"); throw new Error("unexpected sink"); };
+  });
+  await page.goto("/");
+  const requests: string[] = [];
+  const diagnostics: string[] = [];
+  page.on("request", (request) => requests.push(request.url()));
+  page.on("console", (message) => diagnostics.push(message.text()));
+  page.on("pageerror", (error) => diagnostics.push(error.message));
+  const editor = page.getByLabel("Complete HTTP or HTTPS Absolute URL");
+  const url = createCapacityFixture();
+  await editor.fill(url);
+  const ids = await page.locator("#managed-pieces > li").evaluateAll((rows) =>
+    rows.map((row) => row.getAttribute("data-piece-id")));
+  const remove = page.getByRole("button", { name: /Remove Query Parameter at position 260 of 260/ });
+  const removedId = await remove.getAttribute("id");
+  await remove.click();
+  const undo = page.getByRole("button", { name: "Undo", exact: true });
+  await undo.focus();
+  const elapsed = await undo.evaluate((button) => {
+    const start = performance.now();
+    button.dispatchEvent(new KeyboardEvent("keydown", { key: "z", ctrlKey: true, bubbles: true, cancelable: true }));
+    return performance.now() - start;
+  });
+  expect(elapsed).toBeLessThan(100);
+  await expect(editor).toHaveValue(url);
+  await expect(page.locator(`#${removedId}`)).toBeFocused();
+  expect(await page.locator("#managed-pieces > li").evaluateAll((rows) =>
+    rows.map((row) => row.getAttribute("data-piece-id")))).toEqual(ids);
+  expect(await page.evaluate(() => (window as unknown as { __focusSinks: string[] }).__focusSinks)).toEqual([]);
+  expect(await page.evaluate(() => [localStorage.length, sessionStorage.length, document.cookie, location.search])).toEqual([0, 0, "", ""]);
+  expect(requests).toEqual([]);
+  expect(diagnostics).toEqual([]);
 });
 
 test("Story 3.1 Undo remains inactive during native composition in every URL editor", async ({ page }) => {

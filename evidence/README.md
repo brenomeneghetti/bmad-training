@@ -42,7 +42,7 @@ the available native JSON reports and separate command diagnostics under
 - `inventory.json` lists every exact runner/file/full-title/project identity
   and multiplicity, **including tests not mapped to cells**. It is a reviewed
   expectation; the producer never learns expected coverage from its own run.
-- `coverage.json` maps all 40 mandatory cells to exact executed identities,
+- `coverage.json` maps all 44 mandatory cells to exact executed identities,
   including the approved Chromium browser project. File existence and matching aggregate counts
   cannot substitute for these identities.
 - Story 3.1 adds exact-history restoration, guarded Draft preservation,
@@ -54,6 +54,17 @@ the available native JSON reports and separate command diagnostics under
   settles. Composition tests use synthetic native events, not real OS IMEs.
   Native command logs retain original whitespace; `.gitattributes` excludes
   only those retained text reports from whitespace checks, without altering proof.
+- Story 3.2 adds independent platform/chord/native-ownership routing, logical
+  operation focus, filtered invalid-Draft preservation, and reducer-owned serial
+  claim/acknowledgement cells. Both Undo paths exercise every operation; adapter
+  and reducer tests cover missing, stale, cancelled and duplicate effects. Dense
+  shortcut restoration retains all 260 entries and measures below 100 ms without
+  privacy sinks. Workbench integration injects MacIntel, Win32 and Linux platform
+  values to verify the application's modifier detection, not only helper policy.
+  Filtered Add reversal checks earlier visible survivors and no-results fallback
+  through both activation paths, preserving invalid Draft selection and errors.
+  Synthetic composition and injected platform policy do not prove
+  real OS keyboard/IME or manual assistive-technology coverage.
 - Native reports, diagnostics and observed version command outcomes are hashed.
   Every command is bound to the same source/build/delivery identities. Paths
   reject traversal, absolute paths, symlinks and special files before reading.

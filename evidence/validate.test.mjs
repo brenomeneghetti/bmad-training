@@ -9,10 +9,10 @@ import { calculateArtifactDigest, calculateSourceDigest, hashFile, parseCsp, saf
 import { inventoryOf, normalizeReport } from "./adapters.mjs";
 import reporter from "./node-reporter.mjs";
 
-test("accepts complete clean-checkout proof with exact inventory and all 40 cells", async (context) => {
+test("accepts complete clean-checkout proof with exact inventory and all 44 cells", async (context) => {
   const { root } = await createFixture(context);
   assert.deepEqual(await validateEvidence(root), {
-    cellCount: 40, testCount: 3,
+    cellCount: 44, testCount: 3,
     artifactDigest: await calculateArtifactDigest(root, { path: "dist", delivery: "deployment/static-delivery.json" }),
   });
 });
@@ -22,7 +22,7 @@ test("same bytes remain valid after checkout relocation", async (context) => {
   const relocated = `${root}-moved`;
   context.after(() => rm(relocated, { recursive: true, force: true }));
   await rename(root, relocated);
-  assert.equal((await validateEvidence(relocated)).cellCount, 40);
+  assert.equal((await validateEvidence(relocated)).cellCount, 44);
 });
 
 for (const cell of ["exact-history", "guard-draft", "accessible-action", "privacy-capacity"]) {
@@ -35,6 +35,19 @@ for (const cell of ["exact-history", "guard-draft", "accessible-action", "privac
     for (const execution of manifest.executions) execution.sourceDigest = manifest.sourceDigest;
     await writeManifest(root, manifest);
     await assert.rejects(validateEvidence(root), new RegExp(`Missing mandatory evidence cells: story-3-1-${cell}`));
+  });
+}
+
+for (const cell of ["input-arbiter", "logical-focus", "draft-filter", "serial-effects"]) {
+  test(`rejects missing Story 3.2 ${cell} evidence after rehashing`, async (context) => {
+    const { root, manifest } = await createFixture(context);
+    const path = resolve(root, "evidence/coverage.json");
+    const coverage = JSON.parse(await readFile(path, "utf8"));
+    await writeFile(path, JSON.stringify(coverage.filter((item) => item.id !== `story-3-2-${cell}`)));
+    manifest.sourceDigest = await calculateSourceDigest(root);
+    for (const execution of manifest.executions) execution.sourceDigest = manifest.sourceDigest;
+    await writeManifest(root, manifest);
+    await assert.rejects(validateEvidence(root), new RegExp(`Missing mandatory evidence cells: story-3-2-${cell}`));
   });
 }
 

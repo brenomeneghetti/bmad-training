@@ -21,9 +21,16 @@ import { StructuredView } from "../pieces/StructuredView";
 import { buildManagedPieces, filterManagedPieces } from "../pieces/search";
 import styles from "../../styles/workbench.module.css";
 import { flushSync } from "react-dom";
+import { routeUndo } from "./inputArbiter";
+import { executeFocusEffects } from "../../platform/effects";
+import { focusRestoredTarget } from "../../platform/focus";
+import type { SessionAction } from "../../core/session";
 
 export function Workbench() {
   const [state, dispatch] = useReducer(sessionReducer, initialSessionState);
+  const stateRef = useRef(state);
+  stateRef.current = state;
+  const adapterFocusing = useRef(false);
   const [searchTerm, setSearchTerm] = useState("");
   const workbenchRef = useRef<HTMLElement>(null);
   const composingTarget = useRef<EventTarget | null>(null);
@@ -88,13 +95,60 @@ export function Workbench() {
     pendingAddFocus.current = null;
     pendingMoveFocus.current = null;
     pendingFocusAfterSearchClear.current = null;
+    if (!adapterFocusing.current) dispatch({ type: "cancelFocus" });
+  };
+
+  const undo = () => {
+    if (composingTarget.current !== null || !canUndo(stateRef.current)) return;
+    pendingRemovalFocus.current = null;
+    pendingAddFocus.current = null;
+    pendingMoveFocus.current = null;
+    pendingFocusAfterSearchClear.current = null;
+    flushSync(() => dispatch({ type: "undo", revision: stateRef.current.revision }));
   };
 
   useLayoutEffect(() => {
-    const workbench = workbenchRef.current;
-    if (!workbench) return;
+    const send = (action: SessionAction) => {
+      stateRef.current = sessionReducer(stateRef.current, action);
+      dispatch(action);
+    };
+    executeFocusEffects({
+      current: () => stateRef.current.effects,
+      claim: (effectId) => send({ type: "claimFocus", effectId }),
+      invoke: (effect) => {
+        adapterFocusing.current = true;
+        try {
+          return focusRestoredTarget(effect.target, visiblePieces, document);
+        } finally {
+          adapterFocusing.current = false;
+        }
+      },
+      acknowledge: (effectId, filtered) => send({ type: "acknowledgeFocus", effectId, filtered }),
+    });
+  }, [state, visiblePieces]);
+
+  useEffect(() => {
+    const keydown = (event: KeyboardEvent) => {
+      const target = composingTarget.current;
+      if (target instanceof Node && !target.isConnected) {
+        composingTarget.current = null;
+        setWorkbenchComposing(false);
+      }
+      routeUndo(event, {
+        platform: /Mac|iPhone|iPad/.test(navigator.platform) ? "mac" : "other",
+        composing: composingTarget.current !== null,
+        available: canUndo(stateRef.current), document, undo,
+      });
+    };
+    document.addEventListener("keydown", keydown);
+    return () => document.removeEventListener("keydown", keydown);
+  });
+
+  useLayoutEffect(() => {
+    const workbench = document;
     const start = (event: CompositionEvent) => {
       composingTarget.current = event.target;
+      dispatch({ type: "cancelFocus" });
       setWorkbenchComposing(true);
     };
     const end = (event: CompositionEvent) => {
@@ -112,11 +166,23 @@ export function Workbench() {
 
   useLayoutEffect(() => {
     const target = composingTarget.current;
-    if (target instanceof Node && !workbenchRef.current?.contains(target)) {
+    if (target instanceof Node && !target.isConnected) {
       composingTarget.current = null;
       setWorkbenchComposing(false);
     }
   });
+
+  useEffect(() => {
+    if (!workbenchComposing) return;
+    const observer = new MutationObserver(() => {
+      if (composingTarget.current instanceof Node && !composingTarget.current.isConnected) {
+        composingTarget.current = null;
+        setWorkbenchComposing(false);
+      }
+    });
+    observer.observe(document, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, [workbenchComposing]);
 
   useLayoutEffect(() => {
     const pending = pendingRemovalFocus.current;
@@ -273,6 +339,7 @@ export function Workbench() {
   };
 
   const handleFullUrlFocus = () => {
+    if (adapterFocusing.current) return;
     dispatch({ type: "fullUrlFocusBegin" });
   };
 
@@ -504,11 +571,7 @@ export function Workbench() {
           aria-disabled={workbenchComposing || !canUndo(state)}
           aria-describedby="undo-help"
           onPointerDown={(event) => event.preventDefault()}
-          onClick={() => {
-            if (composingTarget.current !== null || !canUndo(state)) return;
-            cancelPendingOperationFocus();
-            flushSync(() => dispatch({ type: "undo", revision: state.revision }));
-          }}
+          onClick={undo}
         >
           Undo
         </button>

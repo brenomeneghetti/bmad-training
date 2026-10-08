@@ -15,6 +15,50 @@ const apply = (state: SessionState, input: string) => {
   return sessionReducer(sessionReducer(changed, parse.start), parse.complete());
 };
 
+describe("Story 3.2 focus authority", () => {
+  it("queues monotonic revisioned targets and guards serial claim duplicate acknowledgement and missing identity", () => {
+    const a = apply(initialSessionState, "https://example.com/a?x=1&y=2");
+    const moved = sessionReducer(a, { type: "moveQueryPiece", pieceId: a.snapshot!.query[1]!.id, direction: "up" });
+    const restored = sessionReducer(moved, { type: "undo", revision: moved.revision });
+    const effect = restored.effects[0]!;
+    expect(effect.target).toMatchObject({ kind: "piece", control: "up", pieceId: a.snapshot!.query[1]!.id });
+    expect(effect.stateRevision).toBe(restored.revision);
+    expect(sessionReducer(restored, { type: "acknowledgeFocus", effectId: effect.effectId })).toBe(restored);
+    expect(sessionReducer(restored, { type: "claimFocus", effectId: effect.effectId + 1 })).toBe(restored);
+    const claimed = sessionReducer(restored, { type: "claimFocus", effectId: effect.effectId });
+    expect(claimed.effects[0]!.status).toBe("claimed");
+    expect(sessionReducer(claimed, { type: "claimFocus", effectId: effect.effectId })).toBe(claimed);
+    const ack = sessionReducer(claimed, { type: "acknowledgeFocus", effectId: effect.effectId });
+    expect(ack.effects).toHaveLength(0);
+    expect(ack.lastAcknowledgedEffectId).toBe(effect.effectId);
+    expect(sessionReducer(ack, { type: "acknowledgeFocus", effectId: effect.effectId })).toBe(ack);
+    const added = sessionReducer(ack, { type: "addQueryPiece" });
+    const next = sessionReducer(added, { type: "undo", revision: added.revision });
+    expect(next.effects[0]!.effectId).toBeGreaterThan(effect.effectId);
+    expect(next.effects[0]!.target).toMatchObject({ kind: "nearest" });
+    const missing = { ...restored, snapshot: { ...restored.snapshot!, query: [] } };
+    expect(sessionReducer(missing, { type: "claimFocus", effectId: effect.effectId }).effects[0]!.status).toBe("rejected");
+  });
+
+  it.each(["revision", "epoch", "focus", "input", "composition"] as const)(
+    "rejects obsolete focus after newer %s without replacement", (reason) => {
+      const a = apply(initialSessionState, "https://example.com/a?x=1");
+      const changed = sessionReducer(a, { type: "addQueryPiece" });
+      let state = sessionReducer(changed, { type: "undo", revision: changed.revision });
+      const id = state.effects[0]!.effectId;
+      state = reason === "revision" ? { ...state, revision: state.revision + 1 }
+        : reason === "epoch" ? { ...state, epoch: state.epoch + 1 }
+        : reason === "input" ? sessionReducer(state, { type: "inputChanged", value: "https://" })
+        : sessionReducer(state, { type: "cancelFocus" });
+      const claimed = sessionReducer(state, { type: "claimFocus", effectId: id });
+      expect(claimed.effects[0]!.status).toBe("rejected");
+      const ack = sessionReducer(claimed, { type: "acknowledgeFocus", effectId: id });
+      expect(ack.effects).toHaveLength(0);
+      expect(ack.nextEffectId).toBe(state.nextEffectId);
+    },
+  );
+});
+
 describe("Story 3.1 Undo", () => {
   it.each(["domain-unicode", "domain-ascii", "path", "query-key", "query-value", "add", "remove-path", "remove-query", "move", "full-url"] as const)(
     "restores exact model and revision map for %s",
@@ -1424,6 +1468,7 @@ describe("session authority", () => {
       after: moved.snapshot,
       pieceId: target.id,
       field: "reorder-query",
+      direction: "down",
     });
     expect(moved.revision).toBe(active.revision + 1);
     expect(moved.structuredSuccess).toContain('"y=2" moved from position 2 to position 3 of 3');

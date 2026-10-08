@@ -1,8 +1,8 @@
 {
   "schemaVersion": 2,
-  "runId": "86e55871-e1cc-428a-85fe-777267ec623f",
-  "sourceDigest": "aaef70366a3ddf785137c809a91f00fab57942f5d69e7fc231a88c17556eb1fa",
-  "recordedAt": "2026-10-08T17:17:22.034Z",
+  "status": "incomplete",
+  "runId": "ed743b41-827c-4d52-b763-f63f4cf66d33",
+  "sourceDigest": "344fa327bf8d01a2aa17fa30c75550798592dcd0232b4c1511d4fe9e4013e097",
   "toolVersions": {
     "node": "24.15.0",
     "pnpm": "12.5.1",
@@ -12,22 +12,22 @@
   "observations": [
     {
       "tool": "node",
-      "path": "evidence/runs/86e55871-e1cc-428a-85fe-777267ec623f/version-node.json",
+      "path": "evidence/runs/ed743b41-827c-4d52-b763-f63f4cf66d33/version-node.json",
       "hash": "88e6d8b73720b513ba0288639d305710b38072c31eb673ac7f54eadbe56a8015"
     },
     {
       "tool": "pnpm",
-      "path": "evidence/runs/86e55871-e1cc-428a-85fe-777267ec623f/version-pnpm.json",
+      "path": "evidence/runs/ed743b41-827c-4d52-b763-f63f4cf66d33/version-pnpm.json",
       "hash": "c89d0cd1f956e5604f6731034875148293c910cfb6853d260af8507877fa5a37"
     },
     {
       "tool": "vitest",
-      "path": "evidence/runs/86e55871-e1cc-428a-85fe-777267ec623f/version-vitest.json",
+      "path": "evidence/runs/ed743b41-827c-4d52-b763-f63f4cf66d33/version-vitest.json",
       "hash": "660bad2e35048832b7475f56bb0cfdc07211ecad95c8eaee1a0ed9f446b47280"
     },
     {
       "tool": "playwright",
-      "path": "evidence/runs/86e55871-e1cc-428a-85fe-777267ec623f/version-playwright.json",
+      "path": "evidence/runs/ed743b41-827c-4d52-b763-f63f4cf66d33/version-playwright.json",
       "hash": "27c3337c251581211e3dda313513cb35f87ecd28192bdf5c76b31902247ba535"
     }
   ],
@@ -42,11 +42,11 @@
       "exitCode": 0,
       "signal": null,
       "checkoutRoot": "/home/blackdude/Documents/OEProjects/bmad-training",
-      "sourceDigest": "aaef70366a3ddf785137c809a91f00fab57942f5d69e7fc231a88c17556eb1fa",
+      "sourceDigest": "344fa327bf8d01a2aa17fa30c75550798592dcd0232b4c1511d4fe9e4013e097",
       "artifactDigest": "b72896ba0e23de2c49ed3112b686471496af2cfad8a19ea7bafa022ddf3c2aa5",
       "log": {
-        "path": "evidence/runs/86e55871-e1cc-428a-85fe-777267ec623f/build.txt",
-        "hash": "57cf29d98e89c3bf36df6feb8d431a4a3d554e44b508fa8433a134b8ca7ae85a"
+        "path": "evidence/runs/ed743b41-827c-4d52-b763-f63f4cf66d33/build.txt",
+        "hash": "e44a04156b28041f7d9953fd6cc784cf65da80fbf5ad8a4ef76a4896fdfb3dfa"
       }
     },
     {
@@ -59,10 +59,10 @@
       "exitCode": 0,
       "signal": null,
       "checkoutRoot": "/home/blackdude/Documents/OEProjects/bmad-training",
-      "sourceDigest": "aaef70366a3ddf785137c809a91f00fab57942f5d69e7fc231a88c17556eb1fa",
+      "sourceDigest": "344fa327bf8d01a2aa17fa30c75550798592dcd0232b4c1511d4fe9e4013e097",
       "artifactDigest": "b72896ba0e23de2c49ed3112b686471496af2cfad8a19ea7bafa022ddf3c2aa5",
       "log": {
-        "path": "evidence/runs/86e55871-e1cc-428a-85fe-777267ec623f/lint.txt",
+        "path": "evidence/runs/ed743b41-827c-4d52-b763-f63f4cf66d33/lint.txt",
         "hash": "0451eeae0fb3805b52968919f11e151ec67d44c8226ed695adfe15d8a0f9a80f"
       }
     },
@@ -79,15 +79,15 @@
       "exitCode": 0,
       "signal": null,
       "checkoutRoot": "/home/blackdude/Documents/OEProjects/bmad-training",
-      "sourceDigest": "aaef70366a3ddf785137c809a91f00fab57942f5d69e7fc231a88c17556eb1fa",
+      "sourceDigest": "344fa327bf8d01a2aa17fa30c75550798592dcd0232b4c1511d4fe9e4013e097",
       "artifactDigest": "b72896ba0e23de2c49ed3112b686471496af2cfad8a19ea7bafa022ddf3c2aa5",
       "log": {
-        "path": "evidence/runs/86e55871-e1cc-428a-85fe-777267ec623f/vitest.txt",
+        "path": "evidence/runs/ed743b41-827c-4d52-b763-f63f4cf66d33/vitest.txt",
         "hash": "bdb86b1e5e1a6d8e04bf3724857dc63dab73fb2d4f54964df707b6abb0a5e632"
       },
       "report": {
-        "path": "evidence/runs/86e55871-e1cc-428a-85fe-777267ec623f/vitest.json",
-        "hash": "d4b1f37d454605edd6a8e71b77c9786244d513de0818d8306e4d6065cc2c68d5"
+        "path": "evidence/runs/ed743b41-827c-4d52-b763-f63f4cf66d33/vitest.json",
+        "hash": "b687f91583c7ab312fbbeb3f99f9da2ad54f789b72d23d98ceec25fd446b6698"
       }
     },
     {
@@ -99,42 +99,18 @@
         "evidence/validate.test.mjs",
         "evidence/run.test.mjs"
       ],
-      "exitCode": 0,
+      "exitCode": 1,
       "signal": null,
       "checkoutRoot": "/home/blackdude/Documents/OEProjects/bmad-training",
-      "sourceDigest": "aaef70366a3ddf785137c809a91f00fab57942f5d69e7fc231a88c17556eb1fa",
+      "sourceDigest": "344fa327bf8d01a2aa17fa30c75550798592dcd0232b4c1511d4fe9e4013e097",
       "artifactDigest": "b72896ba0e23de2c49ed3112b686471496af2cfad8a19ea7bafa022ddf3c2aa5",
       "log": {
-        "path": "evidence/runs/86e55871-e1cc-428a-85fe-777267ec623f/node.txt",
-        "hash": "20840a9a04244ced5a2521063b93a6c3af45af00ee5b40dea241a0b71167dd93"
+        "path": "evidence/runs/ed743b41-827c-4d52-b763-f63f4cf66d33/node.txt",
+        "hash": "d28af9d6a868a0735c8b1511ffd40f5b9b0a4413864b3f3b79f57b619710dda9"
       },
       "report": {
-        "path": "evidence/runs/86e55871-e1cc-428a-85fe-777267ec623f/node.json",
-        "hash": "2b7ba58cd577a839a7f13d9d40ed1a9164f0d1b0775308d640fed63f519a1db2"
-      }
-    },
-    {
-      "runner": "playwright",
-      "argv": [
-        "pnpm",
-        "exec",
-        "playwright",
-        "test",
-        "tests/workbench.spec.ts",
-        "--reporter=json"
-      ],
-      "exitCode": 0,
-      "signal": null,
-      "checkoutRoot": "/home/blackdude/Documents/OEProjects/bmad-training",
-      "sourceDigest": "aaef70366a3ddf785137c809a91f00fab57942f5d69e7fc231a88c17556eb1fa",
-      "artifactDigest": "b72896ba0e23de2c49ed3112b686471496af2cfad8a19ea7bafa022ddf3c2aa5",
-      "log": {
-        "path": "evidence/runs/86e55871-e1cc-428a-85fe-777267ec623f/playwright.txt",
-        "hash": "224eabde9e30e6ea009ea5324c8ef2aa96b2ffc9e9d3e7ed80768815cba7a7ef"
-      },
-      "report": {
-        "path": "evidence/runs/86e55871-e1cc-428a-85fe-777267ec623f/playwright.json",
-        "hash": "e249789f16549975565f2e5641e3a5a3e0b80342ba2a58bc6cc2846ef89b96b3"
+        "path": "evidence/runs/ed743b41-827c-4d52-b763-f63f4cf66d33/node.json",
+        "hash": "b6a6e91e2f55cea654784ac4abaa089ba90dbeeb4128e763ab963f9febb1ac10"
       }
     }
   ],
@@ -142,5 +118,9 @@
     "path": "dist",
     "delivery": "deployment/static-delivery.json",
     "digest": "b72896ba0e23de2c49ed3112b686471496af2cfad8a19ea7bafa022ddf3c2aa5"
+  },
+  "failure": {
+    "code": "COMMAND_FAILED",
+    "message": "node incomplete/nonpassing; see evidence/runs/ed743b41-827c-4d52-b763-f63f4cf66d33/node.txt."
   }
 }
