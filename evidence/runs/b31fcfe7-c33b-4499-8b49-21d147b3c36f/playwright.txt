@@ -1,0 +1,51 @@
+argv: ["pnpm","exec","playwright","test","tests/workbench.spec.ts","--reporter=json"]
+exitCode: 0
+signal: null
+
+Running 43 tests using 1 worker
+
+[1/43] [chromium] › tests/workbench.spec.ts:58:1 › Story 3.3 Copy exact Current and Last Valid preserves pointer editing and keyboard action order
+[2/43] [chromium] › tests/workbench.spec.ts:116:1 › Story 3.3 Copy serial races supersede queued attempts and stale completions before Undo focus
+[3/43] [chromium] › tests/workbench.spec.ts:140:1 › Story 3.3 Copy boundary failures retry and timeout fence never overlap or announce late success
+[4/43] [chromium] › tests/workbench.spec.ts:173:1 › Story 3.3 dense Copy edit Undo exact writes private complete rows below 100 ms at 320px
+[5/43] [chromium] › tests/workbench.spec.ts:225:1 › Story 3.2 both Undo paths restore every operation-specific focus without new history
+[6/43] [chromium] › tests/workbench.spec.ts:272:1 › Story 3.2 routing leaves native ownership excluded chords and composition untouched
+[7/43] [chromium] › tests/workbench.spec.ts:337:1 › Story 3.2 filtering retains Search invalid Draft backward selection and validation on both paths
+[8/43] [chromium] › tests/workbench.spec.ts:390:1 › Story 3.2 shortcut dense Undo focuses privately below 100 ms with all 260 entries
+[9/43] [chromium] › tests/workbench.spec.ts:432:1 › Story 3.1 Undo remains inactive during native composition in every URL editor
+[10/43] [chromium] › tests/workbench.spec.ts:463:1 › Story 3.1 visible Undo restores every committed mutation exactly and branches with fresh IDs
+[11/43] [chromium] › tests/workbench.spec.ts:519:1 › Story 3.1 Undo preserves invalid Draft selection errors Search and accessible cancellation
+[12/43] [chromium] › tests/workbench.spec.ts:556:1 › Story 3.1 Undo restores capacity privately under 100 ms with complete rows
+[13/43] [chromium] › tests/workbench.spec.ts:594:1 › Token final beforeinput publishes composition once and preserves normalized prefix caret
+[14/43] [chromium] › tests/workbench.spec.ts:631:3 › Domain composition publishes once with immediate final input and preserves later edits and selection
+[15/43] [chromium] › tests/workbench.spec.ts:669:3 › Token composition retains Last Valid until end with immediate final input and later edits
+[16/43] [chromium] › tests/workbench.spec.ts:631:3 › Domain composition publishes once with delayed final input and preserves later edits and selection
+[17/43] [chromium] › tests/workbench.spec.ts:669:3 › Token composition retains Last Valid until end with delayed final input and later edits
+[18/43] [chromium] › tests/workbench.spec.ts:703:1 › intake preserves lossless semantics and rejects replacement
+[19/43] [chromium] › tests/workbench.spec.ts:838:3 › Story 2.7 invalid Draft source, independent feedback and keyboard mutations remain accessible at 320px
+[20/43] [chromium] › tests/workbench.spec.ts:898:3 › Story 2.7 invalid Draft capacity preserves all identities and measured edit/reorder response
+[21/43] [chromium] › tests/workbench.spec.ts:972:1 › Story 2.7 capacity rejection preserves invalid Draft, selection, identities and focus
+[22/43] [chromium] › tests/workbench.spec.ts:1010:1 › Story 2.7 invalid Draft feedback reflows with forced colors and increased text spacing
+[23/43] [chromium] › tests/workbench.spec.ts:1051:1 › Domain editing is synchronized, correctable, IME-safe, and host-only
+[24/43] [chromium] › tests/workbench.spec.ts:1202:1 › capacity view renders every row and stays usable at 320px
+[25/43] [chromium] › tests/workbench.spec.ts:1429:1 › removal preserves exact survivors, Search, focus, accessibility, and privacy
+[26/43] [chromium] › tests/workbench.spec.ts:1495:1 › Add Query Parameter appends from either control, synchronizes Search, keeps focus, and stays private at capacity
+[27/43] [chromium] › tests/workbench.spec.ts:1561:1 › Add Query Parameter remains reachable and performant at 250+ entries
+[28/43] [chromium] › tests/workbench.spec.ts:1594:1 › reorders Query Parameters by keyboard and pointer activation, honoring boundaries, Search, duplicates, and capacity
+[29/43] [chromium] › tests/workbench.spec.ts:1646:1 › reorders within a 250+ parameter list, keeping boundaries reachable and performant
+[30/43] [chromium] › tests/workbench.spec.ts:1676:1 › initial and populated workbench pass automated accessibility checks
+[31/43] [chromium] › tests/workbench.spec.ts:1745:1 › reload clears URL content and returns to no session
+[32/43] [chromium] › tests/workbench.spec.ts:1758:1 › search no-results and clear remain keyboard and activation safe
+[33/43] [chromium] › tests/workbench.spec.ts:1785:1 › structured editing preserves exact bytes, identity, validation, and focus
+[34/43] [chromium] › tests/workbench.spec.ts:1834:1 › structured editing handles search, selections, word deletion, caret, and drafts
+[35/43] [chromium] › tests/workbench.spec.ts:1993:1 › Full URL edits publish continuously without an Apply step, with no Apply URL affordance anywhere
+[36/43] [chromium] › tests/workbench.spec.ts:2007:1 › Full URL retains row identity across first intake, Enter, blur, and refocus
+[37/43] [chromium] › tests/workbench.spec.ts:2027:1 › Full URL composition leaves Last Valid and validation untouched until composition ends
+[38/43] [chromium] › tests/workbench.spec.ts:2050:1 › an invalid Draft survives structured Add with its selection, error, and focus contract
+[39/43] [chromium] › tests/workbench.spec.ts:2071:1 › continuous Full URL reconciliation meets the response target at 20,000 characters and 260 entries
+[40/43] [chromium] › tests/workbench.spec.ts:2092:1 › Enter outside IME composition suppresses the newline and closes the focus session
+[41/43] [chromium] › tests/workbench.spec.ts:2109:1 › Shift+Enter outside IME composition suppresses the newline without closing the focus session
+[42/43] [chromium] › tests/workbench.spec.ts:2127:1 › Structured View editing controls stay enabled while the Full URL draft is momentarily invalid (loosened gating)
+[43/43] [chromium] › tests/workbench.spec.ts:2153:1 › blur-close and refocus round trip keeps the Structured View synchronized
+  43 passed (44.3s)
+

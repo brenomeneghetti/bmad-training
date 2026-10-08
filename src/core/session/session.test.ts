@@ -21,7 +21,7 @@ describe("Story 3.2 focus authority", () => {
     const moved = sessionReducer(a, { type: "moveQueryPiece", pieceId: a.snapshot!.query[1]!.id, direction: "up" });
     const restored = sessionReducer(moved, { type: "undo", revision: moved.revision });
     const effect = restored.effects[0]!;
-    expect(effect.target).toMatchObject({ kind: "piece", control: "up", pieceId: a.snapshot!.query[1]!.id });
+    expect(effect.kind === "focus" && effect.target).toMatchObject({ kind: "piece", control: "up", pieceId: a.snapshot!.query[1]!.id });
     expect(effect.stateRevision).toBe(restored.revision);
     expect(sessionReducer(restored, { type: "acknowledgeFocus", effectId: effect.effectId })).toBe(restored);
     expect(sessionReducer(restored, { type: "claimFocus", effectId: effect.effectId + 1 })).toBe(restored);
@@ -35,11 +35,78 @@ describe("Story 3.2 focus authority", () => {
     const added = sessionReducer(ack, { type: "addQueryPiece" });
     const next = sessionReducer(added, { type: "undo", revision: added.revision });
     expect(next.effects[0]!.effectId).toBeGreaterThan(effect.effectId);
-    expect(next.effects[0]!.target).toMatchObject({ kind: "nearest" });
+    expect(next.effects[0]!.kind === "focus" && next.effects[0]!.target).toMatchObject({ kind: "nearest" });
     const missing = { ...restored, snapshot: { ...restored.snapshot!, query: [] } };
     expect(sessionReducer(missing, { type: "claimFocus", effectId: effect.effectId }).effects[0]!.status).toBe("rejected");
   });
 
+});
+
+describe("Story 3.3 Copy authority", () => {
+    it("captures exact Current and Last Valid without modifying editing or History", () => {
+      const current = apply(initialSessionState, "https://EXAMPLE.com/a%2fb?dup=1&dup=2&flag#F");
+      expect(sessionReducer(initialSessionState, { type: "copy" })).toBe(initialSessionState);
+      for (const source of ["current", "last-valid"] as const) {
+        const before = source === "current" ? current : apply(current, "https://");
+        let state = sessionReducer(before, { type: "copy" });
+        expect(state.effects[0]).toMatchObject({
+          kind: "clipboard", serialized: current.snapshot!.serialized, source, attemptId: 1,
+        });
+        state = sessionReducer(state, { type: "cancelFocus" });
+        state = sessionReducer(state, { type: "claimCopy", effectId: 1 });
+        expect(state.effects[0]!.status).toBe("claimed");
+        state = sessionReducer(state, { type: "acknowledgeCopy", effectId: 1, outcome: "success" });
+        expect(state.copySuccess).toBe(source === "current" ? "Current URL copied."
+          : "Last Valid URL copied; Draft URL is unchanged.");
+        for (const key of ["input", "snapshot", "history", "problem", "fullUrlFocus", "tokenRevisions"] as const) {
+          expect(state[key]).toBe(before[key]);
+        }
+        expect(state.lastAcknowledgedEffectId).toBe(1);
+        expect(sessionReducer(state, { type: "acknowledgeCopy", effectId: 1, outcome: "success" })).toBe(state);
+      }
+    });
+
+    it("supersedes queued and invoked copies after revision epoch classification or attempt changes", () => {
+      const initial = apply(initialSessionState, "https://example.com/a?x=1");
+      for (const claimed of [false, true]) {
+        for (const change of ["revision", "epoch", "classification", "attempt", "undo", "exact-source"] as const) {
+          let state = sessionReducer(initial, { type: "copy" });
+          if (claimed) state = sessionReducer(state, { type: "claimCopy", effectId: 1 });
+          state = change === "revision" ? sessionReducer(state, { type: "addQueryPiece" })
+            : change === "epoch" ? { ...state, epoch: state.epoch + 1 }
+            : change === "classification" ? apply(state, "https://")
+            : change === "exact-source" ? { ...state, input: "https://example.com/b",
+                snapshot: { ...state.snapshot!, serialized: "https://example.com/b" } }
+            : change === "undo" ? (() => {
+                const added = sessionReducer(state, { type: "addQueryPiece" });
+                return sessionReducer(added, { type: "undo", revision: added.revision });
+              })()
+            : sessionReducer(state, { type: "copy" });
+          state = sessionReducer(state, { type: "claimCopy", effectId: 1 });
+          expect(state.effects[0]!.status).toBe(claimed ? "claimed" : "rejected");
+          state = sessionReducer(state, { type: "acknowledgeCopy", effectId: 1, outcome: "success" });
+          expect(state.copySuccess).toBeNull();
+          expect(state.copyFailure).toBeNull();
+          expect(state.lastAcknowledgedEffectId).toBe(1);
+        }
+      }
+    });
+
+    it("reports typed source-specific failures and clears obsolete feedback on retry or source change", () => {
+      const initial = apply(apply(initialSessionState, "https://example.com/a"), "https://");
+      for (const outcome of ["unavailable", "throw", "rejected", "timeout", "fenced"] as const) {
+        let state = sessionReducer(initial, { type: "copy" });
+        state = sessionReducer(state, { type: "claimCopy", effectId: 1 });
+        state = sessionReducer(state, { type: "acknowledgeCopy", effectId: 1, outcome });
+        expect(state.copyFailure).toEqual({ source: "last-valid", outcome });
+        expect(sessionReducer(state, { type: "copy" }).copyFailure).toBeNull();
+        expect(apply(state, initial.snapshot!.serialized).copyFailure).toBeNull();
+        expect(sessionReducer(state, { type: "addQueryPiece" }).copyFailure).toBeNull();
+      }
+    });
+  });
+
+describe("Story 3.2 focus authority", () => {
   it.each(["revision", "epoch", "focus", "input", "composition"] as const)(
     "rejects obsolete focus after newer %s without replacement", (reason) => {
       const a = apply(initialSessionState, "https://example.com/a?x=1");

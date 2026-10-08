@@ -42,7 +42,7 @@ the available native JSON reports and separate command diagnostics under
 - `inventory.json` lists every exact runner/file/full-title/project identity
   and multiplicity, **including tests not mapped to cells**. It is a reviewed
   expectation; the producer never learns expected coverage from its own run.
-- `coverage.json` maps all 44 mandatory cells to exact executed identities,
+- `coverage.json` maps all 48 mandatory cells to exact executed identities,
   including the approved Chromium browser project. File existence and matching aggregate counts
   cannot substitute for these identities.
 - Story 3.1 adds exact-history restoration, guarded Draft preservation,
@@ -65,6 +65,14 @@ the available native JSON reports and separate command diagnostics under
   through both activation paths, preserving invalid Draft selection and errors.
   Synthetic composition and injected platform policy do not prove
   real OS keyboard/IME or manual assistive-technology coverage.
+- Story 3.3 pins exact Current/Last Valid Copy, stale/serial claims, typed
+  clipboard failure and the private 20,000-character/260-query capacity cells.
+  Clipboard tests use an injected browser-local adapter, a three-second timeout,
+  and an unresolved-write fence released only on native settlement. They prove
+  no overlap or late success and safe subsequent retry, not
+  native OS clipboard access. Copy does not add History or move editor focus;
+  keyboard activation retains ordinary blur. Safe-copy recovery and the full
+  feedback scheduler remain Stories 3.4 and 3.5.
 - Native reports, diagnostics and observed version command outcomes are hashed.
   Every command is bound to the same source/build/delivery identities. Paths
   reject traversal, absolute paths, symlinks and special files before reading.

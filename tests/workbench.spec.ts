@@ -24,6 +24,204 @@ test.beforeEach(async ({ browser, browserName }, testInfo) => {
   testInfo.annotations.push({ type: "engine", description: `${browserName}:${browser.version()}` });
 });
 
+const installCopyProbe = async (page: import("@playwright/test").Page) => {
+  await page.addInitScript(() => {
+    const probe = {
+      writes: [] as string[], mode: "success",
+      pending: [] as { resolve: () => void; reject: () => void }[],
+    };
+    Object.defineProperty(window, "__copyProbe", { value: probe });
+    Object.defineProperty(navigator, "clipboard", { configurable: true, get: () => {
+      if (probe.mode === "unavailable") return undefined;
+      return { writeText: (value: string) => {
+        probe.writes.push(value);
+        if (probe.mode === "throw") throw new Error("non-content failure");
+        if (probe.mode === "reject") return Promise.reject(new Error("non-content failure"));
+        if (probe.mode === "pending") return new Promise<void>((resolve, reject) => {
+          probe.pending.push({ resolve, reject: () => reject(new Error("non-content failure")) });
+        });
+        return Promise.resolve();
+      } };
+    } });
+  });
+};
+
+declare global {
+  interface Window {
+    __copyProbe: {
+      writes: string[]; mode: string;
+      pending: { resolve: () => void; reject: () => void }[];
+    };
+  }
+}
+
+test("Story 3.3 Copy exact Current and Last Valid preserves pointer editing and keyboard action order", async ({ page, browser }) => {
+  await installCopyProbe(page);
+  await page.goto("/");
+  const editor = page.getByLabel("Complete HTTP or HTTPS Absolute URL");
+  const copy = page.getByRole("button", { name: "Copy", exact: true });
+  await expect(copy).toHaveAttribute("aria-disabled", "true");
+  await copy.focus();
+  await page.keyboard.press("Enter");
+  expect(await page.evaluate(() => window.__copyProbe.writes)).toEqual([]);
+  await editor.fill(semanticFixture);
+  await editor.evaluate((input: HTMLTextAreaElement) => input.setSelectionRange(2, 8, "backward"));
+  await copy.dispatchEvent("pointerdown");
+  await copy.dispatchEvent("pointercancel");
+  expect(await page.evaluate(() => window.__copyProbe.writes)).toEqual([]);
+  await copy.click();
+  await expect(page.getByText("Current URL copied.", { exact: true })).toBeVisible();
+  await expect(editor).toBeFocused();
+  expect(await editor.evaluate((input: HTMLTextAreaElement) =>
+    [input.selectionStart, input.selectionEnd, input.selectionDirection])).toEqual([2, 8, "backward"]);
+  await expect(page.getByRole("button", { name: "Undo", exact: true })).toHaveAttribute("aria-disabled", "true");
+  const ids = await page.locator("#managed-pieces > li").evaluateAll((rows) => rows.map((row) => row.getAttribute("data-piece-id")));
+  await page.getByLabel("Search Managed Pieces").fill("dup");
+  await editor.fill("https://");
+  await editor.evaluate((input: HTMLTextAreaElement) => input.setSelectionRange(2, 5, "backward"));
+  const validation = await page.locator("#error-full-url").textContent();
+  await copy.click();
+  await expect(page.getByText("Last Valid URL copied; Draft URL is unchanged.", { exact: true })).toBeVisible();
+  await expect(editor).toBeFocused();
+  expect(await editor.evaluate((input: HTMLTextAreaElement) =>
+    [input.selectionStart, input.selectionEnd, input.selectionDirection])).toEqual([2, 5, "backward"]);
+  await expect(page.locator("#error-full-url")).toHaveText(validation!);
+  await expect(page.getByLabel("Search Managed Pieces")).toHaveValue("dup");
+  await page.getByLabel("Search Managed Pieces").fill("");
+  expect(await page.locator("#managed-pieces > li").evaluateAll((rows) => rows.map((row) => row.getAttribute("data-piece-id")))).toEqual(ids);
+  await page.getByRole("button", { name: "Undo", exact: true }).focus();
+  await page.keyboard.press("Tab");
+  await expect(copy).toBeFocused();
+  await page.keyboard.press("Space");
+  await expect(copy).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect.poll(() => page.evaluate(() => window.__copyProbe.writes.length)).toBe(4);
+  expect(await page.evaluate(() => window.__copyProbe.writes)).toEqual(Array(4).fill(semanticFixture));
+  const touchContext = await browser.newContext({ hasTouch: true, viewport: { width: 320, height: 720 } });
+  try {
+    const touchPage = await touchContext.newPage();
+    await installCopyProbe(touchPage);
+    await touchPage.goto("/");
+    const touchEditor = touchPage.getByLabel("Complete HTTP or HTTPS Absolute URL");
+    await touchEditor.fill(semanticFixture);
+    await touchPage.getByRole("button", { name: "Copy", exact: true }).tap();
+    await expect(touchPage.getByText("Current URL copied.", { exact: true })).toBeVisible();
+    await expect(touchEditor).toBeFocused();
+    expect(await touchPage.evaluate(() => window.__copyProbe.writes)).toEqual([semanticFixture]);
+  } finally {
+    await touchContext.close();
+  }
+});
+
+test("Story 3.3 Copy serial races supersede queued attempts and stale completions before Undo focus", async ({ page }) => {
+  await installCopyProbe(page);
+  await page.goto("/");
+  const editor = page.getByLabel("Complete HTTP or HTTPS Absolute URL");
+  const copy = page.getByRole("button", { name: "Copy", exact: true });
+  await editor.fill("https://example.com/a?x=1");
+  await page.evaluate(() => { window.__copyProbe.mode = "pending"; });
+  await copy.click();
+  await copy.click();
+  await page.locator("#add-query-before").click();
+  await page.getByRole("button", { name: "Undo", exact: true }).click();
+  await copy.click();
+  expect(await page.evaluate(() => window.__copyProbe.writes)).toEqual(["https://example.com/a?x=1"]);
+  await page.evaluate(() => window.__copyProbe.pending.shift()!.resolve());
+  await expect.poll(() => page.evaluate(() => window.__copyProbe.writes.length)).toBe(2);
+  await expect(page.getByText("Current URL copied.", { exact: true })).toHaveCount(0);
+  await page.evaluate(() => { window.__copyProbe.mode = "success"; window.__copyProbe.pending.shift()!.resolve(); });
+  await expect(page.getByText("Current URL copied.", { exact: true })).toBeVisible();
+  await expect(editor).toHaveValue("https://example.com/a?x=1");
+  await copy.click();
+  await expect.poll(() => page.evaluate(() => window.__copyProbe.writes.length)).toBe(3);
+  await expect(page.getByRole("button", { name: "Undo", exact: true })).toHaveAttribute("aria-disabled", "true");
+});
+
+test("Story 3.3 Copy boundary failures retry and timeout fence never overlap or announce late success", async ({ page }) => {
+  await installCopyProbe(page);
+  for (const mode of ["unavailable", "throw", "reject", "pending"]) {
+    await page.goto("/");
+    const editor = page.getByLabel("Complete HTTP or HTTPS Absolute URL");
+    const copy = page.getByRole("button", { name: "Copy", exact: true });
+    await editor.fill("https://example.com/a");
+    await editor.fill("https://");
+    await page.evaluate((mode) => { window.__copyProbe.mode = mode; }, mode);
+    await copy.click();
+    await expect(page.getByRole("alert")).toContainText("Last Valid URL could not be copied.");
+    await expect(editor).toBeFocused();
+    await expect(page.locator("#error-full-url")).toBeVisible();
+    await page.evaluate(() => { window.__copyProbe.mode = "success"; });
+    await copy.click();
+    if (mode === "pending") {
+      await expect(page.getByRole("alert")).toContainText("pending clipboard write");
+      expect(await page.evaluate(() => window.__copyProbe.writes.length)).toBe(1);
+      await page.evaluate(() => window.__copyProbe.pending.shift()!.resolve());
+      await expect(page.getByText(/URL copied/)).toHaveCount(0);
+      await expect(page.getByRole("alert")).toContainText("pending clipboard write");
+      await copy.click();
+      await expect(page.getByRole("alert")).toHaveCount(0);
+      await expect(page.getByText("Last Valid URL copied; Draft URL is unchanged.", { exact: true })).toBeVisible();
+      expect(await page.evaluate(() => window.__copyProbe.writes.length)).toBe(2);
+    } else {
+      await expect(page.getByRole("alert")).toHaveCount(0);
+      await expect(page.getByText("Last Valid URL copied; Draft URL is unchanged.", { exact: true })).toBeVisible();
+    }
+    await expect(editor).toBeFocused();
+  }
+});
+
+test("Story 3.3 dense Copy edit Undo exact writes private complete rows below 100 ms at 320px", async ({ page }) => {
+  await installCopyProbe(page);
+  await page.addInitScript(() => {
+    const sinks: string[] = [];
+    Object.defineProperty(window, "__copySinks", { value: sinks });
+    Storage.prototype.setItem = () => { sinks.push("storage"); };
+    window.indexedDB.open = () => { sinks.push("indexeddb"); throw new Error("unexpected sink"); };
+    window.caches.open = async () => { sinks.push("cache"); throw new Error("unexpected sink"); };
+    navigator.serviceWorker.register = async () => { sinks.push("service-worker"); throw new Error("unexpected sink"); };
+    navigator.sendBeacon = () => { sinks.push("beacon"); return false; };
+    window.fetch = async () => { sinks.push("fetch"); throw new Error("unexpected sink"); };
+  });
+  await page.goto("/");
+  const requests: string[] = [], diagnostics: string[] = [];
+  page.on("request", (request) => requests.push(request.url()));
+  page.on("console", (message) => diagnostics.push(message.text()));
+  page.on("pageerror", (error) => diagnostics.push(error.message));
+  const url = createCapacityFixture();
+  const editor = page.getByLabel("Complete HTTP or HTTPS Absolute URL");
+  await editor.fill(url);
+  const copy = page.getByRole("button", { name: "Copy", exact: true });
+  const activate = async (message = "Current URL copied.") => {
+    const elapsed = await copy.evaluate((button: HTMLButtonElement) => {
+      const start = performance.now(); button.click(); return performance.now() - start;
+    });
+    expect(elapsed).toBeLessThan(100);
+    await expect(page.getByText(message, { exact: true })).toBeVisible();
+  };
+  const ids = await page.locator("#managed-pieces > li").evaluateAll((rows) => rows.map((row) => row.getAttribute("data-piece-id")));
+  const originalLastValue = await page.getByLabel("Value, Query Parameter 260 of 260").inputValue();
+  await activate();
+  await page.getByLabel("Value, Query Parameter 260 of 260").fill("changed");
+  const changed = await editor.inputValue();
+  await activate();
+  await page.getByRole("button", { name: "Undo", exact: true }).click();
+  await activate();
+  expect(await page.evaluate(() => window.__copyProbe.writes)).toEqual([url, changed, url]);
+  expect(await page.locator("#managed-pieces > li").evaluateAll((rows) => rows.map((row) => row.getAttribute("data-piece-id")))).toEqual(ids);
+  await expect(page.getByLabel("Value, Query Parameter 260 of 260")).toHaveValue(originalLastValue);
+  await editor.fill("https://");
+  await activate("Last Valid URL copied; Draft URL is unchanged.");
+  expect(await page.evaluate(() => window.__copyProbe.writes)).toEqual([url, changed, url, url]);
+  expect(await page.locator("#managed-pieces > li").count()).toBe(ids.length);
+  await page.setViewportSize({ width: 320, height: 720 });
+  await expect(copy).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
+  expect(await page.evaluate(() => (window as unknown as { __copySinks: string[] }).__copySinks)).toEqual([]);
+  expect(await page.evaluate(() => [localStorage.length, sessionStorage.length, document.cookie, location.search])).toEqual([0, 0, "", ""]);
+  expect(requests).toEqual([]);
+  expect(diagnostics).toEqual([]);
+});
+
 test("Story 3.2 both Undo paths restore every operation-specific focus without new history", async ({ page }) => {
   for (const path of ["visible", "shortcut"]) {
     for (const kind of undoFocusKinds) {
@@ -1491,6 +1689,8 @@ test("initial and populated workbench pass automated accessibility checks", asyn
   await expect(page.getByRole("button", { name: "Undo", exact: true })).toBeFocused();
   await expect(page.getByRole("button", { name: "Undo", exact: true })).toHaveAttribute("aria-disabled", "true");
   await page.keyboard.press("Tab");
+  await expect(page.getByRole("button", { name: "Copy", exact: true })).toBeFocused();
+  await page.keyboard.press("Tab");
   await expect(
     page.getByRole("button", { name: "Add Query Parameter before the list" }),
   ).toBeFocused();
@@ -1515,7 +1715,7 @@ test("initial and populated workbench pass automated accessibility checks", asyn
   await addQueryBefore.focus();
   await expect(addQueryBefore).toBeFocused();
   await expect(page.locator("#full-url-help")).toBeVisible();
-  await expect(page.locator("#actions-note")).toBeVisible();
+  await expect(page.locator("#copy-help")).toBeVisible();
   await expect(page.locator("#piece-summary")).toBeVisible();
   await expect(page.getByLabel("Search Managed Pieces")).toBeVisible();
   await expect(page.locator("#managed-pieces > li").first()).toBeVisible();
@@ -1523,7 +1723,7 @@ test("initial and populated workbench pass automated accessibility checks", asyn
   expect(
     await page
       .locator(
-        "#full-url-help, #actions-note, [role='status'], #piece-summary, #managed-pieces > li",
+        "#full-url-help, #copy-help, [role='status'], #piece-summary, #managed-pieces > li",
       )
       .evaluateAll((elements) =>
         elements

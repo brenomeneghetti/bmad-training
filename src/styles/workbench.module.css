@@ -298,3 +298,8 @@ h2 {
     border-color: CanvasText;
   }
 }
+.copyFailure {
+  border: 2px solid currentColor;
+  padding: 0.75rem;
+  overflow-wrap: anywhere;
+}

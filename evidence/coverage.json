@@ -1,5 +1,38 @@
 [
   {
+    "id": "story-3-3-exact-source", "story": "3.3",
+    "tests": [
+      { "runner": "vitest", "file": "src/core/session/session.test.ts", "title": "Story 3.3 Copy authority captures exact Current and Last Valid without modifying editing or History", "project": "vitest" },
+      { "runner": "vitest", "file": "src/app/workbench/Workbench.test.tsx", "title": "URL Workbench Story 3.3 Copy retains Draft backward selection Search and open editing without History", "project": "vitest" },
+      { "runner": "playwright", "file": "tests/workbench.spec.ts", "title": "Story 3.3 Copy exact Current and Last Valid preserves pointer editing and keyboard action order", "project": "chromium" }
+    ]
+  },
+  {
+    "id": "story-3-3-stale-serial", "story": "3.3",
+    "tests": [
+      { "runner": "vitest", "file": "src/core/session/session.test.ts", "title": "Story 3.3 Copy authority supersedes queued and invoked copies after revision epoch classification or attempt changes", "project": "vitest" },
+      { "runner": "vitest", "file": "src/platform/effects/index.test.ts", "title": "Story 3.3 shared executor serializes Copy and Undo claims rejects stale heads and ignores duplicates", "project": "vitest" },
+      { "runner": "vitest", "file": "src/platform/effects/index.test.ts", "title": "Story 3.3 shared executor stops DOM work and queued writes after unmount", "project": "vitest" },
+      { "runner": "playwright", "file": "tests/workbench.spec.ts", "title": "Story 3.3 Copy serial races supersede queued attempts and stale completions before Undo focus", "project": "chromium" }
+    ]
+  },
+  {
+    "id": "story-3-3-typed-failure", "story": "3.3",
+    "tests": [
+      { "runner": "vitest", "file": "src/core/session/session.test.ts", "title": "Story 3.3 Copy authority reports typed source-specific failures and clears obsolete feedback on retry or source change", "project": "vitest" },
+      { "runner": "vitest", "file": "src/platform/clipboard/index.test.ts", "title": "Story 3.3 clipboard returns content-free typed boundary outcomes and exact writes", "project": "vitest" },
+      { "runner": "vitest", "file": "src/platform/clipboard/index.test.ts", "title": "Story 3.3 clipboard timeout fences unresolved writes until settlement without late success", "project": "vitest" },
+      { "runner": "vitest", "file": "src/app/workbench/Workbench.test.tsx", "title": "URL Workbench Story 3.3 Copy retry failures are persistent source-specific and never steal focus", "project": "vitest" },
+      { "runner": "playwright", "file": "tests/workbench.spec.ts", "title": "Story 3.3 Copy boundary failures retry and timeout fence never overlap or announce late success", "project": "chromium" }
+    ]
+  },
+  {
+    "id": "story-3-3-private-capacity", "story": "3.3",
+    "tests": [
+      { "runner": "playwright", "file": "tests/workbench.spec.ts", "title": "Story 3.3 dense Copy edit Undo exact writes private complete rows below 100 ms at 320px", "project": "chromium" }
+    ]
+  },
+  {
     "id": "story-3-2-input-arbiter", "story": "3.2",
     "tests": [
       { "runner": "vitest", "file": "src/app/workbench/inputArbiter.test.ts", "title": "Story 3.2 input arbiter routes exactly once under independent mac policy", "project": "vitest" },

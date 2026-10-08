@@ -22,7 +22,8 @@ import { buildManagedPieces, filterManagedPieces } from "../pieces/search";
 import styles from "../../styles/workbench.module.css";
 import { flushSync } from "react-dom";
 import { routeUndo } from "./inputArbiter";
-import { executeFocusEffects } from "../../platform/effects";
+import { createSessionExecutor } from "../../platform/effects";
+import { createBrowserClipboard } from "../../platform/clipboard";
 import { focusRestoredTarget } from "../../platform/focus";
 import type { SessionAction } from "../../core/session";
 
@@ -31,6 +32,10 @@ export function Workbench() {
   const stateRef = useRef(state);
   stateRef.current = state;
   const adapterFocusing = useRef(false);
+  const executor = useRef(createSessionExecutor());
+  const clipboard = useRef(createBrowserClipboard());
+  const mounted = useRef(true);
+  const visiblePiecesRef = useRef<ReturnType<typeof buildManagedPieces>>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const workbenchRef = useRef<HTMLElement>(null);
   const composingTarget = useRef<EventTarget | null>(null);
@@ -84,6 +89,7 @@ export function Workbench() {
     () => filterManagedPieces(allPieces, searchTerm),
     [allPieces, searchTerm],
   );
+  visiblePiecesRef.current = visiblePieces;
   const editorsDisabled =
     !state.lastValidSnapshot ||
     state.phase === "no-session" ||
@@ -112,20 +118,34 @@ export function Workbench() {
       stateRef.current = sessionReducer(stateRef.current, action);
       dispatch(action);
     };
-    executeFocusEffects({
+    executor.current.run({
       current: () => stateRef.current.effects,
-      claim: (effectId) => send({ type: "claimFocus", effectId }),
-      invoke: (effect) => {
+      active: () => mounted.current,
+      claim: (effect) => send({ type: effect.kind === "focus" ? "claimFocus" : "claimCopy", effectId: effect.effectId }),
+      copy: (effect) => clipboard.current.write(effect.serialized),
+      focus: (effect) => {
         adapterFocusing.current = true;
         try {
-          return focusRestoredTarget(effect.target, visiblePieces, document);
+          return focusRestoredTarget(effect.target, visiblePiecesRef.current, document);
         } finally {
           adapterFocusing.current = false;
         }
       },
-      acknowledge: (effectId, filtered) => send({ type: "acknowledgeFocus", effectId, filtered }),
+      acknowledge: (effect, outcome) => {
+        const action: SessionAction = effect.kind === "focus"
+          ? { type: "acknowledgeFocus", effectId: effect.effectId, filtered: outcome === true }
+          : { type: "acknowledgeCopy", effectId: effect.effectId,
+              outcome: typeof outcome === "boolean" ? "superseded" : outcome };
+        if (mounted.current) send(action);
+        else stateRef.current = sessionReducer(stateRef.current, action);
+      },
     });
   }, [state, visiblePieces]);
+
+  useLayoutEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; };
+  }, []);
 
   useEffect(() => {
     const keydown = (event: KeyboardEvent) => {
@@ -575,7 +595,10 @@ export function Workbench() {
         >
           Undo
         </button>
-        <button type="button" disabled>
+        <button type="button" aria-disabled={!state.snapshot}
+          aria-describedby="copy-help"
+          onPointerDown={(event) => event.preventDefault()}
+          onClick={() => flushSync(() => dispatch({ type: "copy" }))}>
           Copy
         </button>
         <button
@@ -593,7 +616,18 @@ export function Workbench() {
             ? "Undo inactive: finish text composition first."
             : canUndo(state) ? "Undo the latest URL change." : "Undo inactive: no URL changes to undo."}
         </p>
-        <p id="actions-note">Copy is not available yet.</p>
+        <p id="copy-help">{state.snapshot
+          ? "Copy the Current URL, or Last Valid URL while the Draft differs."
+          : "Copy inactive: enter a valid URL first."}</p>
+        <div role="status" aria-live="polite" aria-atomic="true">
+          {state.copySuccess ? <span key={state.latestCopyAttempt}>{state.copySuccess}</span> : null}
+        </div>
+        {state.copyFailure ? <p role="alert" className={styles.copyFailure}>
+          {state.copyFailure.source === "current" ? "Current URL" : "Last Valid URL"} could not be copied.
+          {" "}{state.copyFailure.outcome === "timeout" || state.copyFailure.outcome === "fenced"
+            ? "The attempt timed out or was blocked by a pending clipboard write. Activate Copy to retry after that write settles."
+            : "Check clipboard access and activate Copy to retry."}
+        </p> : null}
         <div role="status" aria-live="polite" aria-atomic="true">
           {state.phase === "active"
             ? `URL parsed. ${

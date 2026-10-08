@@ -13,3 +13,17 @@ export interface FocusEffect {
   readonly target: FocusTarget;
   readonly status: "pending" | "claimed" | "rejected";
 }
+
+export type CopySource = "current" | "last-valid";
+export type ClipboardOutcome = "success" | "unavailable" | "throw" | "rejected" | "timeout" | "fenced" | "superseded";
+export interface CopyEffect {
+  readonly kind: "clipboard";
+  readonly effectId: number;
+  readonly attemptId: number;
+  readonly stateRevision: number;
+  readonly epoch: number;
+  readonly serialized: string;
+  readonly source: CopySource;
+  readonly status: "pending" | "claimed" | "rejected";
+}
+export type SessionEffect = FocusEffect | CopyEffect;

@@ -1,0 +1,150 @@
+{
+  "schemaVersion": 2,
+  "status": "incomplete",
+  "runId": "f8d6f552-b297-4057-b729-95f231a19ca0",
+  "sourceDigest": "4f4c91350bd5998733264d2f95f3bc5fcd88a917324012602ae5e91ec5c19037",
+  "toolVersions": {
+    "node": "24.21.0",
+    "pnpm": "12.5.1",
+    "vitest": "5.0.1",
+    "playwright": "1.63.0"
+  },
+  "observations": [
+    {
+      "tool": "node",
+      "path": "evidence/runs/f8d6f552-b297-4057-b729-95f231a19ca0/version-node.json",
+      "hash": "87d39dc21731a58144d23fe92a6f663c2d110422f5b7c5a2fba4890a4fe19071"
+    },
+    {
+      "tool": "pnpm",
+      "path": "evidence/runs/f8d6f552-b297-4057-b729-95f231a19ca0/version-pnpm.json",
+      "hash": "c89d0cd1f956e5604f6731034875148293c910cfb6853d260af8507877fa5a37"
+    },
+    {
+      "tool": "vitest",
+      "path": "evidence/runs/f8d6f552-b297-4057-b729-95f231a19ca0/version-vitest.json",
+      "hash": "32d2c279089110c9f194b70d464194d25ab41f1d8e20c03b2e49befe9fc4e008"
+    },
+    {
+      "tool": "playwright",
+      "path": "evidence/runs/f8d6f552-b297-4057-b729-95f231a19ca0/version-playwright.json",
+      "hash": "27c3337c251581211e3dda313513cb35f87ecd28192bdf5c76b31902247ba535"
+    }
+  ],
+  "executions": [
+    {
+      "runner": "build",
+      "argv": [
+        "pnpm",
+        "run",
+        "build"
+      ],
+      "exitCode": 0,
+      "signal": null,
+      "checkoutRoot": "/home/blackdude/Documents/OEProjects/bmad-training",
+      "sourceDigest": "4f4c91350bd5998733264d2f95f3bc5fcd88a917324012602ae5e91ec5c19037",
+      "artifactDigest": "60aaaeef9aaadb6346f47508bc32406ded36063000fac64d810e588b409bca60",
+      "log": {
+        "path": "evidence/runs/f8d6f552-b297-4057-b729-95f231a19ca0/build.txt",
+        "hash": "0f00cacab7f25f519b64c6f66beddff02eec8ba278b36d7ce369fd3833129e78"
+      }
+    },
+    {
+      "runner": "lint",
+      "argv": [
+        "pnpm",
+        "run",
+        "lint"
+      ],
+      "exitCode": 0,
+      "signal": null,
+      "checkoutRoot": "/home/blackdude/Documents/OEProjects/bmad-training",
+      "sourceDigest": "4f4c91350bd5998733264d2f95f3bc5fcd88a917324012602ae5e91ec5c19037",
+      "artifactDigest": "60aaaeef9aaadb6346f47508bc32406ded36063000fac64d810e588b409bca60",
+      "log": {
+        "path": "evidence/runs/f8d6f552-b297-4057-b729-95f231a19ca0/lint.txt",
+        "hash": "0451eeae0fb3805b52968919f11e151ec67d44c8226ed695adfe15d8a0f9a80f"
+      }
+    },
+    {
+      "runner": "vitest",
+      "argv": [
+        "pnpm",
+        "exec",
+        "vitest",
+        "run",
+        "--reporter=json",
+        "--outputFile=.cache/evidence-vitest.json"
+      ],
+      "exitCode": 0,
+      "signal": null,
+      "checkoutRoot": "/home/blackdude/Documents/OEProjects/bmad-training",
+      "sourceDigest": "4f4c91350bd5998733264d2f95f3bc5fcd88a917324012602ae5e91ec5c19037",
+      "artifactDigest": "60aaaeef9aaadb6346f47508bc32406ded36063000fac64d810e588b409bca60",
+      "log": {
+        "path": "evidence/runs/f8d6f552-b297-4057-b729-95f231a19ca0/vitest.txt",
+        "hash": "bdb86b1e5e1a6d8e04bf3724857dc63dab73fb2d4f54964df707b6abb0a5e632"
+      },
+      "report": {
+        "path": "evidence/runs/f8d6f552-b297-4057-b729-95f231a19ca0/vitest.json",
+        "hash": "4fd4755ebb413e571e35545b9c90dae416363e53c265e23b327faedb7c53d9b9"
+      }
+    },
+    {
+      "runner": "node",
+      "argv": [
+        "node",
+        "--test",
+        "--test-reporter=./evidence/node-reporter.mjs",
+        "evidence/validate.test.mjs",
+        "evidence/run.test.mjs"
+      ],
+      "exitCode": 0,
+      "signal": null,
+      "checkoutRoot": "/home/blackdude/Documents/OEProjects/bmad-training",
+      "sourceDigest": "4f4c91350bd5998733264d2f95f3bc5fcd88a917324012602ae5e91ec5c19037",
+      "artifactDigest": "60aaaeef9aaadb6346f47508bc32406ded36063000fac64d810e588b409bca60",
+      "log": {
+        "path": "evidence/runs/f8d6f552-b297-4057-b729-95f231a19ca0/node.txt",
+        "hash": "20840a9a04244ced5a2521063b93a6c3af45af00ee5b40dea241a0b71167dd93"
+      },
+      "report": {
+        "path": "evidence/runs/f8d6f552-b297-4057-b729-95f231a19ca0/node.json",
+        "hash": "49cadf5a40bf3634dc840a392429ac593a751054ca76e7653c8e337f3167c085"
+      }
+    },
+    {
+      "runner": "playwright",
+      "argv": [
+        "pnpm",
+        "exec",
+        "playwright",
+        "test",
+        "tests/workbench.spec.ts",
+        "--reporter=json"
+      ],
+      "exitCode": 0,
+      "signal": null,
+      "checkoutRoot": "/home/blackdude/Documents/OEProjects/bmad-training",
+      "sourceDigest": "4f4c91350bd5998733264d2f95f3bc5fcd88a917324012602ae5e91ec5c19037",
+      "artifactDigest": "60aaaeef9aaadb6346f47508bc32406ded36063000fac64d810e588b409bca60",
+      "log": {
+        "path": "evidence/runs/f8d6f552-b297-4057-b729-95f231a19ca0/playwright.txt",
+        "hash": "4e3ee540c5cfeb994c5adf1810a614a2fd1351c9f827e188e1a55186e162e8dc"
+      },
+      "report": {
+        "path": "evidence/runs/f8d6f552-b297-4057-b729-95f231a19ca0/playwright.json",
+        "hash": "43533a381c2bead360e97df0e18b074060e0eb493779ac1da7bf6f5517ea2e5b"
+      }
+    }
+  ],
+  "artifact": {
+    "path": "dist",
+    "delivery": "deployment/static-delivery.json",
+    "digest": "60aaaeef9aaadb6346f47508bc32406ded36063000fac64d810e588b409bca60"
+  },
+  "failure": {
+    "code": "VALIDATION_FAILED",
+    "message": "Exact inventory/multiplicity mismatch: vitest"
+  }
+}

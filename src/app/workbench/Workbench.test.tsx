@@ -14,6 +14,61 @@ import { Workbench } from "./Workbench";
 describe("URL Workbench", () => {
   afterEach(() => vi.useRealTimers());
 
+  it("Story 3.3 Copy retains Draft backward selection Search and open editing without History", async () => {
+    const writeText = vi.fn(async () => {});
+    Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText } });
+    render(<Workbench />);
+    const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL") as HTMLTextAreaElement;
+    const copy = screen.getByRole("button", { name: "Copy" });
+    expect(copy).toHaveAttribute("aria-disabled", "true");
+    fireEvent.click(copy);
+    expect(writeText).not.toHaveBeenCalled();
+    fireEvent.change(editor, { target: { value: semanticFixture } });
+    editor.focus();
+    editor.setSelectionRange(2, 8, "backward");
+    fireEvent.pointerDown(copy);
+    expect(writeText).not.toHaveBeenCalled();
+    fireEvent.pointerCancel(copy);
+    fireEvent.click(copy);
+    await waitFor(() => expect(screen.getByText("Current URL copied.")).toBeInTheDocument());
+    expect(writeText).toHaveBeenLastCalledWith(semanticFixture);
+    expect(editor).toHaveFocus();
+    expect([editor.selectionStart, editor.selectionEnd, editor.selectionDirection]).toEqual([2, 8, "backward"]);
+    expect(screen.getByRole("button", { name: "Undo" })).toHaveAttribute("aria-disabled", "true");
+    fireEvent.change(screen.getByLabelText("Search Managed Pieces"), { target: { value: "dup" } });
+    fireEvent.change(editor, { target: { value: "https://" } });
+    editor.focus();
+    editor.setSelectionRange(2, 5, "backward");
+    const error = document.getElementById("error-full-url")!.textContent;
+    fireEvent.click(copy);
+    await waitFor(() => expect(screen.getByText("Last Valid URL copied; Draft URL is unchanged.")).toBeInTheDocument());
+    expect(writeText).toHaveBeenCalledTimes(2);
+    expect(editor).toHaveValue("https://");
+    expect(editor).toHaveFocus();
+    expect([editor.selectionStart, editor.selectionEnd, editor.selectionDirection]).toEqual([2, 5, "backward"]);
+    expect(screen.getByLabelText("Search Managed Pieces")).toHaveValue("dup");
+    expect(document.getElementById("error-full-url")!.textContent).toBe(error);
+  });
+
+  it("Story 3.3 Copy retry failures are persistent source-specific and never steal focus", async () => {
+    const writeText = vi.fn().mockRejectedValueOnce(new Error("secret")).mockResolvedValueOnce(undefined);
+    Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText } });
+    render(<Workbench />);
+    const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
+    fireEvent.change(editor, { target: { value: "https://example.com/a" } });
+    fireEvent.change(editor, { target: { value: "https://" } });
+    editor.focus();
+    const copy = screen.getByRole("button", { name: "Copy" });
+    fireEvent.click(copy);
+    await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent("Last Valid URL could not be copied."));
+    expect(screen.getByRole("alert")).not.toHaveTextContent("secret");
+    expect(editor).toHaveFocus();
+    fireEvent.click(copy);
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText("Last Valid URL copied; Draft URL is unchanged.")).toBeInTheDocument());
+    expect(editor).toHaveFocus();
+  });
+
   it("Story 3.2 shortcut protects native editors and selection then restores once outside editors", () => {
     render(<Workbench />);
     const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");

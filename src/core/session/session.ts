@@ -14,7 +14,7 @@ import {
   type QueryPiece,
   type TokenEdit,
 } from "../url";
-import type { FocusEffect, FocusTarget } from "./effects";
+import type { ClipboardOutcome, CopyEffect, CopySource, SessionEffect, FocusTarget } from "./effects";
 
 export interface StructuredEditCommand extends TokenEdit {
   readonly tokenRevision: number;
@@ -57,7 +57,10 @@ export type SessionPhase =
   | "invalid-intake";
 
 export interface SessionState {
-  readonly effects: readonly FocusEffect[];
+  readonly effects: readonly SessionEffect[];
+  readonly latestCopyAttempt: number;
+  readonly copySuccess: string | null;
+  readonly copyFailure: { readonly source: CopySource; readonly outcome: ClipboardOutcome } | null;
   readonly nextEffectId: number;
   readonly lastAcknowledgedEffectId: number;
   readonly interaction: number;
@@ -84,6 +87,9 @@ export interface SessionState {
 }
 
 export type SessionAction =
+  | { readonly type: "copy" }
+  | { readonly type: "claimCopy"; readonly effectId: number }
+  | { readonly type: "acknowledgeCopy"; readonly effectId: number; readonly outcome: ClipboardOutcome }
   | { readonly type: "cancelFocus" }
   | { readonly type: "claimFocus"; readonly effectId: number }
   | { readonly type: "acknowledgeFocus"; readonly effectId: number; readonly filtered?: boolean }
@@ -114,6 +120,9 @@ export type SessionAction =
 
 export const initialSessionState: SessionState = {
   effects: [],
+  latestCopyAttempt: 0,
+  copySuccess: null,
+  copyFailure: null,
   nextEffectId: 1,
   lastAcknowledgedEffectId: 0,
   interaction: 0,
@@ -419,11 +428,42 @@ const sessionTransition = (
   action: SessionAction,
 ): SessionState => {
   switch (action.type) {
+    case "copy": {
+      if (!state.snapshot) return state;
+      return { ...state, latestCopyAttempt: state.latestCopyAttempt + 1,
+        copySuccess: null, copyFailure: null,
+        nextEffectId: state.nextEffectId + 1,
+        effects: [...state.effects, {
+          kind: "clipboard", effectId: state.nextEffectId,
+          attemptId: state.latestCopyAttempt + 1, epoch: state.epoch,
+          stateRevision: state.revision, serialized: state.snapshot.serialized,
+          source: copySource(state), status: "pending",
+        }] };
+    }
+    case "claimCopy": {
+      const effect = state.effects[0];
+      if (!effect || effect.kind !== "clipboard" || effect.effectId !== action.effectId ||
+        effect.status !== "pending") return state;
+      return { ...state, effects: [{ ...effect,
+        status: currentCopy(state, effect) ? "claimed" : "rejected" }, ...state.effects.slice(1)] };
+    }
+    case "acknowledgeCopy": {
+      const effect = state.effects[0];
+      if (!effect || effect.kind !== "clipboard" || effect.effectId !== action.effectId ||
+        effect.status === "pending") return state;
+      const current = effect.status === "claimed" && currentCopy(state, effect);
+      return { ...state, effects: state.effects.slice(1), lastAcknowledgedEffectId: effect.effectId,
+        copySuccess: current && action.outcome === "success"
+          ? effect.source === "current" ? "Current URL copied."
+            : "Last Valid URL copied; Draft URL is unchanged." : state.copySuccess,
+        copyFailure: current && action.outcome !== "success" && action.outcome !== "superseded"
+          ? { source: effect.source, outcome: action.outcome } : state.copyFailure };
+    }
     case "cancelFocus":
       return { ...state, interaction: state.interaction + 1 };
     case "claimFocus": {
       const effect = state.effects[0];
-      if (!effect || effect.effectId !== action.effectId || effect.status !== "pending") return state;
+      if (!effect || effect.kind !== "focus" || effect.effectId !== action.effectId || effect.status !== "pending") return state;
       const target = effect.target;
       const mountedIds = new Set(state.snapshot
         ? [state.snapshot.domainId, ...state.snapshot.path.map((piece) => piece.id),
@@ -438,7 +478,7 @@ const sessionTransition = (
     }
     case "acknowledgeFocus": {
       const effect = state.effects[0];
-      if (!effect || effect.effectId !== action.effectId || effect.status === "pending") return state;
+      if (!effect || effect.kind !== "focus" || effect.effectId !== action.effectId || effect.status === "pending") return state;
       return { ...state, effects: state.effects.slice(1), lastAcknowledgedEffectId: effect.effectId,
         structuredSuccess: action.filtered && effect.status === "claimed"
           ? `${state.structuredSuccess} Restored target is hidden by Search. Focus moved to the nearest visible field or Full URL; Search is unchanged.`
@@ -1030,13 +1070,24 @@ const sessionTransition = (
 };
 
 export const sessionReducer = (state: SessionState, action: SessionAction): SessionState => {
-  const next = sessionTransition(state, action);
+  let next = sessionTransition(state, action);
+  if (next.revision !== state.revision || next.epoch !== state.epoch ||
+    copySource(next) !== copySource(state)) {
+    next = { ...next, copySuccess: null, copyFailure: null };
+  }
   if (next !== state && ["inputChanged", "structuredEdit", "removePiece", "addQueryPiece",
     "moveQueryPiece", "fullUrlFocusBegin"].includes(action.type)) {
     return { ...next, interaction: state.interaction + 1 };
   }
   return next;
 };
+
+const copySource = (state: SessionState): CopySource =>
+  state.input === state.snapshot?.serialized ? "current" : "last-valid";
+const currentCopy = (state: SessionState, effect: CopyEffect): boolean =>
+  effect.epoch === state.epoch && effect.stateRevision === state.revision &&
+  effect.attemptId === state.latestCopyAttempt &&
+  effect.serialized === state.snapshot?.serialized && effect.source === copySource(state);
 
 export const prepareParse = (state: SessionState) => {
   const generation = state.generation + 1;
