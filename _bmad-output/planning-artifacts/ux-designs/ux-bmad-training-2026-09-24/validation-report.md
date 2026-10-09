@@ -2,139 +2,153 @@
 
 - **DESIGN.md:** `DESIGN.md`
 - **EXPERIENCE.md:** `EXPERIENCE.md`
-- **Run at:** 2026-09-24T18:39:44.563-03:00
+- **Run at:** 2026-10-09T12:58:02-03:00
+- **Scope:** Approved redesign documents and static mockup, not application testing.
 
 ## Overall verdict
 
-**Ready for architecture handoff with 0 UX blockers.** The current DESIGN.md and EXPERIENCE.md pair is mechanically complete and internally consistent across flows, tokens, components, states, visual-reference handling, document shape, and the reconciled FR-14 Undo contract.
+The approved dark direction and principal interaction decisions are preserved, with resolved tokens, matching component inventories and substantial flow/state coverage. Review identified one contradictory edit-boundary rule and other consequential specification gaps. The final contracts now include corrections; the original reviewer verdicts below describe the reviewed drafts, not an independent re-review of those corrections.
 
-One medium upstream reconciliation finding remains: the PRD Decision Summary still presents invalid-Draft structured editing as unresolved even though the PRD journey and UX contract commit to preserving the Draft and editing Last Valid URL. Accessibility passes with no blocker and carries 12 nonblocking specification-hardening findings.
-
-AG-1–AG-3 are downstream architecture gates, not UX defects. They block implementation stories until parser/serializer, IDN, and accessible-virtualization fixture or prototype evidence passes.
+Accessibility review additionally identified filtered-error recovery, transient drag-feedback, dense keyboard navigation and markerless-list risks. All nine consolidated findings are addressed in the written contracts. The ten original findings include one overlapping blur/History finding. Upstream architecture/requirements synchronization remains an implementation-handoff prerequisite. No application delivery, browser/AT conformance or new release coverage is established.
 
 ## Category verdicts
 
-- Flow coverage — strong
-- Token completeness — strong
-- Component coverage — strong
-- State coverage — strong
-- Visual reference coverage — strong
-- Bloat & overspecification — adequate
-- Inheritance discipline — adequate
-- Shape fit — strong
+| Category | Reviewed-draft verdict |
+|---|---|
+| Flow coverage | adequate |
+| Token completeness | strong |
+| Component coverage | adequate |
+| State coverage | adequate |
+| Visual reference coverage | strong |
+| Bloat & overspecification | adequate |
+| Inheritance discipline | adequate |
+| Shape fit | strong |
 
 ## Findings by severity
+
+Original unique findings: **critical 0, high 2, medium 6, low 1**. Each disposition means a documented correction, not an independently verified application fix. Reviewer line citations refer to the draft snapshots; final section names below locate the corrections.
 
 ### Critical (0)
 
 None.
 
-### High (0)
+### High (2)
 
-None.
+**Rubric F1 / Accessibility A11Y-02 — Focus-changing navigation conflicts with blur-close History**
 
-### Medium (1)
+Location: EXPERIENCE Component Patterns, State Patterns and Interaction Primitives.
+Jump/drag cancellation cannot promise unchanged total History when ordinary blur closes an already accepted Full URL edit.
+Fix: retain ordinary blur closure and distinguish its entry from navigation/selection/preview/cancel, which create no entry of their own. Capture drag revision after focus processing; preserve exact invalid Draft. Added the `A→B`, invalid `X`, jump/cancel acceptance sequence. **Addressed.**
 
-**[Inheritance discipline] — Upstream PRD retains a stale invalid-Draft decision** (§ `prd.md` Decision Summary and §2.3; `.memlog.md`; `EXPERIENCE.md`)
+**Accessibility A11Y-01 — Search-hidden invalid-field recovery**
 
-The final PRD Decision Summary still frames invalid-Draft structured editing as a choice between disabling mutations and discarding the draft. The PRD journey, UX override, and EXPERIENCE.md instead preserve the Draft and allow Structured View editing against Last Valid URL. The UX contract is unambiguous, so this is not a UX blocker, but declared-source consumers can encounter a false open decision.
+Location: EXPERIENCE Feedback channels and Redesign edge-case acceptance.
+Expansion alone cannot reveal a filtered-out invalid field.
+Fix: label the error-summary action to disclose Search clearing when needed; explicitly clear with count feedback, expand and focus the same stable-ID field with rejected text/error intact. Otherwise preserve Search. **Addressed.**
 
-Fix: Close the PRD Decision Summary item or mark it superseded by the committed journey and UX contract.
+### Medium (6)
 
-### Low (12)
+**Rubric F2 — Mutable display positions confused with immutable IDs**
 
-**[Accessibility review] — H1: Observable exposure clock is implicit** (§ `EXPERIENCE.md:109`)
+Location: EXPERIENCE Stable item identity, Component Patterns and Accessibility Floor.
+Key renaming changes duplicate membership without reordering.
+Fix: only internal IDs are immutable; refresh source totals/ordinals after structural changes and duplicate occurrence after key/membership changes. Define field/action naming and per-group filtered positions. **Addressed.**
 
-If the two-second timer starts before live-region DOM commitment, actual message exposure can fall below the normative minimum.
+**Rubric F3 — Absent, empty and empty-entry query states**
 
-Fix: Start the clock after committed DOM insertion and remove or replace the message no earlier than two seconds afterward.
+Location: DESIGN managed-piece-row; EXPERIENCE Query value shape and acceptance.
+Blank-looking inputs cannot distinguish `flag`, `flag=` and empty entries.
+Fix: persistent associated descriptions; preserve existing parser Add defaults and presence transitions. No new presence-toggle control. Full URL remains the way to remove an existing `=`. **Addressed.**
 
-**[Accessibility review] — H2: Queue-overflow transition is not algorithmically closed** (§ `EXPERIENCE.md:109`)
+**Rubric F4 — Visible operation-feedback history contract**
 
-When projected FIFO start exceeds six seconds, implementations can differ on whether outcomes remain queued, move to history, duplicate, or disappear behind a summary.
+Location: Both status-message rows; EXPERIENCE Feedback channels.
+Overflow promotion lacks a usable rendering/lifecycle specification.
+Fix: labeled chronological ordinary list outside disclosures, exact wrapping outcomes, existing architecture exactly-once promotion, no extra live role/focus movement, session retention and reload/close reset. Separate from Undo History. **Addressed.**
 
-Fix: Define overflow at enqueue using projected start time and specify the disposition of every queued outcome.
+**Accessibility A11Y-03 — Stale drag-preview speech**
 
-**[Accessibility review] — H3: Persistent visible operation history lacks a component contract** (§ `EXPERIENCE.md:63–81,109`)
+Location: EXPERIENCE Feedback channels and Drag transaction.
+Pointer destinations could remain queued after drop/cancel.
+Fix: transaction-bound latest-destination coalescing, bounded cadence and invalidation before final outcome; visible destination remains available. **Addressed.**
 
-The sustained-input fallback has no defined placement, semantics, capacity, clearing lifecycle, focus behavior, or distinction from mutation History.
+**Accessibility A11Y-04 — No bounded keyboard return from dense lists**
 
-Fix: Define its accessible name, chronological ordering, capacity, lifecycle, focus behavior, and relationship to product Undo history.
+Location: Both navigation-link rows; EXPERIENCE Utility navigation and acceptance.
+Bottom Add/new-key focus could require hundreds of tab stops to reach utilities.
+Fix: bottom and focus-revealed row links return to Full URL/Copy or Search with explicit focus, no obscured target and no native-editing shortcut interception. **Addressed.**
 
-**[Accessibility review] — H4: Settled-input validation has no default timing** (§ `EXPERIENCE.md:108`)
+**Accessibility A11Y-05 — Markerless list semantics**
 
-The optional bounded assertion path could become either near-keystroke chatter or feedback too delayed to help.
+Location: Both managed-piece-list rows; EXPERIENCE acceptance.
+WebKit/VoiceOver can omit native list grouping under markerless CSS.
+Fix: require explicit `role="list"` on markerless native ordered lists, retaining list items and source-position text. The approved audit mock stays unchanged; the contract governs implementation. Later browser/AT evidence is still required. **Addressed in contract.**
 
-Fix: State a default debounce and maximum latency; permit the release matrix to lengthen but not shorten those bounds.
+### Low (1)
 
-**[Accessibility review] — H5: “Explicit Apply” is not mapped to an interaction** (§ `EXPERIENCE.md:108,130,209`)
+**Rubric F5 — Incorrect removal/Undo flow references**
 
-Validation, keyboard, pointer, and focus tests can target different or nonexistent actions.
+Location: EXPERIENCE acceptance rows FR-7 and FR-14.
+Fix: both now reference Flow 3 step 6 instead of reorder step 5. **Addressed.**
 
-Fix: Define Apply as a named visible control or Enter, or replace the term with the actual trigger names.
+## Accessibility perspective and evidence limits
 
-**[Accessibility review] — H6: Parsing-status delay is qualitative** (§ `EXPERIENCE.md:97`)
+The review calculated actual token pairs: primary text/panel 15.32:1, secondary/panel 9.48:1, action/ink 10.95:1, boundary/panel 3.60:1, selected query boundary 7.66:1 and focus/base 13.50:1. No high-confidence failure was found in the stated operative pairs. The default border against selected fill is only 2.62:1; selected states therefore require their contrasting accent boundary and explicit state. These calculations do not certify rendered opacity, focus clipping, forced colors or changed surfaces.
 
-An unspecified “short delay” can cause Parsing URL to flash, appear late, or publish for a stale generation.
+Static mock limitations are intentional. It does not implement drag, synchronized editing, clipboard effects or the dense dataset. User chose no additional state mockups; remaining recovery/drag/density states are spine-only. Chromium-only MVP evidence does not establish Firefox, WebKit, OS/mobile/manual or full release coverage.
 
-Fix: Provide a numeric default and cancel the pending timer when the generation is superseded or completes first.
+## Editorial polish
 
-**[Accessibility review] — H7: DESIGN broadens Domain conversion status** (§ `DESIGN.md:199,214`)
+Structure: interaction action labels became navigable subsections; the acceptance table was preserved for traceability. Prose: separate cancelled and subsequently committed drag gestures; replace undefined "attentive" with "focused or selected." No functional content or thresholds were removed.
 
-A visual implementation could treat invalid conversion as operation status in addition to inline validation, reintroducing duplicate speech.
+| Pass | Original text | Revised text | Changes |
+|---|---|---|---|
+| structure | EXPERIENCE Interaction Primitives, 1,282 words in an action list | Action labels become subsection headings; body/order retained | MOVE; applied; word impact 0 |
+| structure | EXPERIENCE acceptance table, 1,925 words | Retain requirement/trigger/result/flow table | PRESERVE; traceability rather than redundant narrative; word impact 0 |
+| prose | Devon cancels before committing a single valid drop | Devon cancels, then starts another drag before committing | Distinguish separate gestures; applied |
+| prose | Up/Down pair within the attentive row | Up/Down pair within the focused or selected row | Use defined visibility states; applied |
 
-Fix: Limit conversion status to success and route invalid conversion only through persistent inline validation per EXPERIENCE.md.
+Editorial findings in the canonical machine-readable shape:
 
-**[Accessibility review] — H8: Undo-Add “nearest” lacks a tie-break rule** (§ `EXPERIENCE.md:120,239`)
+```json
+[
+  {
+    "lens": "structure",
+    "location": "EXPERIENCE.md: Interaction Primitives",
+    "trigger_condition": "Implementation references are buried in an uninterrupted action list.",
+    "guard_snippet": "MOVE action labels into subsection headings; retain body and order. Word impact: 0.",
+    "potential_consequence": "Readers cannot directly navigate specific interaction contracts."
+  },
+  {
+    "lens": "structure",
+    "location": "EXPERIENCE.md: Observable acceptance evidence",
+    "trigger_condition": "The long acceptance table resembles narrative repetition.",
+    "guard_snippet": "PRESERVE the requirement/trigger/result/flow table. Word impact: 0.",
+    "potential_consequence": "Cutting it would remove requirement-to-verification traceability."
+  },
+  {
+    "lens": "prose",
+    "location": "EXPERIENCE.md: Flow 3 step 5",
+    "trigger_condition": "Cancellation and committed drop read as one gesture.",
+    "guard_snippet": "State that Devon starts another drag before committing.",
+    "potential_consequence": "Readers may infer that a cancelled gesture can commit."
+  },
+  {
+    "lens": "prose",
+    "location": "DESIGN.md: query-move-controls",
+    "trigger_condition": "The word attentive does not identify a defined visibility state.",
+    "guard_snippet": "Use focused or selected.",
+    "potential_consequence": "Implementers may use inconsistent reveal conditions."
+  }
+]
+```
 
-When surviving rows exist on both sides, conforming implementations can choose different focus destinations.
+## Historical reviews and remaining work
 
-Fix: Define nearest in post-removal source order, such as next then previous.
-
-**[Accessibility review] — H9: Safe-copy recovery does not name the native field primitive** (§ `DESIGN.md:204`; `EXPERIENCE.md:78,102,136`)
-
-A long URL can be technically selected while selection state remains imperceivable or unreliable on touch, narrow widths, or assistive technology.
-
-Fix: Specify the read-only native control, wrapping, selection method, initial scroll, accessible description, and perceivable full selection.
-
-**[Accessibility review] — H10: Inactive-control explanation association is optional** (§ `DESIGN.md:156,202`; `EXPERIENCE.md:96`)
-
-Natively disabled Undo or Copy controls may be skipped, leaving users unable to discover why the action is unavailable.
-
-Fix: Require a visible explanation associated with Actions or the controls whenever inactivity is not self-evident.
-
-**[Accessibility review] — H11: Pointer-cancellation acceptance evidence is aggregated** (§ `EXPERIENCE.md:137,258`)
-
-A generic pass can conceal a control that still mutates on pointer-down or after cancellation.
-
-Fix: Require per-control evidence for drag-away release, `pointercancel`, and no mutation on pointer-down for Add, Remove, Reorder, Undo, Copy, and Clear Search.
-
-**[Accessibility review] — H12: WCAG evidence lacks criterion-level traceability** (§ `EXPERIENCE.md:253–259`)
-
-Strong behavior can still produce incomplete or unauditable evidence for the WCAG 2.2 AA claim.
-
-Fix: Add a companion matrix mapping acceptance cases to applicable success criteria, including 1.4.10–1.4.12, 2.1.1, 2.4.7, 2.4.11, 2.5.2, 2.5.7, 2.5.8, 3.3.1, 3.3.3, 4.1.2, and 4.1.3.
-
-## Downstream architecture gates
-
-- **AG-1 — Parser/serializer contract:** implementation stories remain blocked until cross-browser acceptance, preservation, normalization, snapshot, restore, and Copy fixtures pass.
-- **AG-2 — IDN mapping and serialization:** implementation stories remain blocked until mapping profile, canonical form, rejection, reconstruction, isolation, and exact round-trip fixtures pass.
-- **AG-3 — Accessible virtualization:** implementation stories remain blocked until one complete nonduplicated accessible representation and virtualization-on/off equivalence pass; otherwise ship without virtualization.
-
-AG-1–AG-3 are not UX findings and do not change the 0 UX blocker count.
-
-## Mechanical notes
-
-- Finding counts: critical 0 · high 0 · medium 1 · low 12.
-- Exact UJ-1 label passes.
-- FR rows: 16/16; NFR rows: 17/17.
-- FR-14 Undo consistency passes across the component row, transition table, Flow 2, acceptance evidence, and source.
-- Token references: 36/36 resolved; colors: 17/17 valid six-digit hex.
-- Component parity: 13/13.
-- Visual-reference orphans: 0.
-- Mermaid blocks: 0.
+`review-rubric.md` and `review-accessibility.md` describe the pre-redesign package and are excluded from current counts. Their historical source-reconciliation/hardening notes are not current execution evidence or silently accepted implementation changes. Current upstream obligations are tracked in `reconcile-redesign.md`: orchestration, grouped full-DOM lists, presentation/focus ownership, gestures and deliberately mapped evidence identities.
 
 ## Reviewer files
 
-- `review-rubric.md`
-- `review-accessibility.md`
+- `review-redesign-rubric.md`
+- `review-redesign-accessibility.md`
+- Historical context only: `review-rubric.md`, `review-accessibility.md`

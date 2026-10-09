@@ -1,0 +1,398 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Dark Workbench — Discovery preview, pending approval</title>
+  <style>
+    /*
+      MOCK-ONLY CANDIDATE TOKENS — not amendments to the final DESIGN.md.
+      Canvas #0B1220; panel #121D2E; input #0D1726; raised #1A2940;
+      text #EFF4FC; secondary #B5C3D8; boundary #63758F;
+      body accent #8CB9FF; path accent #C5ADFF; query accent #76DECA;
+      action #A4C8FF with ink #0B1220; selected #20374A; focus #FFD58A.
+      Proposed corners: panel 16px, input/row 10px; spacing: 4/8/12/16/24/32.
+      Governing inputs: DESIGN.md Components/Typography/Layout & Spacing;
+      EXPERIENCE.md Component Patterns/Accessibility Floor; PRD FR-2–FR-9,
+      FR-14–FR-15. New user directions supersede old light appearance ONLY
+      in this pending Discovery candidate: dark panels, group accents,
+      independent disclosures, adjacent Copy, bottom Add, on-demand moves.
+      Existing final spines remain authoritative for implementation.
+    */
+    :root {
+      color-scheme: dark;
+      --canvas: #0B1220; --panel: #121D2E; --input: #0D1726;
+      --raised: #1A2940; --text: #EFF4FC; --muted: #B5C3D8;
+      --border: #63758F; --body: #8CB9FF; --path: #C5ADFF;
+      --query: #76DECA; --action: #A4C8FF; --selected: #20374A;
+      --focus: #FFD58A;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 16px; line-height: 1.5;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--canvas); color: var(--text); }
+    h1, h2, h3, p { margin: 0; }
+    h1 { font-size: clamp(24px, 3vw, 32px); line-height: 1.25; font-weight: 650; }
+    h2 { font-size: 21px; font-weight: 650; }
+    h3 { font-size: 16px; font-weight: 650; }
+    a { color: var(--action); text-underline-offset: 4px; }
+    small, .meta { font-size: 13px; color: var(--muted); }
+    .page { max-width: 1440px; margin: auto; padding: 32px; }
+    .intro { max-width: 900px; margin-bottom: 24px; display: grid; gap: 12px; }
+    .eyebrow { color: var(--body); font-size: 13px; font-weight: 650; letter-spacing: .06em; }
+    .rationale { color: var(--muted); max-width: 80ch; }
+    .preview-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; align-items: start; }
+    .browser { border: 1px solid var(--border); border-radius: 18px; background: var(--canvas); }
+    .frame-label { padding: 12px 20px; border-bottom: 1px solid var(--border); color: var(--muted); font-size: 13px; }
+    .workbench { padding: 24px; display: grid; gap: 20px; }
+    .workbench-header { display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+    .notice { color: var(--muted); font-size: 13px; }
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 16px; padding: 20px; }
+    .full-url { display: grid; gap: 10px; }
+    .editor-line { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: start; }
+    label { display: grid; gap: 6px; font-size: 13px; font-weight: 600; min-width: 0; }
+    input, textarea, button { font: inherit; }
+    input, textarea {
+      width: 100%; min-width: 0; border: 1px solid var(--border); border-radius: 10px;
+      background: var(--input); color: var(--text); padding: 10px 12px;
+      font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+      font-size: 14px; line-height: 1.5; min-height: 44px;
+    }
+    input[dir="ltr"], textarea { unicode-bidi: isolate; }
+    textarea { resize: vertical; min-height: 100px; }
+    button {
+      min-height: 44px; padding: 10px 16px; border: 1px solid var(--border);
+      border-radius: 10px; background: var(--raised); color: var(--text);
+      font-size: 14px; font-weight: 600; white-space: normal; cursor: default;
+    }
+    button.primary { background: var(--action); color: var(--canvas); border-color: var(--action); }
+    button:disabled { color: var(--muted); background: var(--input); cursor: not-allowed; }
+    :focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+    .toolbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .structured { display: grid; gap: 16px; }
+    .search { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: end; }
+    .result-summary { font-size: 13px; color: var(--muted); }
+    .skips { display: flex; flex-wrap: wrap; gap: 8px 20px; font-size: 13px; }
+    .skips a { display: inline-block; padding: 4px 0; min-height: 24px; }
+    details { --accent: var(--body); border: 1px solid var(--accent); border-radius: 16px; background: var(--panel); }
+    details.paths { --accent: var(--path); }
+    details.query { --accent: var(--query); }
+    summary {
+      cursor: pointer; padding: 16px 20px; color: var(--accent);
+      font-size: 15px; font-weight: 650; min-height: 52px;
+    }
+    summary .count { color: var(--muted); font-size: 13px; font-weight: 400; margin-left: 8px; }
+    details[open] summary { border-bottom: 1px solid var(--accent); }
+    .detail-content { padding: 16px; display: grid; gap: 12px; }
+    .domain-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .passive { display: flex; gap: 8px 24px; flex-wrap: wrap; color: var(--muted); font-size: 13px; }
+    code { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; color: var(--text); overflow-wrap: anywhere; }
+    ol { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
+    .piece { border: 1px solid var(--border); border-radius: 10px; padding: 12px; background: var(--input); min-width: 0; }
+    .piece-heading { display: flex; gap: 8px; justify-content: space-between; flex-wrap: wrap; margin-bottom: 10px; font-size: 13px; }
+    .piece-heading strong { font-weight: 600; }
+    .path-line { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: end; }
+    .query-fields { display: grid; grid-template-columns: 28px minmax(0, 1fr) minmax(0, 1fr) auto; gap: 12px; align-items: end; }
+    .handle { color: var(--query); font-size: 22px; text-align: center; padding: 8px 0; min-height: 44px; user-select: none; }
+    .moves { display: none; flex-wrap: wrap; align-items: center; gap: 8px; padding-top: 12px; }
+    .piece:focus-within, .piece.selected { border-color: var(--query); background: var(--selected); }
+    .piece:focus-within .moves, .piece.selected .moves { display: flex; }
+    .state-label { color: var(--query); font-size: 12px; font-weight: 600; }
+    .add-line { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; padding-top: 4px; }
+    .side { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; min-width: 0; }
+    .annotations { display: grid; gap: 10px; color: var(--muted); font-size: 13px; }
+    .annotations strong { color: var(--text); }
+    .mobile-example { width: 320px; max-width: 100%; border: 1px solid var(--border); border-radius: 18px; background: var(--canvas); }
+    .mobile-example .frame-label { padding: 12px; }
+    .mini { padding: 12px; gap: 16px; }
+    .mini h2 { font-size: 20px; }
+    .mini .panel { padding: 12px; }
+    .mini .editor-line, .mini .domain-fields, .mini .search, .mini .path-line { grid-template-columns: minmax(0, 1fr); }
+    .mini .editor-line button, .mini .path-line button { justify-self: start; }
+    .mini summary { padding: 12px; }
+    .mini .detail-content { padding: 10px; }
+    .mini .query-fields { grid-template-columns: 24px minmax(0, 1fr); gap: 8px; }
+    .mini .query-fields .handle { grid-row: 1 / 3; align-self: center; }
+    .mini .query-fields .value { grid-column: 2; }
+    .mini .query-fields button { grid-column: 2; justify-self: start; }
+    .mini .piece { padding: 10px; }
+    .mini .piece-heading { display: grid; gap: 4px; }
+    .mini .count { display: block; margin-left: 18px; }
+    .mini .moves button { padding-inline: 12px; }
+    .mini .moves .meta { width: 100%; }
+    .mobile-caption { margin-bottom: 12px; font-size: 13px; color: var(--muted); }
+    p, summary, button, label, .piece-heading, .frame-label { overflow-wrap: anywhere; }
+    @media (min-width: 1280px) {
+      .preview-layout { grid-template-columns: minmax(0, 1fr) 320px; }
+    }
+    @media (max-width: 700px) {
+      .page { padding: 16px; }
+      .workbench { padding: 12px; }
+      .panel { padding: 12px; }
+      .editor-line, .domain-fields, .search, .path-line { grid-template-columns: minmax(0, 1fr); }
+      .editor-line button, .path-line button { justify-self: start; }
+      summary { padding: 12px; }
+      .detail-content { padding: 10px; }
+      .query-fields { grid-template-columns: 24px minmax(0, 1fr); gap: 8px; }
+      .query-fields .handle { grid-row: 1 / 3; align-self: center; }
+      .query-fields .value { grid-column: 2; }
+      .query-fields button { grid-column: 2; justify-self: start; }
+      .piece { padding: 10px; }
+      .piece-heading { display: grid; gap: 4px; }
+      .count { display: block; margin-left: 18px; }
+      .moves .meta { width: 100%; }
+    }
+    @media (forced-colors: active) {
+      :focus-visible { outline: 3px solid Highlight; }
+      .piece.selected { border: 2px solid Highlight; }
+      details, input, textarea, button, .browser, .mobile-example { border-color: ButtonText; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="intro">
+      <p class="eyebrow">LATE DISCOVERY · ONE DIRECTION · PENDING APPROVAL</p>
+      <h1>Dark Workbench</h1>
+      <p class="rationale">Rounded navy panels and restrained group accents make the URL easier to scan without turning the tool into a dashboard. Copy stays beside the complete URL, Add follows the query list, and move controls appear where a row has attention rather than competing with every field.</p>
+      <p class="notice" id="preview-note"><strong>Static visual preview.</strong> Text fields are editable and native disclosures open or close. Fields do not synchronize; Search, Clear, Copy, Remove, Up/Down, Undo and Add do not perform application mutations or clipboard operations. Drag handles illustrate a proposal only; dragging is not implemented.</p>
+    </header>
+
+    <div class="preview-layout">
+      <div class="browser" aria-label="Primary Workbench layout preview">
+        <div class="frame-label">Desktop composition · same surface reflows at narrow widths</div>
+        <div class="workbench">
+          <header class="workbench-header">
+            <h2>URL Workbench</h2>
+            <span class="meta">Fictitious example · initial valid URL</span>
+          </header>
+          <section class="panel full-url" aria-labelledby="full-title">
+            <label id="full-title" for="full-url">Full URL</label>
+            <div class="editor-line">
+              <textarea id="full-url" dir="ltr" spellcheck="false" aria-describedby="preview-note full-help">https://example.com/products/42?view=grid&amp;tag=blue&amp;tag=sale#details</textarea>
+              <button type="button" class="primary" aria-describedby="preview-note">Copy</button>
+            </div>
+            <p class="meta" id="full-help">The complete URL stays visible when any detail group is hidden.</p>
+            <div class="toolbar">
+              <button type="button" disabled>Undo</button>
+              <span class="meta">Initial URL shown; nothing to undo in this sample.</span>
+            </div>
+          </section>
+
+          <section class="structured" aria-labelledby="structured-title">
+            <h3 id="structured-title">Structured View</h3>
+            <div class="search">
+              <label for="search">Search Managed Pieces
+                <input id="search" type="search" placeholder="Domain, path, key or value" aria-describedby="preview-note results">
+              </label>
+              <button type="button" aria-describedby="preview-note">Clear Search</button>
+            </div>
+            <p class="result-summary" id="results">Sample results: 6 of 6 Managed Pieces shown · 1 Domain, 2 Path Segments, 3 Query Parameters</p>
+            <nav class="skips" aria-label="Workbench preview shortcuts">
+              <a href="#query-group">Jump to Query Parameters</a>
+              <a href="#add-query">Skip to Add Query Parameter</a>
+            </nav>
+
+            <details open>
+              <summary>URL body details <span class="count">Domain + passive URL context</span></summary>
+              <div class="detail-content">
+                <div class="domain-fields">
+                  <label for="domain-unicode">Unicode Domain
+                    <input id="domain-unicode" dir="ltr" value="example.com" spellcheck="false" aria-describedby="domain-help preview-note">
+                  </label>
+                  <label for="domain-ascii">ASCII/Punycode Domain
+                    <input id="domain-ascii" dir="ltr" value="example.com" spellcheck="false" aria-describedby="domain-help preview-note">
+                  </label>
+                </div>
+                <p class="meta" id="domain-help">Sample pair: both forms are identical for this ASCII domain. Both remain editable in the product; conversion is not simulated here.</p>
+                <div class="passive">
+                  <span>Protocol <code>https:</code></span>
+                  <span>Fragment <code>#details</code></span>
+                </div>
+                <p class="meta">Body means everything except path and query. Protocol, Fragment and other non-managed URL pieces remain editable only through Full URL; this group does not add structured editors for them.</p>
+              </div>
+            </details>
+
+            <details class="paths" open>
+              <summary>Paths <span class="count">2 Path Segments · source order</span></summary>
+              <div class="detail-content">
+                <ol aria-label="Path Segments in source order">
+                  <li class="piece">
+                    <div class="piece-heading"><strong>Path Segment 1 of 2</strong><span class="meta">/products</span></div>
+                    <div class="path-line">
+                      <label for="path-one">Path Segment 1 value<input id="path-one" dir="ltr" value="products" aria-describedby="preview-note"></label>
+                      <button type="button" aria-label="Remove Path Segment 1, products" aria-describedby="preview-note">Remove</button>
+                    </div>
+                  </li>
+                  <li class="piece">
+                    <div class="piece-heading"><strong>Path Segment 2 of 2</strong><span class="meta">/42</span></div>
+                    <div class="path-line">
+                      <label for="path-two">Path Segment 2 value<input id="path-two" dir="ltr" value="42" aria-describedby="preview-note"></label>
+                      <button type="button" aria-label="Remove Path Segment 2, 42" aria-describedby="preview-note">Remove</button>
+                    </div>
+                  </li>
+                </ol>
+                <p class="meta">Path editing and removal only. No path-reordering proposal.</p>
+              </div>
+            </details>
+
+            <details class="query" id="query-group" open>
+              <summary>Query Parameters <span class="count">3 ordered entries · duplicates retained</span></summary>
+              <div class="detail-content">
+                <p class="meta" id="reorder-note">Proposed primary action: drag a query handle. Focus a row or its fields to reveal Up/Down, the keyboard and non-drag alternative. The selected second row illustrates this state; touch selection remains unresolved.</p>
+                <ol aria-label="Query Parameters in source order">
+                  <li class="piece" tabindex="0" aria-label="Query Parameter 1 of 3, view equals grid" aria-describedby="reorder-note preview-note">
+                    <div class="piece-heading"><strong>Query Parameter 1 of 3</strong><span class="meta"><code>view=grid</code></span></div>
+                    <div class="query-fields">
+                      <span class="handle" aria-hidden="true" title="Proposed drag handle — static preview">⠿</span>
+                      <label for="query-one-key">Parameter 1 key<input id="query-one-key" dir="ltr" value="view" aria-describedby="preview-note"></label>
+                      <label class="value" for="query-one-value">Parameter 1 value<input id="query-one-value" dir="ltr" value="grid" aria-describedby="preview-note"></label>
+                      <button type="button" aria-label="Remove Query Parameter 1, view equals grid" aria-describedby="preview-note">Remove</button>
+                    </div>
+                    <div class="moves">
+                      <button type="button" disabled aria-label="Move Query Parameter 1 up, already first">↑ Up</button>
+                      <button type="button" aria-label="Move Query Parameter 1 down" aria-describedby="preview-note">↓ Down</button>
+                      <span class="meta">Focused row · move controls</span>
+                    </div>
+                  </li>
+                  <li class="piece selected" tabindex="0" aria-label="Query Parameter 2 of 3, tag occurrence 1 of 2, blue; sample selected appearance" aria-describedby="reorder-note preview-note">
+                    <div class="piece-heading"><strong>Query Parameter 2 of 3</strong><span class="state-label">Selected appearance · sample</span></div>
+                    <p class="meta" style="margin-bottom: 10px">tag · occurrence 1 of 2 · <code>tag=blue</code></p>
+                    <div class="query-fields">
+                      <span class="handle" aria-hidden="true" title="Proposed drag handle — static preview">⠿</span>
+                      <label for="query-two-key">Parameter 2 key<input id="query-two-key" dir="ltr" value="tag" aria-describedby="preview-note"></label>
+                      <label class="value" for="query-two-value">Parameter 2 value<input id="query-two-value" dir="ltr" value="blue" aria-describedby="preview-note"></label>
+                      <button type="button" aria-label="Remove Query Parameter 2, tag occurrence 1, blue" aria-describedby="preview-note">Remove</button>
+                    </div>
+                    <div class="moves">
+                      <button type="button" aria-label="Move Query Parameter 2, tag blue, up" aria-describedby="preview-note">↑ Up</button>
+                      <button type="button" aria-label="Move Query Parameter 2, tag blue, down" aria-describedby="preview-note">↓ Down</button>
+                      <span class="meta">Shown only on focus or selection</span>
+                    </div>
+                  </li>
+                  <li class="piece" tabindex="0" aria-label="Query Parameter 3 of 3, tag occurrence 2 of 2, sale" aria-describedby="reorder-note preview-note">
+                    <div class="piece-heading"><strong>Query Parameter 3 of 3</strong><span class="meta">tag · occurrence 2 of 2</span></div>
+                    <div class="query-fields">
+                      <span class="handle" aria-hidden="true" title="Proposed drag handle — static preview">⠿</span>
+                      <label for="query-three-key">Parameter 3 key<input id="query-three-key" dir="ltr" value="tag" aria-describedby="preview-note"></label>
+                      <label class="value" for="query-three-value">Parameter 3 value<input id="query-three-value" dir="ltr" value="sale" aria-describedby="preview-note"></label>
+                      <button type="button" aria-label="Remove Query Parameter 3, tag occurrence 2, sale" aria-describedby="preview-note">Remove</button>
+                    </div>
+                    <div class="moves">
+                      <button type="button" aria-label="Move Query Parameter 3 up" aria-describedby="preview-note">↑ Up</button>
+                      <button type="button" disabled aria-label="Move Query Parameter 3 down, already last">↓ Down</button>
+                      <span class="meta">Focused row · move controls</span>
+                    </div>
+                  </li>
+                </ol>
+                <div class="add-line">
+                  <button type="button" id="add-query" class="primary" aria-describedby="preview-note">+ Add Query Parameter</button>
+                  <span class="meta">After the final query entry</span>
+                </div>
+              </div>
+            </details>
+          </section>
+        </div>
+      </div>
+
+      <aside class="side" aria-label="Candidate notes and narrow-width state">
+        <div class="panel annotations">
+          <h3>Candidate, not a new contract</h3>
+          <p><strong>Mock-only visuals:</strong> navy surfaces, 16px panels, 10px inputs, blue/violet/teal group accents. Proposed hex values are documented in CSS, not in DESIGN.md.</p>
+          <p><strong>New direction:</strong> three independent, initially expanded disclosures; Copy beside Full URL; bottom-of-query Add; query dragging with focused/selected move buttons.</p>
+          <p><strong>Existing final spine:</strong> still governs actual behavior. This preview does not finalize its reconciliation with the old light tokens, Actions region, pre-list Add or permanent move controls.</p>
+          <p><strong>Still to decide:</strong> exact palette and density; accessible touch selection and move-control discovery; dense-list reachability of bottom Add. No typing shortcuts or finalized drag/focus/announcement contract are introduced.</p>
+        </div>
+
+        <div>
+          <p class="mobile-caption">320px width-controlled example · same URL and ordered entries; Copy wraps below. Each disclosure is independent.</p>
+          <div class="mobile-example" aria-label="320 pixel narrow-width Workbench preview">
+            <div class="frame-label">Narrow-width state · 320 CSS px maximum</div>
+            <div class="workbench mini">
+              <h2>URL Workbench</h2>
+              <section class="panel full-url" aria-labelledby="mobile-full-title">
+                <label id="mobile-full-title" for="mobile-url">Full URL</label>
+                <div class="editor-line">
+                  <textarea id="mobile-url" dir="ltr" spellcheck="false" aria-describedby="preview-note">https://example.com/products/42?view=grid&amp;tag=blue&amp;tag=sale#details</textarea>
+                  <button type="button" class="primary" aria-describedby="preview-note">Copy</button>
+                </div>
+                <div class="toolbar"><button type="button" disabled>Undo</button><span class="meta">Initial URL</span></div>
+              </section>
+              <label for="mobile-search">Search Managed Pieces<input type="search" id="mobile-search" placeholder="Domain, path, key or value" aria-describedby="preview-note"></label>
+              <button type="button" aria-describedby="preview-note">Clear Search</button>
+              <p class="result-summary">Sample: 6 of 6 Managed Pieces shown.</p>
+              <a class="meta" href="#mobile-add">Skip to Add Query Parameter</a>
+              <details open>
+                <summary>URL body details <span class="count">Domain + passive context</span></summary>
+                <div class="detail-content">
+                  <label for="mobile-unicode">Unicode Domain<input id="mobile-unicode" dir="ltr" value="example.com" aria-describedby="mobile-domain-help preview-note"></label>
+                  <label for="mobile-ascii">ASCII/Punycode Domain<input id="mobile-ascii" dir="ltr" value="example.com" aria-describedby="mobile-domain-help preview-note"></label>
+                  <p class="meta" id="mobile-domain-help">Identical sample forms; conversion is not simulated.</p>
+                  <div class="passive"><span>Protocol <code>https:</code></span><span>Fragment <code>#details</code></span></div>
+                  <p class="meta">Edit other URL pieces through Full URL only.</p>
+                </div>
+              </details>
+              <details class="paths" open>
+                <summary>Paths <span class="count">2 Path Segments</span></summary>
+                <div class="detail-content">
+                  <ol aria-label="Narrow example Path Segments">
+                    <li class="piece">
+                      <div class="piece-heading"><strong>Path Segment 1 of 2</strong></div>
+                      <div class="path-line"><label for="mobile-path-one">Segment 1 value<input id="mobile-path-one" dir="ltr" value="products" aria-describedby="preview-note"></label><button type="button" aria-label="Remove narrow example Path Segment 1" aria-describedby="preview-note">Remove</button></div>
+                    </li>
+                    <li class="piece">
+                      <div class="piece-heading"><strong>Path Segment 2 of 2</strong></div>
+                      <div class="path-line"><label for="mobile-path-two">Segment 2 value<input id="mobile-path-two" dir="ltr" value="42" aria-describedby="preview-note"></label><button type="button" aria-label="Remove narrow example Path Segment 2" aria-describedby="preview-note">Remove</button></div>
+                    </li>
+                  </ol>
+                </div>
+              </details>
+              <details class="query" open>
+                <summary>Query Parameters <span class="count">3 ordered entries</span></summary>
+                <div class="detail-content">
+                  <p class="meta">Handles are visual only. Touch selection is not yet specified.</p>
+                  <ol aria-label="Narrow example Query Parameters">
+                    <li class="piece" tabindex="0" aria-label="Narrow example Query Parameter 1 of 3, view grid" aria-describedby="preview-note">
+                      <div class="piece-heading"><strong>Query Parameter 1 of 3</strong></div>
+                      <div class="query-fields">
+                        <span class="handle" aria-hidden="true">⠿</span>
+                        <label for="mobile-key-one">Parameter 1 key<input id="mobile-key-one" dir="ltr" value="view" aria-describedby="preview-note"></label>
+                        <label class="value" for="mobile-value-one">Parameter 1 value<input id="mobile-value-one" dir="ltr" value="grid" aria-describedby="preview-note"></label>
+                        <button type="button" aria-label="Remove narrow example Query Parameter 1" aria-describedby="preview-note">Remove</button>
+                      </div>
+                      <div class="moves"><button type="button" disabled aria-label="Move narrow example Parameter 1 up, already first">↑ Up</button><button type="button" aria-label="Move narrow example Parameter 1 down" aria-describedby="preview-note">↓ Down</button></div>
+                    </li>
+                    <li class="piece selected" tabindex="0" aria-label="Narrow example Query Parameter 2 of 3, tag occurrence 1 of 2, blue; sample selected appearance" aria-describedby="preview-note">
+                      <div class="piece-heading"><strong>Query Parameter 2 of 3</strong><span class="state-label">Selected appearance · sample</span><span class="meta">tag · occurrence 1 of 2</span></div>
+                      <div class="query-fields">
+                        <span class="handle" aria-hidden="true">⠿</span>
+                        <label for="mobile-key-two">Parameter 2 key<input id="mobile-key-two" dir="ltr" value="tag" aria-describedby="preview-note"></label>
+                        <label class="value" for="mobile-value-two">Parameter 2 value<input id="mobile-value-two" dir="ltr" value="blue" aria-describedby="preview-note"></label>
+                        <button type="button" aria-label="Remove narrow example Query Parameter 2" aria-describedby="preview-note">Remove</button>
+                      </div>
+                      <div class="moves"><button type="button" aria-label="Move narrow example Parameter 2 up" aria-describedby="preview-note">↑ Up</button><button type="button" aria-label="Move narrow example Parameter 2 down" aria-describedby="preview-note">↓ Down</button><span class="meta">Focus/selection variant</span></div>
+                    </li>
+                    <li class="piece" tabindex="0" aria-label="Narrow example Query Parameter 3 of 3, tag occurrence 2 of 2, sale" aria-describedby="preview-note">
+                      <div class="piece-heading"><strong>Query Parameter 3 of 3</strong><span class="meta">tag · occurrence 2 of 2</span></div>
+                      <div class="query-fields">
+                        <span class="handle" aria-hidden="true">⠿</span>
+                        <label for="mobile-key-three">Parameter 3 key<input id="mobile-key-three" dir="ltr" value="tag" aria-describedby="preview-note"></label>
+                        <label class="value" for="mobile-value-three">Parameter 3 value<input id="mobile-value-three" dir="ltr" value="sale" aria-describedby="preview-note"></label>
+                        <button type="button" aria-label="Remove narrow example Query Parameter 3" aria-describedby="preview-note">Remove</button>
+                      </div>
+                      <div class="moves"><button type="button" aria-label="Move narrow example Parameter 3 up" aria-describedby="preview-note">↑ Up</button><button type="button" disabled aria-label="Move narrow example Parameter 3 down, already last">↓ Down</button></div>
+                    </li>
+                  </ol>
+                  <div class="add-line"><button type="button" class="primary" id="mobile-add" aria-describedby="preview-note">+ Add Query Parameter</button></div>
+                </div>
+              </details>
+              <p class="notice">Static preview · no app mutations.</p>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </main>
+</body>
+</html>

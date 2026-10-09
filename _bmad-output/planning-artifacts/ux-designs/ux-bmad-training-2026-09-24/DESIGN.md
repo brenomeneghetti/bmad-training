@@ -1,40 +1,43 @@
 ---
 name: URL Piece Management
-description: A restrained, high-legibility utility system for inspecting and editing complex URLs in a browser-local public web tool.
+description: Approved dark workbench identity for a browser-local URL editing utility; finalized design contract, not delivered application behavior.
 status: final
-updated: 2026-09-24
+updated: 2026-10-09
 sources:
   - ../../prds/prd-bmad-training-2026-09-24/prd.md
   - ../../prds/prd-bmad-training-2026-09-24/addendum.md
+  - ../../architecture/architecture-bmad-training-2026-09-24/ARCHITECTURE-SPINE.md
 colors:
-  surface-base: '#FFFFFF'
-  surface-subtle: '#F7F7F8'
-  surface-disabled: '#E4E4E7'
-  text-primary: '#18181B'
-  text-secondary: '#52525B'
-  text-disabled: '#52525B'
-  border-default: '#71717A'
-  border-strong: '#3F3F46'
-  action: '#174EA6'
-  action-hover: '#123E85'
-  action-text: '#FFFFFF'
-  focus: '#0B57D0'
-  focus-gap: '#FFFFFF'
-  success: '#146C43'
-  error: '#B3261E'
-  error-surface: '#FFF4F2'
-  changed-surface: '#EEF4FF'
+  surface-base: '#0B1220'
+  surface-panel: '#121D2E'
+  surface-input: '#0D1726'
+  surface-raised: '#1A2940'
+  text-primary: '#EFF4FC'
+  text-secondary: '#B5C3D8'
+  border-default: '#63758F'
+  body-accent: '#8CB9FF'
+  path-accent: '#C5ADFF'
+  query-accent: '#76DECA'
+  action: '#A4C8FF'
+  action-text: '#0B1220'
+  selected-surface: '#20374A'
+  focus: '#FFD58A'
 typography:
   page-title:
     fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
-    fontSize: 24px
+    fontSize: 'clamp(24px, 3vw, 32px)'
     fontWeight: '650'
     lineHeight: '1.25'
   section-title:
     fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
-    fontSize: 18px
+    fontSize: 21px
     fontWeight: '650'
-    lineHeight: '1.35'
+    lineHeight: '1.5'
+  group-title:
+    fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
+    fontSize: 15px
+    fontWeight: '650'
+    lineHeight: '1.5'
   body:
     fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
     fontSize: 16px
@@ -42,24 +45,27 @@ typography:
     lineHeight: '1.5'
   label:
     fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
+    fontSize: 13px
+    fontWeight: '600'
+    lineHeight: '1.5'
+  control:
+    fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
     fontSize: 14px
     fontWeight: '600'
-    lineHeight: '1.4'
+    lineHeight: '1.5'
   meta:
     fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
     fontSize: 13px
     fontWeight: '400'
-    lineHeight: '1.4'
+    lineHeight: '1.5'
   url:
     fontFamily: 'ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace'
     fontSize: 14px
     fontWeight: '400'
     lineHeight: '1.5'
 rounded:
-  sm: 4px
-  md: 6px
-  lg: 8px
-  full: 9999px
+  md: 10px
+  lg: 16px
 spacing:
   '1': 4px
   '2': 8px
@@ -67,49 +73,79 @@ spacing:
   '4': 16px
   '5': 24px
   '6': 32px
-  '7': 48px
+  field-label-gap: 6px
+  row-gap: 10px
+  panel-padding: 20px
   pointer-min: 24px
   control-target: 44px
+  disclosure-target: 52px
   content-max: 1440px
 components:
   full-url-editor:
-    background: '{colors.surface-base}'
+    background: '{colors.surface-input}'
     foreground: '{colors.text-primary}'
-    border: '{colors.border-strong}'
+    border: '{colors.border-default}'
     radius: '{rounded.md}'
     typography: '{typography.url}'
-    min-height: 96px
+    min-height: 100px
   action-bar:
-    background: '{colors.surface-base}'
-    border: '{colors.border-default}'
-    gap: '{spacing.2}'
+    background: '{colors.surface-panel}'
+    gap: '{spacing.3}'
   search-field:
-    background: '{colors.surface-base}'
+    background: '{colors.surface-input}'
     foreground: '{colors.text-primary}'
     border: '{colors.border-default}'
     radius: '{rounded.md}'
     min-height: '{spacing.control-target}'
+  detail-group:
+    background: '{colors.surface-panel}'
+    radius: '{rounded.lg}'
+    body-accent: '{colors.body-accent}'
+    path-accent: '{colors.path-accent}'
+    query-accent: '{colors.query-accent}'
+  disclosure-control:
+    typography: '{typography.group-title}'
+    min-height: '{spacing.disclosure-target}'
+  passive-url-context:
+    foreground: '{colors.text-secondary}'
+    typography: '{typography.meta}'
   managed-piece-list:
-    background: '{colors.surface-base}'
-    gap: '{spacing.2}'
+    gap: '{spacing.row-gap}'
   managed-piece-row:
-    background: '{colors.surface-base}'
+    background: '{colors.surface-input}'
     foreground: '{colors.text-primary}'
     border: '{colors.border-default}'
     radius: '{rounded.md}'
+    selected-background: '{colors.selected-surface}'
   piece-type-label:
-    background: '{colors.surface-subtle}'
     foreground: '{colors.text-primary}'
-    border: '{colors.border-default}'
-    radius: '{rounded.full}'
     typography: '{typography.meta}'
+  query-drag-handle:
+    foreground: '{colors.query-accent}'
+    min-height: '{spacing.control-target}'
+    min-width: '{spacing.control-target}'
+  query-move-controls:
+    background: '{colors.surface-raised}'
+    foreground: '{colors.text-primary}'
+    radius: '{rounded.md}'
+    min-height: '{spacing.control-target}'
+  drop-indicator:
+    foreground: '{colors.query-accent}'
+  remove-control:
+    background: '{colors.surface-raised}'
+    foreground: '{colors.text-primary}'
+    radius: '{rounded.md}'
+    min-height: '{spacing.control-target}'
   add-query-parameter-control:
     background: '{colors.action}'
     foreground: '{colors.action-text}'
     radius: '{rounded.md}'
     min-height: '{spacing.control-target}'
+  add-query-jump-link:
+    foreground: '{colors.action}'
+    min-height: '{spacing.pointer-min}'
   undo-control:
-    background: '{colors.surface-base}'
+    background: '{colors.surface-raised}'
     foreground: '{colors.text-primary}'
     border: '{colors.border-default}'
     radius: '{rounded.md}'
@@ -120,20 +156,23 @@ components:
     radius: '{rounded.md}'
     min-height: '{spacing.control-target}'
   safe-copy-readonly:
-    background: '{colors.surface-subtle}'
+    background: '{colors.surface-input}'
     foreground: '{colors.text-primary}'
-    border: '{colors.border-strong}'
+    border: '{colors.border-default}'
     radius: '{rounded.md}'
     typography: '{typography.url}'
     min-height: '{spacing.control-target}'
   status-message:
     foreground: '{colors.text-secondary}'
     typography: '{typography.meta}'
+  committed-state-banner:
+    foreground: '{colors.text-primary}'
+    background: '{colors.surface-panel}'
   validation-message:
-    background: '{colors.error-surface}'
-    foreground: '{colors.error}'
-    border: '{colors.error}'
-    radius: '{rounded.sm}'
+    background: '{colors.surface-input}'
+    foreground: '{colors.focus}'
+    border: '{colors.focus}'
+    radius: '{rounded.md}'
     typography: '{typography.meta}'
   no-results-state:
     foreground: '{colors.text-secondary}'
@@ -142,76 +181,88 @@ components:
 
 ## Brand & Style
 
-The V1 identity is a restrained, high-legibility utility: system typography, neutral surfaces, blue actions, quiet borders, modest corners, and minimal depth. It should feel like a trustworthy editing instrument rather than a decorative developer dashboard. Content, persistent labels, exact state language, and character-level legibility take priority over personality.
+Breno approved the original dark reference-inspired preview: navy surfaces, rounded panels and styled inputs, distinct blue/violet/teal accents, system typography, and meaningful space and hierarchy. This replaces the older light utility identity without changing the product's browser-local scope or exact URL contracts. No UI system is inherited; no new font, theme switcher, icon system, or component library is introduced.
 
-No UI system is inherited. These tokens are the committed V1 visual direction. Dark mode and a separate icon language are outside the current visual contract.
+The approved composition is [Dark Workbench](mockups/dark-workbench.html), promoted byte-for-byte from `.working/direction-dark-workbench.html`. Its historical “pending approval” annotations and static controls remain an audit trail, not current decisions or implementation proof. This pair of spines wins on conflict with mockups, wireframes, or imports. The design is finalized; upstream synchronization is tracked in [redesign reconciliation](reconcile-redesign.md), and document-review findings and dispositions in the [validation report](validation-report.md).
 
 ## Colors
 
-- `{colors.surface-base}` with `{colors.text-primary}` is the default reading pair; target contrast is at least 7:1.
-- `{colors.action}` with `{colors.action-text}` is reserved for primary actions such as `copy-control` and `add-query-parameter-control`; target contrast is at least 4.5:1.
-- `{colors.border-default}` is the minimum functional boundary and must measure at least 3:1 against `{colors.surface-base}`. Decorative separators may be lighter only when removing them would not impair component identification.
-- `{colors.error}` with `{colors.error-surface}` identifies inline invalid state and is always paired with text, `aria-invalid`, and an error association.
-- `{colors.changed-surface}` may provide a static counterpart cue, always with visible status text. It must not flash, animate, or carry meaning alone.
-- Disabled appearance uses `{colors.surface-disabled}` plus explicit inactive semantics and explanatory text where needed; reduced contrast is never the only cue.
+All palette values above are exact approved-preview CSS values. Error and feedback treatments reuse that palette as spine-only applications; the preview did not approve a separate error color.
 
-Focus is a two-layer indicator. On neutral controls, use a 2px `{colors.focus}` outline with at least a 2px offset. On blue controls, place a 2px `{colors.focus-gap}` inner gap between the component and a 2px `{colors.focus}` outer outline so the indicator changes contrast by at least 3:1 against both the control and adjacent surface. In `forced-colors: active`, preserve the native outline or use a 2px system-color outline; do not rely on box-shadow or forced token colors.
+- `{colors.surface-base}`, `{colors.surface-panel}`, `{colors.surface-input}`, and `{colors.surface-raised}` create tonal hierarchy without shadows.
+- `{colors.text-primary}` is the main reading ink; `{colors.text-secondary}` serves help, source positions and counts. Main reading pairs target 7:1; all normal text targets at least 4.5:1 on its actual surface.
+- `{colors.body-accent}`, `{colors.path-accent}`, and `{colors.query-accent}` identify the body, Paths, and Query Parameters groups. Headings and text identify the groups without color. Accents are not validity indicators.
+- `{colors.action}` / `{colors.action-text}` is the primary Copy/Add pair, targeting at least 4.5:1.
+- `{colors.border-default}` is the functional field/row boundary, targeting at least 3:1 on adjacent input/panel surfaces.
+- `{colors.selected-surface}` with a `{colors.query-accent}` boundary accompanies explicit selection text/state; it is not the sole indication of selection or destination.
+- `{colors.focus}` is the 3px focus outline with a 3px offset, matching the preview. It must contrast at least 3:1 with its adjacent dark surface; the offset separates it from pale primary buttons. It also supports text-labeled validation, never color-only error semantics.
 
-No gradients, decorative color coding, or color-only differentiation among Domain, Path Segment, Query Parameter, validation, or history states.
+In forced colors, use native/system-color outlines and boundaries, including a perceivable selected-row boundary and explicit drop marker. Do not force brand colors or rely on box-shadow. Contrast is a contract to verify on rendered states, not a claim of completed application checks.
 
 ## Typography
 
-- Use `{typography.url}` for the Full URL, Domain forms, and URL-value fields where punctuation and character distinction matter.
-- Use `{typography.body}` for instructions and empty states, `{typography.label}` for persistent labels, and `{typography.meta}` for position, result count, and secondary state detail.
-- URL text uses left-to-right isolation without changing the user's stored characters. Unicode and ASCII/Punycode Domain values are isolated independently from surrounding labels.
-- Do not visually truncate editable or verification values. Values may wrap; an essential URL value field may scroll horizontally inside its own boundary, while its label, help, validation, and actions remain outside that scroller.
+The approved preview retains system sans-serif for UI and monospace for URL text. Use `{typography.page-title}` for the workbench title, `{typography.section-title}` for major headings, `{typography.group-title}` for disclosure headings, `{typography.label}` for persistent labels, `{typography.control}` for buttons, and `{typography.meta}` for source positions, counts and help.
+
+Use `{typography.url}` for Full URL, both Domain forms, raw Path Segment and Query Parameter text, and safe-copy values. Independently isolate Unicode and ASCII/Punycode values; `dir="ltr"` and bidi isolation never change stored characters. No truncation of editable/verification values: wrap Full URL; confine essential horizontal scrolling to value fields, with labels, help, errors and actions outside their scroller.
 
 ## Layout & Spacing
 
-The page is one URL Workbench with maximum width `{spacing.content-max}`. Use `{spacing.1}` through `{spacing.7}` consistently: major regions use `{spacing.5}` or `{spacing.6}` separation, while dense rows use `{spacing.2}` or `{spacing.3}` without shrinking hit areas.
+One URL Workbench, maximum `{spacing.content-max}`. Use the approved 4/8/12/16/24/32 scale: major gaps `{spacing.5}` or `{spacing.6}`, group gaps `{spacing.4}`, row gaps `{spacing.row-gap}`, and field/action gaps `{spacing.3}`. Panels use `{spacing.panel-padding}` at adequate widths and `{spacing.3}` when narrow.
 
-At 1024 CSS px and wider, the Full URL and Actions regions may remain visible while Structured View scrolls. From 768–1023 CSS px, controls wrap into labeled rows. Below 768 CSS px, all regions stack in the same reading order. At 320 CSS px—including the equivalent of 400% browser zoom on a 1280px viewport—required content and actions reflow without page-level horizontal scrolling or loss. Horizontal scrolling is allowed only inside essential URL value fields as defined above.
+Full URL and Copy share a line at adequate widths: flexible textarea plus auto-width Copy, top-aligned, separated by `{spacing.3}`. Copy may wrap below only at narrow widths (the approved preview uses 700 CSS px). Undo stays in the same Full URL panel below; there is no separate Actions landmark. Full URL, Copy, current/last-valid context, and validation remain outside the three independent disclosures.
 
-Every pointer target is at least `{spacing.pointer-min}` by `{spacing.pointer-min}` at every supported width or satisfies the WCAG spacing exception. Primary and destructive controls—including Copy, Add, and Remove—target at least `{spacing.control-target}` by `{spacing.control-target}`. “Clear Search” and Move controls must receive an equivalent hit area even when their visible mark is smaller.
+Body details, Paths, then Query Parameters stack with visible headings. Both Domain fields may share a line; query key/value/actions may share a row. At ≤700px these stack in unchanged source/reading order. The preview's 1280px split shows an annotation/mobile-example rail, not an application sidebar; its browser-frame corners and discovery captions are not application chrome.
 
-With WCAG 1.4.12 text-spacing overrides—line height 1.5 times the font size, paragraph spacing 2 times the font size, letter spacing 0.12 times the font size, and word spacing 0.16 times the font size—no label, help text, error, status, control, row, or URL content may clip, overlap, hide, truncate, or lose function at any supported width.
+Reflow at 320 CSS px and 400% zoom without page-level horizontal scrolling. Pointer targets are at least `{spacing.pointer-min}` square or satisfy the WCAG spacing exception; Copy, Add, Remove, Clear Search, drag handle and Move controls target `{spacing.control-target}` square. Widen the preview's illustrative 24/28px handle column to meet this contract; do not copy its undersized glyph container into the app. Disclosure headings target `{spacing.disclosure-target}` height, never below the control floor at narrow widths.
 
-At high density, Full URL, Search, Copy, Undo, the pre-list Add shortcut, and skip links remain reachable without traversing every row. When the Full URL or Actions region is sticky, it may use a separator but cannot obscure focus, headings, validation, or status.
+At high density, Full URL, Search, Copy, Undo, result summary and the top Add jump link remain quickly reachable without walking every row. The sole Add button is after the query list. If a header is sticky, it cannot obscure focus, headings, validation, status, or drop destinations.
+
+WCAG 1.4.12 text-spacing overrides (1.5× line height, 2× paragraph spacing, 0.12× letter spacing, 0.16× word spacing) must cause no clipping, overlap, truncation, hidden controls or lost function at any supported width.
 
 ## Elevation & Depth
 
-Use borders and tonal surfaces for hierarchy. The default experience has no card shadows. Sticky regions may gain a clear separator only when content passes beneath them. Routine edits, validation, Copy, and Undo never open a modal or elevated interruption.
+Tonal navy layers and clear boundaries, no default card shadows. No grid background, marketing gradients, decorative dashboard chrome or modal routine mutations. Sticky content may gain a separator, not elevation-driven hierarchy.
 
 ## Shapes
 
-Use `{rounded.sm}` for inline messages, `{rounded.md}` for controls and Managed Piece rows, `{rounded.lg}` only for large containing regions, and `{rounded.full}` only for compact type labels. Shape is supplementary and never the sole distinction among piece types or states.
+Approved panels/disclosures use `{rounded.lg}`; styled fields, rows, buttons and inline messages use `{rounded.md}`. Do not import discovery browser-frame radii as product components. Shape supplements labels and state, never replaces them.
 
 ## Components
 
-Canonical component identifiers below match `EXPERIENCE.md`.
+Canonical identifiers match `EXPERIENCE.md.Component Patterns`. The [approved mockup](mockups/dark-workbench.html) illustrates valid desktop/narrow composition, both Domain fields, independent disclosures, duplicate query rows, a selected/focused move-control variant, and bottom Add placement; behavioral/error/drag recovery variants are spine-only.
 
 | Component | Visual specification |
 |---|---|
-| `full-url-editor` | Persistently labeled multiline `<textarea>` using `{components.full-url-editor.typography}`. Text wraps within a minimum 96px field. Invalid Draft URL uses the error border and adjacent inline `validation-message`; persistent help remains visually associated. |
-| `action-bar` | Quiet utility region with stable visual positions for Undo, Copy, and the pre-list Add shortcut. At narrower widths it wraps without changing their visual sequence. |
-| `search-field` | Persistent “Search Managed Pieces” label, “Clear Search” control with at least `{spacing.pointer-min}` hit area, and a visible normative result summary. |
-| `managed-piece-list` | Ordered single-column list with a visible heading, result summary, skip targets, and no visual suggestion that off-screen rows are absent. |
-| `managed-piece-row` | Bordered row containing type, stable source-position text, editable controls, and labeled actions. Duplicate entries show stable source ordinal and source occurrence context; filtered-result position is separate visible text. Both “Unicode Domain” and “ASCII/Punycode Domain” are visibly editable, independently bidi-isolated, and paired with visible conversion status. |
-| `piece-type-label` | Compact text reading Domain, Path Segment, or Query Parameter. Position and occurrence remain separate visible text; color and shape are supplementary. |
-| `add-query-parameter-control` | The same label and primary-action treatment appear before and after the list. Both instances meet `{spacing.control-target}`. |
-| `undo-control` | Secondary control with visible inactive state when the Initial URL is current. Shortcut text may accompany, never replace, the Undo label. |
-| `copy-control` | Persistent primary action with a stable label. |
-| `safe-copy-readonly` | Read-only URL field with a persistent “Current URL” or “Last Valid URL” label, `{components.safe-copy-readonly.typography}`, strong border, and visibly apparent full-value selection. |
-| `status-message` | Visually stable, separately styled areas for polite operation status and actionable failure; layout-critical controls do not move when text changes. |
-| `validation-message` | Visible inline error adjacent to its field, using `{components.validation-message.background}`, `{components.validation-message.foreground}`, and `{components.validation-message.border}`. |
-| `no-results-state` | Plain text inside Structured View, paired with the visible result count and a “Clear Search” action. |
+| `full-url-editor` | Persistent label and wrapping textarea using `{components.full-url-editor.typography}`, minimum `{components.full-url-editor.min-height}`. Error border, persistent help and external validation do not disappear on collapse. |
+| `action-bar` | Inline Full URL panel utilities: Copy beside textarea, Undo below, feedback outside disclosures. No separate Actions region or top Add button. |
+| `search-field` | Labeled “Search Managed Pieces,” styled input, Clear Search control and visible normative count. |
+| `detail-group` | Three `{rounded.lg}` panels: body blue, Paths violet, Query Parameters teal. Counts/context accompany text headings; disclosure state is apparent without color. |
+| `disclosure-control` | Visible heading/control and direction/state indicator; `{typography.group-title}` with count in `{typography.meta}`. Collapsed heading remains perceivable. |
+| `passive-url-context` | Labeled scheme, present port/userinfo and supported Fragment context, wrapping raw values, no input-like editing affordance. |
+| `managed-piece-list` | Ordered source collection within groups; heading/count and skip destinations remain clear. Markerless lists retain explicit list semantics. No implication that off-screen rows are absent. |
+| `managed-piece-row` | Rounded bordered input-tone row, persistent field labels, current source position/occurrence text and actions. Selected/focused query row uses `{components.managed-piece-row.selected-background}` and explicit text/state. Query rows show the absent/empty/empty-entry descriptions from EXPERIENCE Query value shape in `{typography.meta}` using `{colors.text-secondary}`. Both Domain forms are editable; successful conversion uses status, invalid conversion uses persistent inline validation only. |
+| `piece-type-label` | Text Domain, Path Segment or Query Parameter, plus source ordinal/total and duplicate occurrence; filtered-result position is separate. No color-only type coding. |
+| `query-drag-handle` | Per-query grip on a named button, visible without hover, full-size target; selection/reveal state accompanies appearance. No grip on Paths. |
+| `query-move-controls` | On-demand Up/Down button pair within the focused or selected row, using `{components.query-move-controls.background}`; readable disabled boundary states. No layout that hides a focused Move button. |
+| `drop-indicator` | Static insertion line plus destination text/position; perceivable without animation and in forced colors. Not illustrated in the approved mock. |
+| `remove-control` | Persistently labeled secondary Remove action for Path Segment/Query Parameter only; target size is not reduced for density. |
+| `add-query-parameter-control` | One primary “Add Query Parameter” button at bottom of query list, reachable in empty/no-match states. |
+| `add-query-jump-link` | Underlined top “Skip to Add Query Parameter” using `{colors.action}`, not another Add button. Bottom and focus-revealed row return links use the same treatment, wrap clearly and never obscure focused controls. |
+| `undo-control` | Secondary “Undo” with text/programmatic inactive state when Initial URL is current. Shortcut help never replaces its label. |
+| `copy-control` | Persistent primary “Copy” alongside Full URL; narrow wrapping only. No disclosure can hide it. |
+| `safe-copy-readonly` | Labeled “Current URL” or “Last Valid URL” field with exact source visibly selected; outside disclosures. |
+| `status-message` | Stable external polite-operation and actionable-failure areas. A labeled "Operation feedback" ordinary list presents exact chronological overflow outcomes, with `{typography.meta}`, readable wrapping and `{spacing.2}` between entries. No live role, forced focus or confusion with Undo History; feedback survives until reload/close. |
+| `committed-state-banner` | Explicit Current URL / Last Valid URL context outside disclosures, including invalid-Draft explanation. No color-only safe-state claim. |
+| `validation-message` | Persistent `{components.validation-message.foreground}` text/error boundary on `{components.validation-message.background}`; field association and external summary keep collapsed errors discoverable. |
+| `no-results-state` | Plain text “0 of M” and Clear Search; sole bottom Add and top jump link stay findable. |
 
 ## Do's and Don'ts
 
 | Do | Don't |
 |---|---|
-| Keep Full URL, Search, Copy, Undo, Add, result count, and skip links visually findable in dense sessions. | Require traversal of hundreds of row controls to reach Add or the next major region. |
-| Keep both “Unicode Domain” and “ASCII/Punycode Domain” labels visible, isolate each value bidirectionally, and show conversion status. | Present two unlabeled Domain fields or merge their labels. |
-| Use quiet boundaries, static change cues, and two-layer focus on blue controls. | Use low-contrast borders, animated flashes, decorative shadows, or box-shadow-only focus. |
-| Reflow all labels, errors, status, and actions at 320 CSS px. | Introduce page-level horizontal scrolling; confine essential scrolling to URL value fields. |
-| Preserve at least 24×24 pointer targets at all widths and target 44×44 for primary/destructive controls. | Compress actions to icon glyph dimensions to fit more rows. |
+| Use the approved dark navy layers, rounded panels, group accents and system typography. | Restore the old light identity, add a background grid, or clone reference-product features/marketing. |
+| Keep Full URL and Copy always visible, with adjacent Copy on adequate widths. | Put Copy in a disclosure or wrap it below on a wide layout. |
+| Pair group/state colors with text and programmatic state. | Treat blue/violet/teal as validation or color-only classification. |
+| Provide primary query dragging plus focused/selected Up/Down controls. | Make drag optional future scope, drag-only, hover-only, or introduce Path reorder. |
+| Put the sole Add button below query rows, with a top jump link. | Duplicate the top Add button or force traversal of hundreds of controls. |
+| Preserve exact URL text, bidi isolation, 320px reflow and text-spacing tolerance. | Truncate critical values or reproduce the mock's undersized decorative handle. |

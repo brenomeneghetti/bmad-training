@@ -1,8 +1,30 @@
 <!DOCTYPE html>
+<!--
+  UX Design Validation Report — skeleton template.
+
+  This file is a starter the synthesis pass fills in directly. There is no
+  substitution engine. The LLM:
+    1. Reads {doc_workspace}/review-rubric.md and every review-{slug}.md from
+       additional reviewers.
+    2. Copies this skeleton.
+    3. Replaces the placeholder content (everything between TEMPLATE markers)
+       with the consolidated review, preserving the structure and CSS.
+    4. Writes the result to {doc_workspace}/validation-report.html.
+    5. Writes a markdown twin to {doc_workspace}/validation-report.md.
+
+  Visual rules the LLM must preserve:
+    - The container width, the color tokens, the typography.
+    - One dimension = one collapsible <section class="dimension">.
+    - Verdict pill uses the verdict-* class matching its judgment.
+    - Severity badge uses the badge-sev-* class matching its level.
+    - Each extra reviewer (accessibility, adversarial, etc.) gets its own
+      collapsible section below the rubric dimensions.
+    - The footer always shows the artifact paths and timestamp.
+-->
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>UX Design Validation: bmad-training</title>
+<title>UX Design Validation: URL Piece Management redesign</title>
 <style>
   :root {
     --bg: #fafaf9;
@@ -183,160 +205,105 @@
 </head>
 <body>
   <div class="container">
+
+    <!-- TEMPLATE: header. Fill ux spec name and ux spec path. No overall grade —
+         per-category verdicts and severity counts below carry the picture. -->
     <header class="report-header">
       <div class="title">
-        <h1>bmad-training — UX Design Validation Report</h1>
-        <div class="subtitle">_bmad-output/planning-artifacts/ux-designs/ux-bmad-training-2026-09-24/</div>
+        <h1>URL Piece Management — UX Design Validation Report</h1>
+        <div class="subtitle">DESIGN.md + EXPERIENCE.md · 2026-10-09 redesign</div>
       </div>
     </header>
 
+    <!-- TEMPLATE: overall synthesis paragraphs. Lift directly from
+         review-rubric.md "Overall verdict" section; expand if extra reviewers
+         (accessibility, adversarial, etc.) materially shift the picture.
+         Wrap each paragraph in <p>. -->
     <div class="synthesis">
-      <p><strong>Ready for architecture handoff with 0 UX blockers.</strong> The current DESIGN.md and EXPERIENCE.md pair is mechanically complete and internally consistent across flows, tokens, components, states, visual-reference handling, document shape, and the reconciled FR-14 Undo contract.</p>
-      <p>One medium upstream reconciliation finding remains: the PRD Decision Summary still presents invalid-Draft structured editing as unresolved even though the PRD journey and UX contract commit to preserving the Draft and editing Last Valid URL. Accessibility passes with no blocker and carries 12 nonblocking specification-hardening findings.</p>
-      <p>AG-1–AG-3 are downstream architecture gates, not UX defects. They block implementation stories until parser/serializer, IDN, and accessible-virtualization fixture or prototype evidence passes.</p>
+      <p>The approved dark direction and principal interaction decisions are preserved, with resolved tokens, matching component inventories and substantial flow/state coverage. Review identified a contradictory edit-boundary rule and other consequential specification gaps. Final contracts include corrections; the verdicts below describe the reviewed drafts, not an independent re-review.</p>
+      <p>Accessibility review also identified filtered-error recovery, drag-feedback, dense keyboard navigation and markerless-list risks. Nine consolidated findings are addressed in the written contracts (two high, six medium, one low; ten original findings include one overlap). Upstream synchronization remains required. No application delivery, browser/AT conformance or new release coverage is established.</p>
     </div>
 
+    <!-- TEMPLATE: dimension summary cards. One per rubric category, in this
+         canonical order (from references/validate.md):
+           1. Flow coverage
+           2. Token completeness
+           3. Component coverage
+           4. State coverage
+           5. Visual reference coverage
+           6. Bloat & overspecification
+           7. Inheritance discipline
+           8. Shape fit
+         The dim-verdict text uses one of: strong | adequate | thin | broken. -->
     <div class="dimension-summary">
-      <div class="dim-card"><div class="dim-name">Flow coverage</div><div class="dim-verdict" style="color: var(--verdict-strong)">strong</div></div>
+      <div class="dim-card"><div class="dim-name">Flow coverage</div><div class="dim-verdict" style="color: var(--verdict-adequate)">adequate</div></div>
       <div class="dim-card"><div class="dim-name">Token completeness</div><div class="dim-verdict" style="color: var(--verdict-strong)">strong</div></div>
-      <div class="dim-card"><div class="dim-name">Component coverage</div><div class="dim-verdict" style="color: var(--verdict-strong)">strong</div></div>
-      <div class="dim-card"><div class="dim-name">State coverage</div><div class="dim-verdict" style="color: var(--verdict-strong)">strong</div></div>
+      <div class="dim-card"><div class="dim-name">Component coverage</div><div class="dim-verdict" style="color: var(--verdict-adequate)">adequate</div></div>
+      <div class="dim-card"><div class="dim-name">State coverage</div><div class="dim-verdict" style="color: var(--verdict-adequate)">adequate</div></div>
       <div class="dim-card"><div class="dim-name">Visual reference coverage</div><div class="dim-verdict" style="color: var(--verdict-strong)">strong</div></div>
       <div class="dim-card"><div class="dim-name">Bloat &amp; overspecification</div><div class="dim-verdict" style="color: var(--verdict-adequate)">adequate</div></div>
       <div class="dim-card"><div class="dim-name">Inheritance discipline</div><div class="dim-verdict" style="color: var(--verdict-adequate)">adequate</div></div>
       <div class="dim-card"><div class="dim-name">Shape fit</div><div class="dim-verdict" style="color: var(--verdict-strong)">strong</div></div>
     </div>
 
-    <section class="dimension">
-      <details>
-        <summary><h2>1. Flow coverage</h2><span class="verdict-pill verdict-strong">strong</span></summary>
-        <div class="dim-body"><div class="dim-judgment">
-          <p>UJ-1, FR-1–FR-16, and NFR-1–NFR-17 are covered by named, numbered flows and individual observable acceptance rows. Devon’s journey includes a climax and Clipboard failure path; companion flows cover invalid Draft, IDN, density, virtualization, focus, and validation behavior.</p>
-          <p>FR-14 is consistent across <code>undo-control</code>, the transition table, Flow 2, acceptance evidence, and the source: preserve invalid Draft text, restore committed state, focus the restored or affected logical item when present, then the nearest survivor, then Full URL.</p>
-        </div></div>
-      </details>
-    </section>
+    <!-- TEMPLATE: one section per rubric category, same canonical order as the
+         summary cards above. Skip a category entirely if the rubric review
+         marked it n/a for this UX spec. Open the section by default if verdict
+         is thin or broken. -->
+    <section class="dimension"><details><summary><h2>Flow coverage</h2><span class="verdict-pill verdict-adequate">adequate</span></summary><div class="dim-body"><p>Named Devon journeys, numbered steps, climax and failure paths retained.</p></div><div class="findings-list"><article class="finding"><header><span class="badge badge-sev-low">low</span><h3 class="finding-title">F5 — Incorrect removal/Undo flow references</h3></header><div class="finding-location">EXPERIENCE acceptance FR-7 and FR-14</div><div class="finding-note">References pointed to reorder rather than removal/Undo.</div><div class="finding-fix"><strong>Fix:</strong> both reference Flow 3 step 6. Addressed.</div></article></div></details></section>
+    <section class="dimension"><details><summary><h2>Token completeness</h2><span class="verdict-pill verdict-strong">strong</span></summary><div class="dim-body"><p>Concrete dark tokens and references resolve. Representative calculated contrast: primary/panel 15.32:1; secondary/panel 9.48:1; action/ink 10.95:1; boundary/panel 3.60:1; selected query boundary 7.66:1; focus/base 13.50:1. No high-confidence operative-pair failure. Default border/selected fill is 2.62:1; selected states require the accent boundary. Calculations do not certify rendered opacity, forced colors, focus clipping or altered surfaces.</p></div></details></section>
+    <section class="dimension"><details><summary><h2>Component coverage</h2><span class="verdict-pill verdict-adequate">adequate</span></summary><div class="dim-body"><p>Matching visual and behavioral component inventories.</p></div><div class="findings-list"><article class="finding"><header><span class="badge badge-sev-medium">medium</span><h3 class="finding-title">F4 — Operation-feedback history rendering</h3></header><div class="finding-location">Both status-message rows; EXPERIENCE Feedback channels</div><div class="finding-note">Overflow promotion lacked placement, semantics and lifecycle.</div><div class="finding-fix"><strong>Fix:</strong> labeled chronological ordinary list outside disclosures; exact wrapping outcomes; existing exactly-once promotion; no additional live role/focus; session retention and reload reset. Separate from Undo History. Addressed.</div></article></div></details></section>
+    <section class="dimension"><details><summary><h2>State coverage</h2><span class="verdict-pill verdict-adequate">adequate</span></summary><div class="dim-body"><p>Draft, disclosure, filtering, recovery and gesture states covered; two contract corrections were needed.</p></div><div class="findings-list">
+      <article class="finding"><header><span class="badge badge-sev-high">high</span><h3 class="finding-title">F1 / A11Y-02 — Navigation versus blur-close History</h3></header><div class="finding-location">EXPERIENCE State Patterns and Interaction Primitives</div><div class="finding-note">Cancellation cannot erase a prior legitimate accepted-edit entry caused by blur.</div><div class="finding-fix"><strong>Fix:</strong> retain ordinary blur closure; navigation/selection/preview/cancel add no entry of their own. Capture drag revision after focus processing; preserve invalid Draft. Added A→B, invalid X, jump/cancel acceptance. Addressed; overlap retained in reviewer snapshots.</div></article>
+      <article class="finding"><header><span class="badge badge-sev-medium">medium</span><h3 class="finding-title">F3 — Absent/empty query shapes</h3></header><div class="finding-location">DESIGN row; EXPERIENCE Query value shape</div><div class="finding-note">Blank inputs obscure flag, flag= and empty-entry distinctions.</div><div class="finding-fix"><strong>Fix:</strong> persistent associated descriptions, existing parser Add defaults/presence transitions and exact Copy/Undo acceptance. No new presence toggle; Full URL can remove an existing equals sign. Addressed.</div></article>
+    </div></details></section>
+    <section class="dimension"><details><summary><h2>Visual reference coverage</h2><span class="verdict-pill verdict-strong">strong</span></summary><div class="dim-body"><p>Approved dark desktop/narrow composition is linked from both spines. User chose no additional state mocks; error, recovery, actual drag and density states are spine-only. The keeper is an unchanged audit artifact, not implementation evidence; final contract deltas govern.</p></div></details></section>
+    <section class="dimension"><details><summary><h2>Bloat &amp; overspecification</h2><span class="verdict-pill verdict-adequate">adequate</span></summary><div class="dim-body"><p>Load-bearing tables and thresholds retained. Editorial structure added navigable interaction subsections and preserved acceptance traceability. Prose distinguishes cancelled/subsequent committed drags and replaces undefined “attentive” with “focused or selected.”</p></div></details></section>
+    <section class="dimension"><details><summary><h2>Inheritance discipline</h2><span class="verdict-pill verdict-adequate">adequate</span></summary><div class="dim-body"><p>Sources and glossary retained; upstream synchronization remains explicit.</p></div><div class="findings-list"><article class="finding"><header><span class="badge badge-sev-medium">medium</span><h3 class="finding-title">F2 — Display labels versus immutable IDs</h3></header><div class="finding-location">EXPERIENCE Stable item identity and Accessibility Floor</div><div class="finding-note">Key changes affect duplicate membership without reordering.</div><div class="finding-fix"><strong>Fix:</strong> only IDs immutable; source labels refresh on structural/key changes. Explicit naming and per-group filtered positions. Addressed.</div></article></div></details></section>
+    <section class="dimension"><details><summary><h2>Shape fit</h2><span class="verdict-pill verdict-strong">strong</span></summary><div class="dim-body"><p>Canonical DESIGN section ordering and required EXPERIENCE sections retained; both are final design contracts dated 2026-10-09, not delivered app behavior.</p></div></details></section>
 
-    <section class="dimension">
-      <details>
-        <summary><h2>2. Token completeness</h2><span class="verdict-pill verdict-strong">strong</span></summary>
-        <div class="dim-body"><div class="dim-judgment">
-          <p>All 36 DESIGN.md token references resolve. The spine defines 17 valid six-digit color values, six typography roles, four radii, ten spacing tokens, and 13 component token groups. Load-bearing contrast, validation, focus, forced-color, changed, and disabled treatments are specified; dark mode is explicitly outside V1.</p>
-        </div></div>
-      </details>
-    </section>
-
-    <section class="dimension">
-      <details>
-        <summary><h2>3. Component coverage</h2><span class="verdict-pill verdict-strong">strong</span></summary>
-        <div class="dim-body"><div class="dim-judgment">
-          <p>All 13 canonical component identifiers have substantive and aligned visual rules in DESIGN.md and behavioral rules in EXPERIENCE.md: Full URL editor, actions, search, managed-piece list and row, labels, add, Undo, Copy, safe-copy recovery, status, validation, and no-results state.</p>
-        </div></div>
-      </details>
-    </section>
-
-    <section class="dimension">
-      <details>
-        <summary><h2>4. State coverage</h2><span class="verdict-pill verdict-strong">strong</span></summary>
-        <div class="dim-body"><div class="dim-judgment">
-          <p>Applicable states are covered across URL Workbench, Full URL, Actions, and Structured View: no session, delayed parsing and stale-result rejection, valid and invalid inputs, Clipboard failure, reload/close, reduced motion, no results, inactive actions, deterministic focus, forced colors, responsive reflow, high-density virtualization, and fail-closed virtualization fallback.</p>
-          <p>Offline and permission-denied application states do not apply to browser-local, account-free V1; Clipboard denial is covered by safe-copy recovery.</p>
-        </div></div>
-      </details>
-    </section>
-
-    <section class="dimension">
-      <details>
-        <summary><h2>5. Visual reference coverage</h2><span class="verdict-pill verdict-strong">strong</span></summary>
-        <div class="dim-body"><div class="dim-judgment">
-          <p>No visual files exist in imports, .working, mockups, or wireframes. The memlog records all V1 surfaces as intentionally spine-only, and EXPERIENCE.md states that the spines are authoritative over future visual artifacts. There are no orphaned, unspecific, or conflicting references.</p>
-        </div></div>
-      </details>
-    </section>
-
-    <section class="dimension">
-      <details>
-        <summary><h2>6. Bloat &amp; overspecification</h2><span class="verdict-pill verdict-adequate">adequate</span></summary>
-        <div class="dim-body"><div class="dim-judgment">
-          <p>The pair is dense, but its detail is tied to exact serialization, continuous-edit history, invalid-Draft behavior, deterministic focus, accessible high-volume lists, feedback routing, and release evidence. Tables carry the contracts, upstream product content is inherited rather than repeated wholesale, and no section is safely removable without weakening downstream extraction.</p>
-        </div></div>
-      </details>
-    </section>
-
-    <section class="dimension">
-      <details>
-        <summary><h2>7. Inheritance discipline</h2><span class="verdict-pill verdict-adequate">adequate</span></summary>
-        <div class="dim-body"><div class="dim-judgment">
-          <p>Both source paths resolve. UJ-1 is reproduced character-for-character, FR/NFR numbering and glossary terms remain aligned, component names match across the spines, and EXPERIENCE.md token references resolve to DESIGN.md.</p>
-        </div></div>
-        <div class="findings-list">
-          <article class="finding">
-            <header>
-              <span class="badge badge-sev-medium">medium</span>
-              <h3 class="finding-title">Upstream PRD retains a stale invalid-Draft decision</h3>
-              <span class="finding-location">prd.md Decision Summary and §2.3; .memlog.md; EXPERIENCE.md</span>
-            </header>
-            <div class="finding-note">The final PRD Decision Summary still frames invalid-Draft structured editing as a choice between disabling mutations and discarding the draft. The PRD journey, UX override, and EXPERIENCE.md instead preserve the Draft and allow Structured View editing against Last Valid URL. The UX contract is unambiguous, so this is not a UX blocker, but declared-source consumers can encounter a false open decision.</div>
-            <div class="finding-fix"><strong>Fix:</strong> Close the PRD Decision Summary item or mark it superseded by the committed journey and UX contract.</div>
-          </article>
-        </div>
-      </details>
-    </section>
-
-    <section class="dimension">
-      <details>
-        <summary><h2>8. Shape fit</h2><span class="verdict-pill verdict-strong">strong</span></summary>
-        <div class="dim-body"><div class="dim-judgment">
-          <p>DESIGN.md follows the canonical section order. EXPERIENCE.md contains every required default plus triggered Inspiration &amp; Anti-patterns and Responsive &amp; Platform sections. Architecture Gates and Observable acceptance evidence earn their place as measurable downstream boundaries.</p>
-        </div></div>
-      </details>
-    </section>
-
+    <!-- TEMPLATE: one section per extra reviewer that ran (accessibility,
+         adversarial, brand-conformance, etc.). Skip this block entirely if
+         only the rubric walker ran. -->
     <section class="reviewer-section">
       <details>
         <summary>
-          <h2>Accessibility review — 12 nonblocking hardening findings</h2>
-          <span class="reviewer-source">review-accessibility.md</span>
+          <h2>Accessibility review</h2>
+          <span class="reviewer-source">review-redesign-accessibility.md</span>
         </summary>
-        <div class="dim-body"><div class="dim-judgment">
-          <p>The WCAG 2.2 AA implementation contract passes with 0 current UX accessibility blockers. Prior B1–B10 are closed, and the Undo/FR-14 rule is consistent. The findings below harden specification and release evidence without changing architecture-handoff readiness.</p>
-        </div></div>
+        <div class="dim-body">
+          <div class="dim-judgment">
+            <p>Five original accessibility findings. Expanding a disclosure alone cannot recover Search-hidden invalid text; obsolete drag speech and unbounded keyboard return paths are consequential usability hazards. Markerless native lists require a WebKit-safe safeguard. The overlapping blur-close finding is consolidated above. These are source-contract findings, not observed app failures.</p>
+          </div>
+        </div>
         <div class="findings-list">
-          <article class="finding"><header><span class="badge badge-sev-low">low</span><h3 class="finding-title">H1 — Observable exposure clock is implicit</h3><span class="finding-location">EXPERIENCE.md:109</span></header><div class="finding-note">If the two-second timer starts before live-region DOM commitment, actual message exposure can fall below the normative minimum.</div><div class="finding-fix"><strong>Fix:</strong> Start the clock after committed DOM insertion and remove or replace the message no earlier than two seconds afterward.</div></article>
-          <article class="finding"><header><span class="badge badge-sev-low">low</span><h3 class="finding-title">H2 — Queue-overflow transition is not algorithmically closed</h3><span class="finding-location">EXPERIENCE.md:109</span></header><div class="finding-note">When projected FIFO start exceeds six seconds, implementations can differ on whether outcomes remain queued, move to history, duplicate, or disappear behind a summary.</div><div class="finding-fix"><strong>Fix:</strong> Define overflow at enqueue using projected start time and specify the disposition of every queued outcome.</div></article>
-          <article class="finding"><header><span class="badge badge-sev-low">low</span><h3 class="finding-title">H3 — Persistent visible operation history lacks a component contract</h3><span class="finding-location">EXPERIENCE.md:63–81,109</span></header><div class="finding-note">The sustained-input fallback has no defined placement, semantics, capacity, clearing lifecycle, focus behavior, or distinction from mutation History.</div><div class="finding-fix"><strong>Fix:</strong> Define its accessible name, chronological ordering, capacity, lifecycle, focus behavior, and relationship to product Undo history.</div></article>
-          <article class="finding"><header><span class="badge badge-sev-low">low</span><h3 class="finding-title">H4 — Settled-input validation has no default timing</h3><span class="finding-location">EXPERIENCE.md:108</span></header><div class="finding-note">The optional bounded assertion path could become either near-keystroke chatter or feedback too delayed to help.</div><div class="finding-fix"><strong>Fix:</strong> State a default debounce and maximum latency; permit the release matrix to lengthen but not shorten those bounds.</div></article>
-          <article class="finding"><header><span class="badge badge-sev-low">low</span><h3 class="finding-title">H5 — “Explicit Apply” is not mapped to an interaction</h3><span class="finding-location">EXPERIENCE.md:108,130,209</span></header><div class="finding-note">Validation, keyboard, pointer, and focus tests can target different or nonexistent actions.</div><div class="finding-fix"><strong>Fix:</strong> Define Apply as a named visible control or Enter, or replace the term with the actual trigger names.</div></article>
-          <article class="finding"><header><span class="badge badge-sev-low">low</span><h3 class="finding-title">H6 — Parsing-status delay is qualitative</h3><span class="finding-location">EXPERIENCE.md:97</span></header><div class="finding-note">An unspecified “short delay” can cause Parsing URL to flash, appear late, or publish for a stale generation.</div><div class="finding-fix"><strong>Fix:</strong> Provide a numeric default and cancel the pending timer when the generation is superseded or completes first.</div></article>
-          <article class="finding"><header><span class="badge badge-sev-low">low</span><h3 class="finding-title">H7 — DESIGN broadens Domain conversion status</h3><span class="finding-location">DESIGN.md:199,214</span></header><div class="finding-note">A visual implementation could treat invalid conversion as operation status in addition to inline validation, reintroducing duplicate speech.</div><div class="finding-fix"><strong>Fix:</strong> Limit conversion status to success and route invalid conversion only through persistent inline validation per EXPERIENCE.md.</div></article>
-          <article class="finding"><header><span class="badge badge-sev-low">low</span><h3 class="finding-title">H8 — Undo-Add “nearest” lacks a tie-break rule</h3><span class="finding-location">EXPERIENCE.md:120,239</span></header><div class="finding-note">When surviving rows exist on both sides, conforming implementations can choose different focus destinations.</div><div class="finding-fix"><strong>Fix:</strong> Define nearest in post-removal source order, such as next then previous.</div></article>
-          <article class="finding"><header><span class="badge badge-sev-low">low</span><h3 class="finding-title">H9 — Safe-copy recovery does not name the native field primitive</h3><span class="finding-location">DESIGN.md:204; EXPERIENCE.md:78,102,136</span></header><div class="finding-note">A long URL can be technically selected while selection state remains imperceivable or unreliable on touch, narrow widths, or assistive technology.</div><div class="finding-fix"><strong>Fix:</strong> Specify the read-only native control, wrapping, selection method, initial scroll, accessible description, and perceivable full selection.</div></article>
-          <article class="finding"><header><span class="badge badge-sev-low">low</span><h3 class="finding-title">H10 — Inactive-control explanation association is optional</h3><span class="finding-location">DESIGN.md:156,202; EXPERIENCE.md:96</span></header><div class="finding-note">Natively disabled Undo or Copy controls may be skipped, leaving users unable to discover why the action is unavailable.</div><div class="finding-fix"><strong>Fix:</strong> Require a visible explanation associated with Actions or the controls whenever inactivity is not self-evident.</div></article>
-          <article class="finding"><header><span class="badge badge-sev-low">low</span><h3 class="finding-title">H11 — Pointer-cancellation acceptance evidence is aggregated</h3><span class="finding-location">EXPERIENCE.md:137,258</span></header><div class="finding-note">A generic pass can conceal a control that still mutates on pointer-down or after cancellation.</div><div class="finding-fix"><strong>Fix:</strong> Require per-control evidence for drag-away release, pointercancel, and no mutation on pointer-down for all six named controls.</div></article>
-          <article class="finding"><header><span class="badge badge-sev-low">low</span><h3 class="finding-title">H12 — WCAG evidence lacks criterion-level traceability</h3><span class="finding-location">EXPERIENCE.md:253–259</span></header><div class="finding-note">Strong behavior can still produce incomplete or unauditable evidence for the WCAG 2.2 AA claim.</div><div class="finding-fix"><strong>Fix:</strong> Add a companion matrix mapping acceptance cases to applicable success criteria, including 1.4.10–1.4.12, 2.1.1, 2.4.7, 2.4.11, 2.5.2, 2.5.7, 2.5.8, 3.3.1, 3.3.3, 4.1.2, and 4.1.3.</div></article>
+          <article class="finding"><header><span class="badge badge-sev-high">high</span><h3 class="finding-title">A11Y-01 — Search-hidden error recovery</h3></header><div class="finding-location">EXPERIENCE Feedback channels</div><div class="finding-note">A summary link can target an excluded field.</div><div class="finding-fix"><strong>Fix:</strong> disclose Search clearing in the action label; clear only when needed with count feedback, expand/focus stable field preserving rejected text/error; otherwise preserve Search. Addressed.</div></article>
+          <article class="finding"><header><span class="badge badge-sev-medium">medium</span><h3 class="finding-title">A11Y-03 — Stale drag-preview speech</h3></header><div class="finding-location">EXPERIENCE Feedback channels / Drag transaction</div><div class="finding-note">Queued transient destinations can outlive the gesture.</div><div class="finding-fix"><strong>Fix:</strong> latest-destination coalescing at bounded cadence, transaction/source-revision binding and invalidation before final outcome; visible destination retained. Addressed.</div></article>
+          <article class="finding"><header><span class="badge badge-sev-medium">medium</span><h3 class="finding-title">A11Y-04 — Dense-list keyboard return</h3></header><div class="finding-location">Both navigation-link rows; EXPERIENCE Utility navigation</div><div class="finding-note">Bottom focus can require hundreds of tab stops to utilities.</div><div class="finding-fix"><strong>Fix:</strong> bottom and focus-revealed row return links to Full URL/Copy and Search; explicit unobscured focus with preserved state and no editing-key interception. Addressed.</div></article>
+          <article class="finding"><header><span class="badge badge-sev-medium">medium</span><h3 class="finding-title">A11Y-05 — Markerless list semantics</h3></header><div class="finding-location">Both managed-piece-list rows; EXPERIENCE acceptance</div><div class="finding-note">WebKit/VoiceOver may omit markerless native list grouping.</div><div class="finding-fix"><strong>Fix:</strong> explicit list role with native list items/source positions. Audit mock stays unchanged; contract governs production. Later browser/AT evidence required. Addressed in contract.</div></article>
         </div>
       </details>
     </section>
 
+    <!-- TEMPLATE: mechanical notes — short, bulleted. Skip if there are none. -->
     <div class="mechanical">
-      <h3>Mechanical notes and downstream gates</h3>
+      <h3>Mechanical notes</h3>
       <ul>
-        <li>Finding counts: critical 0 · high 0 · medium 1 · low 12; UX blockers: 0.</li>
-        <li>Exact UJ-1 label passes; FR rows 16/16; NFR rows 17/17; FR-14 consistency passes.</li>
-        <li>Token references 36/36 resolved; colors 17/17 valid; component parity 13/13; visual-reference orphans 0; Mermaid blocks 0.</li>
-        <li><strong>AG-1 — Parser/serializer contract:</strong> implementation stories remain blocked until cross-browser acceptance, preservation, normalization, snapshot, restore, and Copy fixtures pass.</li>
-        <li><strong>AG-2 — IDN mapping and serialization:</strong> implementation stories remain blocked until mapping profile, canonical form, rejection, reconstruction, isolation, and exact round-trip fixtures pass.</li>
-        <li><strong>AG-3 — Accessible virtualization:</strong> implementation stories remain blocked until one complete nonduplicated accessible representation and virtualization-on/off equivalence pass; otherwise ship without virtualization.</li>
+        <li>Nine unique findings: critical 0, high 2, medium 6, low 1. Ten original findings include one overlap.</li>
+        <li>Reviewer draft line citations are historical snapshots; final section names locate corrections.</li>
+        <li>Historical review-rubric.md and review-accessibility.md excluded from current counts. Earlier source-reconciliation/hardening notes are not execution evidence or silently adopted changes.</li>
+        <li>Architecture orchestration, grouped full-DOM lists, presentation/focus ownership, gestures and evidence identities still need deliberate synchronization; see reconcile-redesign.md.</li>
+        <li>Static mock does not implement drag, synchronized editing, clipboard or dense data. Chromium-only MVP evidence does not establish Firefox, WebKit, OS/mobile/manual or full release coverage.</li>
+        <li>Document corrections were not independently re-reviewed. Full severity-grouped Markdown twin: <a href="validation-report.md">validation-report.md</a>.</li>
       </ul>
     </div>
 
     <footer class="report-footer">
       <div class="meta">
-        <span>DESIGN.md: _bmad-output/planning-artifacts/ux-designs/ux-bmad-training-2026-09-24/DESIGN.md</span>
-        <span>EXPERIENCE.md: _bmad-output/planning-artifacts/ux-designs/ux-bmad-training-2026-09-24/EXPERIENCE.md</span>
-        <span>Rubric: _bmad-output/planning-artifacts/ux-designs/ux-bmad-training-2026-09-24/review-rubric.md</span>
-        <span>Accessibility: _bmad-output/planning-artifacts/ux-designs/ux-bmad-training-2026-09-24/review-accessibility.md</span>
-        <span>Generated: 2026-09-24T18:39:44.563-03:00</span>
+        <span>Documents: DESIGN.md · EXPERIENCE.md</span>
+        <span>Rubric: review-redesign-rubric.md</span>
+        <span>Accessibility: review-redesign-accessibility.md</span>
+        <span>Generated: 2026-10-09T12:58:02-03:00</span>
       </div>
     </footer>
   </div>
