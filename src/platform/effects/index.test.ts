@@ -79,6 +79,7 @@ it("Story 3.3 shared executor stops DOM work and queued writes after unmount", a
   let active = true;
   let effects: import("../../core/session").SessionEffect[] = [1, 2].map((effectId) => ({
     kind: "clipboard", effectId, attemptId: effectId, epoch: 1, stateRevision: 1,
+    draftRevision: 0, interaction: 0,
     source: "current", serialized: "private", status: "pending",
   }));
   let settle!: () => void;
@@ -96,4 +97,80 @@ it("Story 3.3 shared executor stops DOM work and queued writes after unmount", a
   expect(copy).toHaveBeenCalledTimes(1);
   expect(port.focus).not.toHaveBeenCalled();
   expect(acknowledge).toHaveBeenCalledTimes(1);
+});
+
+it("Story 3.4 executor waits for recovery render then claims and acknowledges focus exactly once", async () => {
+  let state = sessionReducer(initialSessionState, { type: "inputChanged", value: "https://example.com/a" });
+  const parse = prepareParse(state);
+  state = sessionReducer(sessionReducer(state, parse.start), parse.complete());
+  const send = (action: SessionAction) => { state = sessionReducer(state, action); };
+  send({ type: "copy" });
+  let rendered = false;
+  const events: string[] = [];
+  const executor = createSessionExecutor();
+  const port = {
+    current: () => state.effects, active: () => true,
+    ready: (effect: (typeof state.effects)[number]) => effect.kind !== "focus" || rendered,
+    claim: (effect: (typeof state.effects)[number]) => {
+      events.push(`claim-${effect.effectId}`);
+      send({ type: effect.kind === "focus" ? "claimFocus" : "claimCopy", effectId: effect.effectId });
+    },
+    focus: () => { events.push("focus"); return false; },
+    copy: async () => "unavailable" as const,
+    acknowledge: (effect: (typeof state.effects)[number], outcome: boolean | import("../../core/session").ClipboardOutcome) => {
+      events.push(`ack-${effect.effectId}`);
+      send(effect.kind === "focus" ? { type: "acknowledgeFocus", effectId: effect.effectId }
+        : { type: "acknowledgeCopy", effectId: effect.effectId, outcome: typeof outcome === "boolean" ? "superseded" : outcome });
+    },
+  };
+  executor.run(port);
+  await Promise.resolve();
+  expect(events).toEqual(["claim-1", "ack-1"]);
+  expect(state.copyRecovery?.serialized).toBe("https://example.com/a");
+  executor.run(port);
+  expect(events).toHaveLength(2);
+  rendered = true;
+  executor.run(port);
+  executor.run(port);
+  expect(events).toEqual(["claim-1", "ack-1", "claim-2", "focus", "ack-2"]);
+  expect(state.effects).toHaveLength(0);
+});
+
+it("Story 3.4 executor acknowledges obsolete or unmounted recovery without touching DOM", async () => {
+  for (const interruption of ["interaction", "mutation", "attempt", "unmount"] as const) {
+    let state = sessionReducer(initialSessionState, { type: "inputChanged", value: "https://example.com/a" });
+    const parse = prepareParse(state);
+    state = sessionReducer(sessionReducer(state, parse.start), parse.complete());
+    const send = (action: SessionAction) => { state = sessionReducer(state, action); };
+    send({ type: "copy" });
+    let rendered = false, active = true;
+    let settle!: () => void;
+    const focus = vi.fn(() => false);
+    const acknowledged: number[] = [];
+    const executor = createSessionExecutor();
+    const port = {
+      current: () => state.effects, active: () => active,
+      ready: (effect: (typeof state.effects)[number]) => effect.kind !== "focus" || rendered,
+      claim: (effect: (typeof state.effects)[number]) => {
+        send({ type: effect.kind === "focus" ? "claimFocus" : "claimCopy", effectId: effect.effectId });
+      }, focus,
+      copy: () => new Promise<"rejected">((resolve) => { settle = () => resolve("rejected"); }),
+      acknowledge: (effect: (typeof state.effects)[number], outcome: boolean | import("../../core/session").ClipboardOutcome) => {
+        acknowledged.push(effect.effectId);
+        send(effect.kind === "focus" ? { type: "acknowledgeFocus", effectId: effect.effectId }
+          : { type: "acknowledgeCopy", effectId: effect.effectId, outcome: typeof outcome === "boolean" ? "superseded" : outcome });
+      },
+    };
+    executor.run(port);
+    if (interruption === "unmount") active = false;
+    settle();
+    await Promise.resolve();
+    if (interruption === "interaction") send({ type: "cancelFocus" });
+    else if (interruption === "mutation") send({ type: "addQueryPiece" });
+    else if (interruption === "attempt") send({ type: "copy" });
+    rendered = true;
+    executor.run(port);
+    expect(focus).not.toHaveBeenCalled();
+    expect(acknowledged).toEqual(interruption === "unmount" ? [1] : [1, 2]);
+  }
 });

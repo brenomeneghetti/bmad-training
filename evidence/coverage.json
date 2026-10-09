@@ -1,5 +1,42 @@
 [
   {
+    "id": "story-3-4-exact-recovery", "story": "3.4",
+    "tests": [
+      { "runner": "vitest", "file": "src/core/session/session.test.ts", "title": "Story 3.4 recovery authority captures every typed failure from exact Current and Last Valid without editing or History", "project": "vitest" },
+      { "runner": "vitest", "file": "src/app/workbench/Workbench.test.tsx", "title": "URL Workbench Story 3.4 Copy failures select exact recovery and retry success retains focus", "project": "vitest" },
+      { "runner": "playwright", "file": "tests/workbench.spec.ts", "title": "Story 3.4 failure matrix selects exact Last Valid recovery and retry preserves native focus", "project": "chromium" },
+      { "runner": "playwright", "file": "tests/workbench.spec.ts", "title": "Story 3.4 Current recovery retains native selection across Search and clears on mutation retry reload", "project": "chromium" }
+    ]
+  },
+  {
+    "id": "story-3-4-recovery-lifecycle", "story": "3.4",
+    "tests": [
+      { "runner": "vitest", "file": "src/core/session/session.test.ts", "title": "Story 3.4 recovery authority retains recovery across interaction and clears it atomically on retry Draft mutation and Undo", "project": "vitest" },
+      { "runner": "vitest", "file": "src/app/workbench/Workbench.test.tsx", "title": "URL Workbench Story 3.4 recovery preserves Draft backward selection validation Search IDs and open History", "project": "vitest" },
+      { "runner": "playwright", "file": "tests/workbench.spec.ts", "title": "Story 3.4 Current recovery retains native selection across Search and clears on mutation retry reload", "project": "chromium" },
+      { "runner": "playwright", "file": "tests/workbench.spec.ts", "title": "Story 3.4 interrupted failures retain manual recovery without stealing focus and obsolete writes stay silent", "project": "chromium" }
+    ]
+  },
+  {
+    "id": "story-3-4-race-focus", "story": "3.4",
+    "tests": [
+      { "runner": "vitest", "file": "src/core/session/session.test.ts", "title": "Story 3.4 recovery authority rejects delayed focus and stale outcomes after interaction composition source change or newer attempt", "project": "vitest" },
+      { "runner": "vitest", "file": "src/platform/effects/index.test.ts", "title": "Story 3.4 executor waits for recovery render then claims and acknowledges focus exactly once", "project": "vitest" },
+      { "runner": "vitest", "file": "src/platform/effects/index.test.ts", "title": "Story 3.4 executor acknowledges obsolete or unmounted recovery without touching DOM", "project": "vitest" },
+      { "runner": "vitest", "file": "src/platform/clipboard/index.test.ts", "title": "Story 3.4 clipboard timeout gives one terminal outcome and late resolve or reject only releases ownership", "project": "vitest" },
+      { "runner": "vitest", "file": "src/app/workbench/Workbench.test.tsx", "title": "URL Workbench Story 3.4 pending failure cannot steal focus after pointer keyboard focus or composition interaction", "project": "vitest" },
+      { "runner": "vitest", "file": "src/app/workbench/Workbench.test.tsx", "title": "URL Workbench Story 3.4 timeout newer fenced recovery survives late resolve reject and unmount", "project": "vitest" },
+      { "runner": "playwright", "file": "tests/workbench.spec.ts", "title": "Story 3.4 timeout fence exposes newest exact recovery and late resolve reject cannot focus or succeed", "project": "chromium" },
+      { "runner": "playwright", "file": "tests/workbench.spec.ts", "title": "Story 3.4 interrupted failures retain manual recovery without stealing focus and obsolete writes stay silent", "project": "chromium" }
+    ]
+  },
+  {
+    "id": "story-3-4-private-capacity", "story": "3.4",
+    "tests": [
+      { "runner": "playwright", "file": "tests/workbench.spec.ts", "title": "Story 3.4 dense recovery publishes and selects privately below 100 ms with accessible 320px complete rendering", "project": "chromium" }
+    ]
+  },
+  {
     "id": "story-3-3-exact-source", "story": "3.3",
     "tests": [
       { "runner": "vitest", "file": "src/core/session/session.test.ts", "title": "Story 3.3 Copy authority captures exact Current and Last Valid without modifying editing or History", "project": "vitest" },
@@ -22,8 +59,8 @@
       { "runner": "vitest", "file": "src/core/session/session.test.ts", "title": "Story 3.3 Copy authority reports typed source-specific failures and clears obsolete feedback on retry or source change", "project": "vitest" },
       { "runner": "vitest", "file": "src/platform/clipboard/index.test.ts", "title": "Story 3.3 clipboard returns content-free typed boundary outcomes and exact writes", "project": "vitest" },
       { "runner": "vitest", "file": "src/platform/clipboard/index.test.ts", "title": "Story 3.3 clipboard timeout fences unresolved writes until settlement without late success", "project": "vitest" },
-      { "runner": "vitest", "file": "src/app/workbench/Workbench.test.tsx", "title": "URL Workbench Story 3.3 Copy retry failures are persistent source-specific and never steal focus", "project": "vitest" },
-      { "runner": "playwright", "file": "tests/workbench.spec.ts", "title": "Story 3.3 Copy boundary failures retry and timeout fence never overlap or announce late success", "project": "chromium" }
+      { "runner": "vitest", "file": "src/app/workbench/Workbench.test.tsx", "title": "URL Workbench Story 3.4 Copy failures select exact recovery and retry success retains focus", "project": "vitest" },
+      { "runner": "playwright", "file": "tests/workbench.spec.ts", "title": "Story 3.4 failure matrix selects exact Last Valid recovery and retry preserves native focus", "project": "chromium" }
     ]
   },
   {

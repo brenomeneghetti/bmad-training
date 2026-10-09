@@ -50,7 +50,7 @@ describe("URL Workbench", () => {
     expect(document.getElementById("error-full-url")!.textContent).toBe(error);
   });
 
-  it("Story 3.3 Copy retry failures are persistent source-specific and never steal focus", async () => {
+  it("Story 3.4 Copy failures select exact recovery and retry success retains focus", async () => {
     const writeText = vi.fn().mockRejectedValueOnce(new Error("secret")).mockResolvedValueOnce(undefined);
     Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText } });
     render(<Workbench />);
@@ -62,11 +62,139 @@ describe("URL Workbench", () => {
     fireEvent.click(copy);
     await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent("Last Valid URL could not be copied."));
     expect(screen.getByRole("alert")).not.toHaveTextContent("secret");
-    expect(editor).toHaveFocus();
+    const recovery = screen.getByLabelText("Last Valid URL — copy recovery") as HTMLTextAreaElement;
+    expect(recovery).toHaveValue("https://example.com/a");
+    expect(recovery).toHaveAttribute("readonly");
+    expect(recovery).toHaveFocus();
+    expect([recovery.selectionStart, recovery.selectionEnd]).toEqual([0, recovery.value.length]);
+    const search = screen.getByLabelText("Search Managed Pieces");
+    search.focus();
     fireEvent.click(copy);
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/copy recovery/)).not.toBeInTheDocument();
     await waitFor(() => expect(screen.getByText("Last Valid URL copied; Draft URL is unchanged.")).toBeInTheDocument());
-    expect(editor).toHaveFocus();
+    expect(search).toHaveFocus();
+  });
+
+  it("Story 3.4 recovery preserves Draft backward selection validation Search IDs and open History", async () => {
+    Object.defineProperty(navigator, "clipboard", { configurable: true, value: undefined });
+    const { unmount } = render(<Workbench />);
+    const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL") as HTMLTextAreaElement;
+    fireEvent.change(editor, { target: { value: semanticFixture } });
+    const ids = [...document.querySelectorAll("[data-piece-id]")].map((row) => row.getAttribute("data-piece-id"));
+    fireEvent.change(editor, { target: { value: semanticFixture.replace("#frag%23ment", "#changed") } });
+    editor.focus();
+    fireEvent.click(screen.getByRole("button", { name: "Copy" }));
+    await waitFor(() => expect(screen.getByLabelText("Current URL — copy recovery")).toHaveFocus());
+    editor.focus();
+    fireEvent.change(editor, { target: { value: semanticFixture.replace("#frag%23ment", "#newer") } });
+    fireEvent.change(screen.getByLabelText("Search Managed Pieces"), { target: { value: "dup" } });
+    fireEvent.change(editor, { target: { value: "https://" } });
+    editor.focus();
+    editor.setSelectionRange(2, 5, "backward");
+    const validation = document.getElementById("error-full-url")!.textContent;
+    fireEvent.click(screen.getByRole("button", { name: "Copy" }));
+    await waitFor(() => expect(screen.getByLabelText("Last Valid URL — copy recovery")).toHaveFocus());
+    expect([editor.selectionStart, editor.selectionEnd, editor.selectionDirection]).toEqual([2, 5, "backward"]);
+    expect(editor).toHaveValue("https://");
+    expect(document.getElementById("error-full-url")!.textContent).toBe(validation);
+    expect(screen.getByLabelText("Search Managed Pieces")).toHaveValue("dup");
+    const recovery = screen.getByLabelText(/copy recovery/);
+    fireEvent.change(screen.getByLabelText("Search Managed Pieces"), { target: { value: "" } });
+    expect(screen.getByLabelText(/copy recovery/)).toBe(recovery);
+    expect([...document.querySelectorAll("[data-piece-id]")].map((row) => row.getAttribute("data-piece-id"))).toEqual(ids);
+    fireEvent.click(screen.getByRole("button", { name: "Undo" }));
+    expect(screen.queryByLabelText(/copy recovery/)).not.toBeInTheDocument();
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Copy" })));
+    expect(screen.getByLabelText("Last Valid URL — copy recovery")).toHaveValue(semanticFixture);
+    unmount();
+
+    render(<Workbench />);
+    const nextEditor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
+    fireEvent.change(nextEditor, { target: { value: "https://example.com/a" } });
+    act(() => nextEditor.focus());
+    fireEvent.change(nextEditor, { target: { value: "https://example.com/b" } });
+    fireEvent.click(screen.getByRole("button", { name: "Copy" }));
+    await waitFor(() => expect(screen.getByLabelText(/copy recovery/)).toHaveFocus());
+    act(() => screen.getByLabelText("Search Managed Pieces").focus());
+    act(() => nextEditor.focus());
+    fireEvent.change(nextEditor, { target: { value: "https://example.com/c" } });
+    act(() => screen.getByLabelText("Search Managed Pieces").focus());
+    fireEvent.click(screen.getByRole("button", { name: "Undo" }));
+    expect(nextEditor).toHaveValue("https://example.com/b");
+    fireEvent.click(screen.getByRole("button", { name: "Undo" }));
+    expect(nextEditor).toHaveValue("https://example.com/a");
+  });
+
+  it("Story 3.4 pending failure cannot steal focus after pointer keyboard focus or composition interaction", async () => {
+    for (const interaction of ["pointer", "keyboard", "focus", "outside", "composition",
+      "external-focus", "window-blur", "visibility", "wheel"] as const) {
+      let reject!: () => void;
+      Object.defineProperty(navigator, "clipboard", { configurable: true,
+        value: { writeText: () => new Promise<void>((_, failure) => { reject = () => failure(new Error("private")); }) } });
+      const { unmount } = render(<Workbench />);
+      const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL") as HTMLTextAreaElement;
+      fireEvent.change(editor, { target: { value: semanticFixture } });
+      editor.focus();
+      editor.setSelectionRange(2, 8, "backward");
+      fireEvent.click(screen.getByRole("button", { name: "Copy" }));
+      const external = document.createElement("input");
+      document.body.append(external);
+      if (interaction === "pointer") fireEvent.pointerDown(editor);
+      else if (interaction === "keyboard") fireEvent.keyDown(editor, { key: "ArrowLeft" });
+      else if (interaction === "focus") screen.getByLabelText("Search Managed Pieces").focus();
+      else if (interaction === "outside") fireEvent.pointerDown(document.body);
+      else if (interaction === "external-focus") external.focus();
+      else if (interaction === "window-blur") fireEvent(window, new Event("blur"));
+      else if (interaction === "visibility") fireEvent(document, new Event("visibilitychange"));
+      else if (interaction === "wheel") fireEvent.wheel(editor);
+      else fireEvent.compositionStart(editor);
+      const focused = document.activeElement;
+      await act(async () => reject());
+      const recovery = screen.getByLabelText(/copy recovery/) as HTMLTextAreaElement;
+      expect(recovery).toHaveValue(semanticFixture);
+      expect(document.activeElement).toBe(focused);
+      expect([editor.selectionStart, editor.selectionEnd, editor.selectionDirection]).toEqual([2, 8, "backward"]);
+      if (interaction === "composition") fireEvent.compositionEnd(editor);
+      external.remove();
+      unmount();
+    }
+  });
+
+  it("Story 3.4 timeout newer fenced recovery survives late resolve reject and unmount", async () => {
+    vi.useFakeTimers();
+    for (const rejected of [false, true]) {
+      let settle!: () => void;
+      const writeText = vi.fn(() => new Promise<void>((resolve, reject) => {
+        settle = rejected ? () => reject(new Error("private")) : resolve;
+      }));
+      Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText } });
+      const { unmount } = render(<Workbench />);
+      const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
+      fireEvent.change(editor, { target: { value: semanticFixture } });
+      fireEvent.click(screen.getByRole("button", { name: "Copy" }));
+      await act(async () => { await vi.advanceTimersByTimeAsync(3_000); });
+      expect(screen.getByLabelText(/copy recovery/)).toHaveValue(semanticFixture);
+      expect(screen.getByLabelText(/copy recovery/)).toHaveFocus();
+      fireEvent.change(editor, { target: { value: "https://example.com/new" } });
+      await act(async () => fireEvent.click(screen.getByRole("button", { name: "Copy" })));
+      const recovery = screen.getByLabelText(/copy recovery/) as HTMLTextAreaElement;
+      expect(recovery).toHaveValue("https://example.com/new");
+      expect(recovery).toHaveFocus();
+      const search = screen.getByLabelText("Search Managed Pieces");
+      search.focus();
+      await act(async () => settle());
+      expect(search).toHaveFocus();
+      expect(recovery).toHaveValue("https://example.com/new");
+      expect(screen.getByRole("alert")).toHaveTextContent("pending clipboard write");
+      expect(screen.queryByText("Current URL copied.")).not.toBeInTheDocument();
+      expect(writeText).toHaveBeenCalledTimes(1);
+      fireEvent.click(screen.getByRole("button", { name: "Copy" }));
+      expect(writeText).toHaveBeenCalledTimes(2);
+      unmount();
+      await act(async () => settle());
+      expect(document.querySelector("#copy-recovery")).toBeNull();
+    }
   });
 
   it("Story 3.2 shortcut protects native editors and selection then restores once outside editors", () => {

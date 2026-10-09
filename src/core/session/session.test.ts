@@ -65,7 +65,88 @@ describe("Story 3.3 Copy authority", () => {
         expect(sessionReducer(state, { type: "acknowledgeCopy", effectId: 1, outcome: "success" })).toBe(state);
       }
     });
+});
 
+describe("Story 3.4 recovery authority", () => {
+    it("captures every typed failure from exact Current and Last Valid without editing or History", () => {
+      const current = apply(initialSessionState, "https://EXAMPLE.com/a%2fb?dup=1&dup=2&flag#F");
+      for (const source of ["current", "last-valid"] as const) {
+        const before = source === "current" ? current : apply(current, "https://");
+        for (const outcome of ["unavailable", "throw", "rejected", "timeout", "fenced"] as const) {
+          let state = sessionReducer(before, { type: "copy" });
+          state = sessionReducer(state, { type: "claimCopy", effectId: 1 });
+          state = sessionReducer(state, { type: "acknowledgeCopy", effectId: 1, outcome });
+          expect(state.copyRecovery).toEqual({
+            serialized: current.snapshot!.serialized, source, epoch: before.epoch,
+            stateRevision: before.revision, attemptId: 1,
+          });
+          expect(state.copyFailure).toEqual({ source, outcome });
+          expect(state.copySuccess).toBeNull();
+          for (const key of ["input", "snapshot", "history", "problem", "fullUrlFocus", "tokenRevisions"] as const) {
+            expect(state[key]).toBe(before[key]);
+          }
+          expect(state.effects[0]).toMatchObject({
+            kind: "focus", effectId: 2, target: { kind: "copy-recovery", attemptId: 1 },
+          });
+          expect(sessionReducer(state, { type: "acknowledgeCopy", effectId: 1, outcome })).toBe(state);
+          state = sessionReducer(state, { type: "claimFocus", effectId: 2 });
+          expect(state.effects[0]!.status).toBe("claimed");
+          state = sessionReducer(state, { type: "acknowledgeFocus", effectId: 2 });
+          expect(state.effects).toHaveLength(0);
+          expect(state.lastAcknowledgedEffectId).toBe(2);
+        }
+      }
+    });
+
+    it("retains recovery across interaction and clears it atomically on retry Draft mutation and Undo", () => {
+      let state = apply(initialSessionState, "https://example.com/a?x=1");
+      state = sessionReducer(state, { type: "addQueryPiece" });
+      state = apply(state, "https://");
+      state = sessionReducer(state, { type: "copy" });
+      state = sessionReducer(state, { type: "claimCopy", effectId: 1 });
+      state = sessionReducer(state, { type: "acknowledgeCopy", effectId: 1, outcome: "timeout" });
+      expect(sessionReducer(state, { type: "cancelFocus" }).copyRecovery).toBe(state.copyRecovery);
+      for (const next of [
+        sessionReducer(state, { type: "copy" }),
+        sessionReducer(state, { type: "inputChanged", value: "https://bad" }),
+        sessionReducer(state, { type: "undo", revision: state.revision }),
+      ]) {
+        expect(next.copyRecovery).toBeNull();
+        expect(next.copyFailure).toBeNull();
+        expect(next.copySuccess).toBeNull();
+        expect(sessionReducer(next, { type: "claimFocus", effectId: 2 }).effects[0]!.status).toBe("rejected");
+      }
+    });
+
+    it("rejects delayed focus and stale outcomes after interaction composition source change or newer attempt", () => {
+      const before = apply(initialSessionState, "https://example.com/a");
+      for (const reason of ["interaction", "draft", "revision", "attempt", "epoch"] as const) {
+        let pending = sessionReducer(before, { type: "copy" });
+        pending = sessionReducer(pending, { type: "claimCopy", effectId: 1 });
+        const interrupted = reason === "interaction" ? sessionReducer(pending, { type: "cancelFocus" })
+          : reason === "draft" ? apply(pending, "https://")
+          : reason === "revision" ? sessionReducer(pending, { type: "addQueryPiece" })
+          : reason === "attempt" ? sessionReducer(pending, { type: "copy" })
+          : { ...pending, epoch: pending.epoch + 1 };
+        const settled = sessionReducer(interrupted, { type: "acknowledgeCopy", effectId: 1, outcome: "rejected" });
+        if (reason === "interaction") {
+          expect(settled.copyRecovery?.serialized).toBe(before.snapshot!.serialized);
+          expect(sessionReducer(settled, { type: "claimFocus", effectId: 2 }).effects[0]!.status).toBe("rejected");
+        } else {
+          expect(settled.copyRecovery).toBeNull();
+          expect(settled.copyFailure).toBeNull();
+          expect(settled.effects.every((effect) => effect.kind !== "focus")).toBe(true);
+        }
+      }
+      let draft = apply(before, "https://");
+      draft = sessionReducer(draft, { type: "copy" });
+      draft = sessionReducer(draft, { type: "claimCopy", effectId: 1 });
+      draft = apply(draft, "https://bad");
+      expect(sessionReducer(draft, { type: "acknowledgeCopy", effectId: 1, outcome: "timeout" }).copyRecovery).toBeNull();
+    });
+});
+
+describe("Story 3.3 Copy authority", () => {
     it("supersedes queued and invoked copies after revision epoch classification or attempt changes", () => {
       const initial = apply(initialSessionState, "https://example.com/a?x=1");
       for (const claimed of [false, true]) {

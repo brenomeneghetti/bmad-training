@@ -1,5 +1,6 @@
 export type FocusTarget =
   | { readonly kind: "full-url" }
+  | { readonly kind: "copy-recovery"; readonly attemptId: number }
   | { readonly kind: "nearest"; readonly candidates: readonly string[] }
   | { readonly kind: "piece"; readonly pieceId: string; readonly order: readonly string[];
       readonly control: "remove" | "up" | "down" | "path" | "query-key" | "query-value" | "domain-unicode" | "domain-ascii" };
@@ -22,6 +23,8 @@ export interface CopyEffect {
   readonly attemptId: number;
   readonly stateRevision: number;
   readonly epoch: number;
+  readonly draftRevision: number;
+  readonly interaction: number;
   readonly serialized: string;
   readonly source: CopySource;
   readonly status: "pending" | "claimed" | "rejected";

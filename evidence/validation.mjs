@@ -55,6 +55,10 @@ export const requiredCells = new Map([
   ["story-3-3-stale-serial", "3.3"],
   ["story-3-3-typed-failure", "3.3"],
   ["story-3-3-private-capacity", "3.3"],
+  ["story-3-4-exact-recovery", "3.4"],
+  ["story-3-4-recovery-lifecycle", "3.4"],
+  ["story-3-4-race-focus", "3.4"],
+  ["story-3-4-private-capacity", "3.4"],
 ]);
 
 const requiredCsp = new Map([

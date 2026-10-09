@@ -4,6 +4,7 @@ import { resolve } from "node:path";
 import test from "node:test";
 import { createFixture } from "./fixture.mjs";
 import { acquireOwner, executeRun, owns, releaseOwner, stopChild } from "./run.mjs";
+import { calculateSourceDigest } from "./validation.mjs";
 
 const producer = (root, manifest) => async ({ runId, directory }) => {
   const oldDirectory = `evidence/runs/${manifest.runId}`;
@@ -16,6 +17,19 @@ const producer = (root, manifest) => async ({ runId, directory }) => {
   for (const observation of manifest.observations) observation.path = observation.path.replace(oldDirectory, directory);
   return manifest;
 };
+
+test("missing Story 3.4 recovery evidence cannot publish success and releases ownership", async (context) => {
+  const { root, manifest } = await createFixture(context);
+  const path = resolve(root, "evidence/coverage.json");
+  const coverage = JSON.parse(await readFile(path, "utf8"));
+  await writeFile(path, JSON.stringify(coverage.filter((cell) => cell.id !== "story-3-4-exact-recovery")));
+  manifest.sourceDigest = await calculateSourceDigest(root);
+  for (const execution of manifest.executions) execution.sourceDigest = manifest.sourceDigest;
+  await assert.rejects(executeRun(root, { produce: producer(root, manifest) }),
+    /Missing mandatory evidence cells: story-3-4-exact-recovery/);
+  await assert.rejects(access(resolve(root, "evidence/manifest.json")));
+  await assert.rejects(access(resolve(root, "evidence/.owner.json")));
+});
 
 test("overlap leaves active owner and existing publication untouched", async (context) => {
   const { root } = await createFixture(context);
@@ -72,7 +86,7 @@ for (const phase of ["before", "after"]) {
     const { root, manifest } = await createFixture(context);
     const result = await executeRun(root, { produce: producer(root, manifest) });
     const { validateEvidence } = await import("./validation.mjs");
-    assert.equal((await validateEvidence(root)).cellCount, 48);
+    assert.equal((await validateEvidence(root)).cellCount, 52);
     assert.equal(JSON.parse(await readFile(resolve(root, "evidence/manifest.json"))).runId, result.runId);
     await assert.rejects(access(resolve(root, "evidence/.owner.json")));
   });

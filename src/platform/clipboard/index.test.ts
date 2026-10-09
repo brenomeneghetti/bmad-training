@@ -39,3 +39,29 @@ it("Story 3.3 clipboard timeout fences unresolved writes until settlement withou
     expect(await retry).toBe(rejected ? "rejected" : "success");
   }
 });
+
+it("Story 3.4 clipboard timeout gives one terminal outcome and late resolve or reject only releases ownership", async () => {
+  vi.useFakeTimers();
+  for (const rejected of [false, true]) {
+    let settle!: () => void;
+    const terminal = vi.fn();
+    const writeText = vi.fn(() => new Promise<void>((resolve, reject) => {
+      settle = rejected ? () => reject(new Error("private attempted URL")) : resolve;
+    }));
+    const clipboard = createBrowserClipboard(() => ({ writeText }));
+    void clipboard.write("exact attempt").then(terminal);
+    await vi.advanceTimersByTimeAsync(3_000);
+    expect(terminal).toHaveBeenCalledExactlyOnceWith("timeout");
+    expect(await clipboard.write("new attempt")).toBe("fenced");
+    expect(writeText).toHaveBeenCalledTimes(1);
+    settle();
+    await Promise.resolve();
+    await vi.advanceTimersByTimeAsync(3_000);
+    expect(terminal).toHaveBeenCalledTimes(1);
+    const retry = clipboard.write("retry");
+    expect(writeText).toHaveBeenLastCalledWith("retry");
+    settle();
+    expect(await retry).toBe(rejected ? "rejected" : "success");
+    expect(vi.getTimerCount()).toBe(0);
+  }
+});

@@ -37,6 +37,7 @@ export interface SessionExecutionPort {
   copy(effect: CopyEffect): Promise<ClipboardOutcome>;
   acknowledge(effect: SessionEffect, outcome: ClipboardOutcome | boolean): void;
   active(): boolean;
+  ready?(effect: SessionEffect): boolean;
 }
 
 export const createSessionExecutor = () => {
@@ -48,6 +49,7 @@ export const createSessionExecutor = () => {
         if (!port.active()) { running = false; return; }
         const effect = port.current()[0];
         if (!effect || effect.status !== "pending") { running = false; return; }
+        if (port.ready && !port.ready(effect)) { running = false; return; }
         running = true;
         port.claim(effect);
         const claimed = port.current()[0];

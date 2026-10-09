@@ -42,7 +42,8 @@ the available native JSON reports and separate command diagnostics under
 - `inventory.json` lists every exact runner/file/full-title/project identity
   and multiplicity, **including tests not mapped to cells**. It is a reviewed
   expectation; the producer never learns expected coverage from its own run.
-- `coverage.json` maps all 48 mandatory cells to exact executed identities,
+- `coverage.json` retains the preceding 48 cells and adds four Story 3.4 cells
+  (52 total), mapping exact executed identities,
   including the approved Chromium browser project. File existence and matching aggregate counts
   cannot substitute for these identities.
 - Story 3.1 adds exact-history restoration, guarded Draft preservation,
@@ -70,9 +71,31 @@ the available native JSON reports and separate command diagnostics under
   Clipboard tests use an injected browser-local adapter, a three-second timeout,
   and an unresolved-write fence released only on native settlement. They prove
   no overlap or late success and safe subsequent retry, not
-  native OS clipboard access. Copy does not add History or move editor focus;
-  keyboard activation retains ordinary blur. Safe-copy recovery and the full
-  feedback scheduler remain Stories 3.4 and 3.5.
+  native OS clipboard access. Successful Copy does not add History or move editor
+  focus; keyboard activation retains ordinary blur.
+- Story 3.4 pins exact attempted Current/Last Valid recovery, its lifecycle,
+  race/focus ownership, and private capacity. Actionable failures expose a labeled
+  read-only field and native keyboard/device-copy instructions. Current failures
+  focus/select only after the recovery DOM mounts and only if no intervening
+  interaction, composition, mutation or newer attempt supersedes focus. Window
+  blur, visibility changes, wheel input and external programmatic focus also
+  cancel delayed focus. Search
+  and focus retain recovery; retry and URL/Draft mutation clear it atomically.
+  Recovery focus leaves the editor without creating History. Timeout/fenced
+  recovery stays owned by the newest attempt; late resolve/reject only releases
+  the unresolved-write fence. Guidance warns that an irrevocable pending write
+  may overwrite manually copied text. Pointer retry from recovery keeps a
+  connected Copy focus target; deliberately leaving recovery for another
+  control closes any suspended Full URL intent, while returning directly to
+  Full URL preserves it. Chromium tests check all typed failures, native
+  selection, reload clearing, private 20,000-character/260-query completeness,
+  Current/Last Valid settlement-to-selected-recovery below 100 ms at 320px,
+  keyboard failure activation, axe, forced-color focus, text spacing
+  and 320px reflow without weakening CSP. Integrity/lifecycle negative tests
+  reject missing cells and unexecuted exact recovery identities. These are
+  injected clipboard outcomes and synthetic events, not native clipboard,
+  manual AT/IME, OS/mobile or additional-browser proof. Outcome scheduling
+  remains Story 3.5; release certification remains Story 3.6.
 - Native reports, diagnostics and observed version command outcomes are hashed.
   Every command is bound to the same source/build/delivery identities. Paths
   reject traversal, absolute paths, symlinks and special files before reading.

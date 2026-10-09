@@ -14,6 +14,7 @@ export const focusRestoredTarget = (
   visible: readonly MountedPiece[],
   document: Document,
 ): boolean => {
+  if (target.kind === "copy-recovery") return false;
   const firstField = (piece: MountedPiece) =>
     `${piece.kind === "domain" ? "unicode" : piece.kind === "path" ? "path" : "query-key"}-${piece.id}`;
   let ids: string[];

@@ -9,10 +9,10 @@ import { calculateArtifactDigest, calculateSourceDigest, hashFile, parseCsp, saf
 import { inventoryOf, normalizeReport } from "./adapters.mjs";
 import reporter from "./node-reporter.mjs";
 
-test("accepts complete clean-checkout proof with exact inventory and all 48 cells", async (context) => {
+test("accepts complete clean-checkout proof with exact inventory and all 52 cells", async (context) => {
   const { root } = await createFixture(context);
   assert.deepEqual(await validateEvidence(root), {
-    cellCount: 48, testCount: 3,
+    cellCount: 52, testCount: 3,
     artifactDigest: await calculateArtifactDigest(root, { path: "dist", delivery: "deployment/static-delivery.json" }),
   });
 });
@@ -22,7 +22,7 @@ test("same bytes remain valid after checkout relocation", async (context) => {
   const relocated = `${root}-moved`;
   context.after(() => rm(relocated, { recursive: true, force: true }));
   await rename(root, relocated);
-  assert.equal((await validateEvidence(relocated)).cellCount, 48);
+  assert.equal((await validateEvidence(relocated)).cellCount, 52);
 });
 
 for (const cell of ["exact-history", "guard-draft", "accessible-action", "privacy-capacity"]) {
@@ -61,6 +61,33 @@ for (const cell of ["exact-source", "stale-serial", "typed-failure", "private-ca
     for (const execution of manifest.executions) execution.sourceDigest = manifest.sourceDigest;
     await writeManifest(root, manifest);
     await assert.rejects(validateEvidence(root), new RegExp(`Missing mandatory evidence cells: story-3-3-${cell}`));
+  });
+}
+
+for (const cell of ["exact-recovery", "recovery-lifecycle", "race-focus", "private-capacity"]) {
+  test(`rejects missing Story 3.4 ${cell} evidence after rehashing`, async (context) => {
+    const { root, manifest } = await createFixture(context);
+    const path = resolve(root, "evidence/coverage.json");
+    const coverage = JSON.parse(await readFile(path, "utf8"));
+    await writeFile(path, JSON.stringify(coverage.filter((item) => item.id !== `story-3-4-${cell}`)));
+    manifest.sourceDigest = await calculateSourceDigest(root);
+    for (const execution of manifest.executions) execution.sourceDigest = manifest.sourceDigest;
+    await writeManifest(root, manifest);
+    await assert.rejects(validateEvidence(root), new RegExp(`Missing mandatory evidence cells: story-3-4-${cell}`));
+  });
+
+  test(`rejects unexecuted Story 3.4 ${cell} identity despite other passing tests`, async (context) => {
+    const { root, manifest } = await createFixture(context);
+    const path = resolve(root, "evidence/coverage.json");
+    const coverage = JSON.parse(await readFile(path, "utf8"));
+    const actual = JSON.parse(await readFile(resolve(process.cwd(), "evidence/coverage.json"), "utf8"));
+    const mapping = actual.find((item) => item.id === `story-3-4-${cell}`).tests.find((item) => item.runner === "playwright");
+    coverage.find((item) => item.id === `story-3-4-${cell}`).tests.push(mapping);
+    await writeFile(path, JSON.stringify(coverage));
+    manifest.sourceDigest = await calculateSourceDigest(root);
+    for (const execution of manifest.executions) execution.sourceDigest = manifest.sourceDigest;
+    await writeManifest(root, manifest);
+    await assert.rejects(validateEvidence(root), /Unmapped test identity in story-3-4-/);
   });
 }
 

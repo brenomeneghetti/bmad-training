@@ -43,6 +43,7 @@ export function Workbench() {
   const [fullUrlComposition, setFullUrlComposition] = useState<string | null>(null);
   const fullUrlComposing = useRef(false);
   const fullUrlEditorRef = useRef<HTMLTextAreaElement>(null);
+  const copyRecoveryRef = useRef<HTMLTextAreaElement>(null);
   const [searchStatuses, setSearchStatuses] = useState<readonly {
     readonly id: number;
     readonly message: string;
@@ -101,7 +102,10 @@ export function Workbench() {
     pendingAddFocus.current = null;
     pendingMoveFocus.current = null;
     pendingFocusAfterSearchClear.current = null;
-    if (!adapterFocusing.current) dispatch({ type: "cancelFocus" });
+    if (!adapterFocusing.current) {
+      stateRef.current = sessionReducer(stateRef.current, { type: "cancelFocus" });
+      dispatch({ type: "cancelFocus" });
+    }
   };
 
   const undo = () => {
@@ -121,11 +125,23 @@ export function Workbench() {
     executor.current.run({
       current: () => stateRef.current.effects,
       active: () => mounted.current,
+      ready: (effect) => effect.kind !== "focus" || effect.target.kind !== "copy-recovery" ||
+        stateRef.current.copyRecovery?.attemptId !== effect.target.attemptId ||
+        copyRecoveryRef.current?.dataset.attemptId === String(effect.target.attemptId),
       claim: (effect) => send({ type: effect.kind === "focus" ? "claimFocus" : "claimCopy", effectId: effect.effectId }),
       copy: (effect) => clipboard.current.write(effect.serialized),
       focus: (effect) => {
         adapterFocusing.current = true;
         try {
+          if (effect.target.kind === "copy-recovery") {
+            const recovery = copyRecoveryRef.current;
+            if (composingTarget.current === null && recovery?.isConnected &&
+              recovery.dataset.attemptId === String(effect.target.attemptId)) {
+              recovery.focus();
+              recovery.setSelectionRange(0, recovery.value.length);
+            }
+            return false;
+          }
           return focusRestoredTarget(effect.target, visiblePiecesRef.current, document);
         } finally {
           adapterFocusing.current = false;
@@ -145,6 +161,28 @@ export function Workbench() {
   useLayoutEffect(() => {
     mounted.current = true;
     return () => { mounted.current = false; };
+  }, []);
+
+  useLayoutEffect(() => {
+    const outsideInteraction = (event: Event) => {
+      if (event.target instanceof Node && !workbenchRef.current?.contains(event.target)) {
+        cancelPendingOperationFocus();
+      }
+    };
+    for (const type of ["pointerdown", "keydown", "focusin"]) {
+      document.addEventListener(type, outsideInteraction, true);
+    }
+    window.addEventListener("blur", cancelPendingOperationFocus);
+    document.addEventListener("visibilitychange", cancelPendingOperationFocus);
+    document.addEventListener("wheel", cancelPendingOperationFocus, { capture: true, passive: true });
+    return () => {
+      for (const type of ["pointerdown", "keydown", "focusin"]) {
+        document.removeEventListener(type, outsideInteraction, true);
+      }
+      window.removeEventListener("blur", cancelPendingOperationFocus);
+      document.removeEventListener("visibilitychange", cancelPendingOperationFocus);
+      document.removeEventListener("wheel", cancelPendingOperationFocus, true);
+    };
   }, []);
 
   useEffect(() => {
@@ -364,6 +402,7 @@ export function Workbench() {
   };
 
   const handleFullUrlBlur = () => {
+    if (adapterFocusing.current) return;
     dispatch({ type: "closeFullUrlEdit", reason: "blur" });
   };
 
@@ -527,6 +566,8 @@ export function Workbench() {
       onFocusCapture={cancelPendingOperationFocus}
       onChangeCapture={cancelPendingOperationFocus}
       onCompositionStartCapture={cancelPendingOperationFocus}
+      onPointerDownCapture={cancelPendingOperationFocus}
+      onKeyDownCapture={cancelPendingOperationFocus}
     >
       <h1>URL Workbench</h1>
       <p className={styles.privacyNotice}>
@@ -597,7 +638,9 @@ export function Workbench() {
         </button>
         <button type="button" aria-disabled={!state.snapshot}
           aria-describedby="copy-help"
-          onPointerDown={(event) => event.preventDefault()}
+          onPointerDown={(event) => {
+            if (document.activeElement !== copyRecoveryRef.current) event.preventDefault();
+          }}
           onClick={() => flushSync(() => dispatch({ type: "copy" }))}>
           Copy
         </button>
@@ -625,9 +668,28 @@ export function Workbench() {
         {state.copyFailure ? <p role="alert" className={styles.copyFailure}>
           {state.copyFailure.source === "current" ? "Current URL" : "Last Valid URL"} could not be copied.
           {" "}{state.copyFailure.outcome === "timeout" || state.copyFailure.outcome === "fenced"
-            ? "The attempt timed out or was blocked by a pending clipboard write. Activate Copy to retry after that write settles."
+            ? "The attempt timed out or was blocked by a pending clipboard write. That write cannot be cancelled and may overwrite text you copy manually. Activate Copy to retry after that write settles."
             : "Check clipboard access and activate Copy to retry."}
+          {" "}The attempted URL is available below for native copy.
         </p> : null}
+        {state.copyRecovery ? <div className={styles.copyRecovery}>
+          <label htmlFor="copy-recovery">
+            {state.copyRecovery.source === "current" ? "Current URL" : "Last Valid URL"} — copy recovery
+          </label>
+          <p id="copy-recovery-help">
+            This is the exact URL from the failed attempt. Copy the selected text using
+            {" "}Ctrl+C (Windows/Linux), Command+C (Mac), or your device’s native Copy menu.
+            {" "}If needed, select all of this field first. Native copy is not verified here;
+            {" "}activate Copy to retry clipboard access.
+          </p>
+          <textarea id="copy-recovery" ref={copyRecoveryRef}
+            data-attempt-id={state.copyRecovery.attemptId}
+            value={state.copyRecovery.serialized} readOnly dir="ltr"
+            onBlur={(event) => {
+              if (event.relatedTarget !== fullUrlEditorRef.current) handleFullUrlBlur();
+            }}
+            aria-describedby="copy-recovery-help" />
+        </div> : null}
         <div role="status" aria-live="polite" aria-atomic="true">
           {state.phase === "active"
             ? `URL parsed. ${

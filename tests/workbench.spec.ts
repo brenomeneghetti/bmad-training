@@ -137,7 +137,7 @@ test("Story 3.3 Copy serial races supersede queued attempts and stale completion
   await expect(page.getByRole("button", { name: "Undo", exact: true })).toHaveAttribute("aria-disabled", "true");
 });
 
-test("Story 3.3 Copy boundary failures retry and timeout fence never overlap or announce late success", async ({ page }) => {
+test("Story 3.4 failure matrix selects exact Last Valid recovery and retry preserves native focus", async ({ page }) => {
   await installCopyProbe(page);
   for (const mode of ["unavailable", "throw", "reject", "pending"]) {
     await page.goto("/");
@@ -148,8 +148,15 @@ test("Story 3.3 Copy boundary failures retry and timeout fence never overlap or 
     await page.evaluate((mode) => { window.__copyProbe.mode = mode; }, mode);
     await copy.click();
     await expect(page.getByRole("alert")).toContainText("Last Valid URL could not be copied.");
-    await expect(editor).toBeFocused();
+    const recovery = page.getByLabel("Last Valid URL — copy recovery", { exact: true });
+    await expect(recovery).toHaveValue("https://example.com/a");
+    await expect(recovery).toBeFocused();
+    await expect(recovery).toHaveAttribute("readonly", "");
+    expect(await recovery.evaluate((input: HTMLTextAreaElement) =>
+      [input.selectionStart, input.selectionEnd])).toEqual([0, "https://example.com/a".length]);
     await expect(page.locator("#error-full-url")).toBeVisible();
+    const search = page.getByLabel("Search Managed Pieces");
+    await search.focus();
     await page.evaluate(() => { window.__copyProbe.mode = "success"; });
     await copy.click();
     if (mode === "pending") {
@@ -158,6 +165,7 @@ test("Story 3.3 Copy boundary failures retry and timeout fence never overlap or 
       await page.evaluate(() => window.__copyProbe.pending.shift()!.resolve());
       await expect(page.getByText(/URL copied/)).toHaveCount(0);
       await expect(page.getByRole("alert")).toContainText("pending clipboard write");
+      await search.focus();
       await copy.click();
       await expect(page.getByRole("alert")).toHaveCount(0);
       await expect(page.getByText("Last Valid URL copied; Draft URL is unchanged.", { exact: true })).toBeVisible();
@@ -166,8 +174,240 @@ test("Story 3.3 Copy boundary failures retry and timeout fence never overlap or 
       await expect(page.getByRole("alert")).toHaveCount(0);
       await expect(page.getByText("Last Valid URL copied; Draft URL is unchanged.", { exact: true })).toBeVisible();
     }
-    await expect(editor).toBeFocused();
+    await expect(search).toBeFocused();
+    await expect(recovery).toHaveCount(0);
   }
+});
+
+test("Story 3.4 Current recovery retains native selection across Search and clears on mutation retry reload", async ({ page }) => {
+  await installCopyProbe(page);
+  for (const mode of ["unavailable", "throw", "reject"]) {
+    await page.goto("/");
+    const editor = page.getByLabel("Complete HTTP or HTTPS Absolute URL");
+    const copy = page.getByRole("button", { name: "Copy", exact: true });
+    await editor.fill(semanticFixture);
+    const ids = await page.locator("#managed-pieces > li").evaluateAll((rows) => rows.map((row) => row.getAttribute("data-piece-id")));
+    await page.evaluate((mode) => { window.__copyProbe.mode = mode; }, mode);
+    if (mode === "reject") await copy.click();
+    else {
+      await copy.focus();
+      await page.keyboard.press(mode === "unavailable" ? "Enter" : "Space");
+    }
+    const recovery = page.getByLabel("Current URL — copy recovery", { exact: true });
+    await expect(recovery).toHaveValue(semanticFixture);
+    await expect(recovery).toBeFocused();
+    expect(await recovery.evaluate((input: HTMLTextAreaElement) =>
+      [input.selectionStart, input.selectionEnd])).toEqual([0, semanticFixture.length]);
+    await expect(recovery).toHaveAttribute("aria-describedby", "copy-recovery-help");
+    await expect(page.locator("#copy-recovery-help")).toContainText("Ctrl+C");
+    await expect(page.locator("#copy-recovery-help")).toContainText("Command+C");
+    await expect(page.locator("#copy-recovery-help")).toContainText("native Copy menu");
+    const writes = await page.evaluate(() => window.__copyProbe.writes.length);
+    await page.keyboard.press("Control+c");
+    expect(await page.evaluate(() => window.__copyProbe.writes.length)).toBe(writes);
+    await expect(page.getByText("Current URL copied.", { exact: true })).toHaveCount(0);
+    await page.keyboard.press("Tab");
+    expect(await page.evaluate(() => document.activeElement?.tagName)).not.toBe("BODY");
+    await expect(recovery).not.toBeFocused();
+    await page.getByLabel("Search Managed Pieces").fill("dup");
+    await expect(recovery).toHaveValue(semanticFixture);
+    await page.getByLabel("Search Managed Pieces").fill("");
+    expect(await page.locator("#managed-pieces > li").evaluateAll((rows) => rows.map((row) => row.getAttribute("data-piece-id")))).toEqual(ids);
+    await expect(page.getByRole("button", { name: "Undo", exact: true })).toHaveAttribute("aria-disabled", "true");
+    await recovery.focus();
+    await page.evaluate(() => { window.__copyProbe.mode = "success"; });
+    await copy.click();
+    await expect(copy).toBeFocused();
+    await expect(recovery).toHaveCount(0);
+    await page.evaluate((mode) => { window.__copyProbe.mode = mode; }, mode);
+    await editor.fill("https://");
+    await expect(recovery).toHaveCount(0);
+    await expect(page.getByRole("alert")).toHaveCount(0);
+    await editor.evaluate((input: HTMLTextAreaElement) => input.setSelectionRange(2, 5, "backward"));
+    const validation = await page.locator("#error-full-url").textContent();
+    await copy.click();
+    const lastValid = page.getByLabel("Last Valid URL — copy recovery", { exact: true });
+    await expect(lastValid).toHaveValue(semanticFixture);
+    await expect(lastValid).toBeFocused();
+    expect(await editor.evaluate((input: HTMLTextAreaElement) =>
+      [input.selectionStart, input.selectionEnd, input.selectionDirection])).toEqual([2, 5, "backward"]);
+    await expect(page.locator("#error-full-url")).toHaveText(validation!);
+    await page.evaluate(() => { window.__copyProbe.mode = "pending"; });
+    await copy.click();
+    await expect(lastValid).toHaveCount(0);
+    await expect(page.getByRole("alert")).toHaveCount(0);
+    await page.reload();
+    await expect(page.locator("#copy-recovery")).toHaveCount(0);
+    await expect(editor).toHaveValue("");
+    await expect(copy).toHaveAttribute("aria-disabled", "true");
+  }
+});
+
+test("Story 3.4 timeout fence exposes newest exact recovery and late resolve reject cannot focus or succeed", async ({ page }) => {
+  await installCopyProbe(page);
+  for (const outcome of ["resolve", "reject"] as const) {
+    await page.goto("/");
+    const editor = page.getByLabel("Complete HTTP or HTTPS Absolute URL");
+    const copy = page.getByRole("button", { name: "Copy", exact: true });
+    await editor.fill(semanticFixture);
+    await page.evaluate(() => { window.__copyProbe.mode = "pending"; });
+    await copy.click();
+    await expect(page.getByLabel("Current URL — copy recovery", { exact: true })).toHaveValue(semanticFixture);
+    await expect(page.locator("#copy-recovery")).toBeFocused();
+    await editor.fill("https://EXAMPLE.com/new?flag&empty=");
+    await expect(page.locator("#copy-recovery")).toHaveCount(0);
+    await editor.fill("https://");
+    await copy.click();
+    const recovery = page.getByLabel("Last Valid URL — copy recovery", { exact: true });
+    await expect(recovery).toHaveValue("https://EXAMPLE.com/new?flag&empty=");
+    await expect(recovery).toBeFocused();
+    expect(await page.evaluate(() => window.__copyProbe.writes)).toEqual([semanticFixture]);
+    const attemptId = await recovery.getAttribute("data-attempt-id");
+    const search = page.getByLabel("Search Managed Pieces");
+    await search.fill("flag");
+    await page.evaluate((outcome) => { window.__copyProbe.pending.shift()![outcome](); }, outcome);
+    await expect(search).toBeFocused();
+    await expect(recovery).toHaveAttribute("data-attempt-id", attemptId!);
+    await expect(recovery).toHaveValue("https://EXAMPLE.com/new?flag&empty=");
+    await expect(page.getByRole("alert")).toContainText("pending clipboard write");
+    await expect(page.getByRole("alert")).toContainText("may overwrite text you copy manually");
+    await expect(page.getByText(/URL copied/)).toHaveCount(0);
+    await page.evaluate(() => { window.__copyProbe.mode = "success"; });
+    await copy.click();
+    await expect(recovery).toHaveCount(0);
+    await expect(page.getByText("Last Valid URL copied; Draft URL is unchanged.", { exact: true })).toBeVisible();
+    await expect(search).toBeFocused();
+    expect(await page.evaluate(() => window.__copyProbe.writes)).toEqual([semanticFixture, "https://EXAMPLE.com/new?flag&empty="]);
+  }
+});
+
+test("Story 3.4 interrupted failures retain manual recovery without stealing focus and obsolete writes stay silent", async ({ page }) => {
+  await installCopyProbe(page);
+  for (const interaction of ["pointer", "outside", "keyboard", "focus", "composition", "mutation", "newer-copy", "undo"]) {
+    await page.goto("/");
+    const editor = page.getByLabel("Complete HTTP or HTTPS Absolute URL");
+    const copy = page.getByRole("button", { name: "Copy", exact: true });
+    await editor.fill("https://example.com/a?x=1");
+    await page.getByLabel("Value, Query Parameter 1 of 1").fill("2");
+    await editor.focus();
+    await editor.evaluate((input: HTMLTextAreaElement) => input.setSelectionRange(2, 8, "backward"));
+    await page.evaluate(() => { window.__copyProbe.mode = "pending"; });
+    await copy.click();
+    if (interaction === "pointer") await editor.dispatchEvent("pointerdown");
+    else if (interaction === "outside") await page.locator("body").dispatchEvent("pointerdown");
+    else if (interaction === "keyboard") await page.keyboard.press("ArrowLeft");
+    else if (interaction === "focus") await page.getByLabel("Search Managed Pieces").focus();
+    else if (interaction === "composition") await editor.dispatchEvent("compositionstart");
+    else if (interaction === "mutation") await editor.fill("https://");
+    else if (interaction === "undo") await page.getByRole("button", { name: "Undo", exact: true }).click();
+    else await copy.click();
+    const focusId = await page.evaluate(() => document.activeElement?.id);
+    await page.evaluate(() => { window.__copyProbe.mode = "success"; window.__copyProbe.pending.shift()!.reject(); });
+    if (["pointer", "outside", "keyboard", "focus", "composition"].includes(interaction)) {
+      await expect(page.locator("#copy-recovery")).toHaveValue("https://example.com/a?x=2");
+      expect(await page.evaluate(() => document.activeElement?.id)).toBe(focusId);
+    } else {
+      await expect(page.locator("#copy-recovery")).toHaveCount(0);
+      await expect(page.getByRole("alert")).toHaveCount(0);
+      if (interaction === "newer-copy") {
+        await expect(page.getByText("Current URL copied.", { exact: true })).toBeVisible();
+        expect(await page.evaluate(() => window.__copyProbe.writes.length)).toBe(2);
+      } else {
+        await expect(page.getByText(/URL copied/)).toHaveCount(0);
+      }
+    }
+    if (interaction === "composition") await editor.dispatchEvent("compositionend");
+  }
+});
+
+test("Story 3.4 dense recovery publishes and selects privately below 100 ms with accessible 320px complete rendering", async ({ page }) => {
+  await installCopyProbe(page);
+  await page.setViewportSize({ width: 320, height: 720 });
+  await page.addInitScript(() => {
+    const sinks: string[] = [];
+    Object.defineProperty(window, "__recoverySinks", { value: sinks });
+    Storage.prototype.setItem = () => { sinks.push("storage"); };
+    window.indexedDB.open = () => { sinks.push("indexeddb"); throw new Error("unexpected sink"); };
+    window.caches.open = async () => { sinks.push("cache"); throw new Error("unexpected sink"); };
+    navigator.serviceWorker.register = async () => { sinks.push("service-worker"); throw new Error("unexpected sink"); };
+    navigator.sendBeacon = () => { sinks.push("beacon"); return false; };
+    window.fetch = async () => { sinks.push("fetch"); throw new Error("unexpected sink"); };
+  });
+  await page.goto("/");
+  const requests: string[] = [], diagnostics: string[] = [];
+  page.on("request", (request) => requests.push(request.url()));
+  page.on("console", (message) => diagnostics.push(message.text()));
+  page.on("pageerror", (error) => diagnostics.push(error.message));
+  const url = createCapacityFixture();
+  expect(url.length).toBe(20_000);
+  const editor = page.getByLabel("Complete HTTP or HTTPS Absolute URL");
+  await editor.fill(url);
+  const ids = await page.locator("#managed-pieces > li").evaluateAll((rows) => rows.map((row) => row.getAttribute("data-piece-id")));
+  await page.evaluate(() => { window.__copyProbe.mode = "pending"; });
+  await page.getByRole("button", { name: "Copy", exact: true }).click();
+  const settleToSelectedRecovery = () => page.evaluate(() => new Promise<number>((resolve, reject) => {
+    const start = performance.now();
+    const check = () => {
+      const recovery = document.getElementById("copy-recovery") as HTMLTextAreaElement | null;
+      if (recovery && document.activeElement === recovery &&
+        recovery.selectionStart === 0 && recovery.selectionEnd === recovery.value.length) {
+        resolve(performance.now() - start);
+      } else if (performance.now() - start > 1_000) reject(new Error("Recovery render/focus deadline"));
+      else requestAnimationFrame(check);
+    };
+    window.__copyProbe.pending.shift()!.reject();
+    requestAnimationFrame(check);
+  }));
+  expect(await settleToSelectedRecovery()).toBeLessThan(100);
+  const recovery = page.getByLabel("Current URL — copy recovery", { exact: true });
+  await expect(recovery).toHaveValue(url);
+  await expect(recovery).toBeFocused();
+  expect(await page.locator("#managed-pieces > li").evaluateAll((rows) => rows.map((row) => row.getAttribute("data-piece-id")))).toEqual(ids);
+  await expect(page.getByLabel("Key, Query Parameter 260 of 260")).toBeAttached();
+  await expect(page.getByRole("button", { name: "Undo", exact: true })).toHaveAttribute("aria-disabled", "true");
+  await recovery.scrollIntoViewIfNeeded();
+  await expect(page.locator("#copy-recovery-help")).toBeVisible();
+  await expect(page.getByText("Current URL — copy recovery", { exact: true })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  await page.emulateMedia({ forcedColors: "active" });
+  expect(await recovery.evaluate((element) => getComputedStyle(element).borderTopColor)).not.toBe("rgba(0, 0, 0, 0)");
+  const outline = await recovery.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return { style: style.outlineStyle, width: parseFloat(style.outlineWidth), color: style.outlineColor };
+  });
+  expect(outline.style).not.toBe("none");
+  expect(outline.width).toBeGreaterThanOrEqual(2);
+  expect(outline.color).not.toBe("rgba(0, 0, 0, 0)");
+  expect(await recovery.evaluate((input: HTMLTextAreaElement) =>
+    [input.selectionStart, input.selectionEnd])).toEqual([0, url.length]);
+  await page.evaluate(() => {
+    const sheet = document.styleSheets[0]!;
+    sheet.insertRule("* { line-height: 1.5 !important; letter-spacing: .12em !important; word-spacing: .16em !important; }", sheet.cssRules.length);
+    sheet.insertRule("p { margin-bottom: 2em !important; }", sheet.cssRules.length);
+  });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
+  await editor.fill("https://");
+  await editor.evaluate((input: HTMLTextAreaElement) => input.setSelectionRange(2, 5, "backward"));
+  const validation = await page.locator("#error-full-url").textContent();
+  await page.getByRole("button", { name: "Copy", exact: true }).click();
+  expect(await settleToSelectedRecovery()).toBeLessThan(100);
+  const lastValid = page.getByLabel("Last Valid URL — copy recovery", { exact: true });
+  await expect(lastValid).toHaveValue(url);
+  await expect(lastValid).toBeFocused();
+  expect(await lastValid.evaluate((input: HTMLTextAreaElement) =>
+    [input.selectionStart, input.selectionEnd])).toEqual([0, url.length]);
+  expect(await editor.evaluate((input: HTMLTextAreaElement) =>
+    [input.selectionStart, input.selectionEnd, input.selectionDirection])).toEqual([2, 5, "backward"]);
+  await expect(editor).toHaveValue("https://");
+  await expect(page.locator("#error-full-url")).toHaveText(validation!);
+  expect(await page.locator("#managed-pieces > li").evaluateAll((rows) =>
+    rows.map((row) => row.getAttribute("data-piece-id")))).toEqual(ids);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
+  expect(await page.evaluate(() => (window as unknown as { __recoverySinks: string[] }).__recoverySinks)).toEqual([]);
+  expect(await page.evaluate(() => [localStorage.length, sessionStorage.length, document.cookie, location.search])).toEqual([0, 0, "", ""]);
+  expect(requests).toEqual([]);
+  expect(diagnostics).toEqual([]);
 });
 
 test("Story 3.3 dense Copy edit Undo exact writes private complete rows below 100 ms at 320px", async ({ page }) => {

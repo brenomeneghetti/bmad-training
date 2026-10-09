@@ -1,0 +1,1 @@
+{"argv":["pnpm","exec","playwright","--version"],"exitCode":0,"signal":null,"stdout":"Version 1.63.0\n","stderr":""}

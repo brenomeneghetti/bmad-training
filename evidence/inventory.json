@@ -606,7 +606,10 @@
   { "runner": "vitest", "file": "src/app/workbench/Workbench.test.tsx", "title": "URL Workbench Story 3.2 Workbench detects MacIntel primary modifier and restores exact state and focus", "project": "vitest", "multiplicity": 1 },
   { "runner": "vitest", "file": "src/app/workbench/Workbench.test.tsx", "title": "URL Workbench Story 3.2 Workbench detects Win32 primary modifier and restores exact state and focus", "project": "vitest", "multiplicity": 1 },
   { "runner": "vitest", "file": "src/app/workbench/Workbench.test.tsx", "title": "URL Workbench Story 3.3 Copy retains Draft backward selection Search and open editing without History", "project": "vitest", "multiplicity": 1 },
-  { "runner": "vitest", "file": "src/app/workbench/Workbench.test.tsx", "title": "URL Workbench Story 3.3 Copy retry failures are persistent source-specific and never steal focus", "project": "vitest", "multiplicity": 1 },
+  { "runner": "vitest", "file": "src/app/workbench/Workbench.test.tsx", "title": "URL Workbench Story 3.4 Copy failures select exact recovery and retry success retains focus", "project": "vitest", "multiplicity": 1 },
+  { "runner": "vitest", "file": "src/app/workbench/Workbench.test.tsx", "title": "URL Workbench Story 3.4 pending failure cannot steal focus after pointer keyboard focus or composition interaction", "project": "vitest", "multiplicity": 1 },
+  { "runner": "vitest", "file": "src/app/workbench/Workbench.test.tsx", "title": "URL Workbench Story 3.4 recovery preserves Draft backward selection validation Search IDs and open History", "project": "vitest", "multiplicity": 1 },
+  { "runner": "vitest", "file": "src/app/workbench/Workbench.test.tsx", "title": "URL Workbench Story 3.4 timeout newer fenced recovery survives late resolve reject and unmount", "project": "vitest", "multiplicity": 1 },
   {
     "runner": "vitest",
     "file": "src/app/workbench/Workbench.test.tsx",
@@ -1421,6 +1424,9 @@
   { "runner": "vitest", "file": "src/core/session/session.test.ts", "title": "Story 3.3 Copy authority captures exact Current and Last Valid without modifying editing or History", "project": "vitest", "multiplicity": 1 },
   { "runner": "vitest", "file": "src/core/session/session.test.ts", "title": "Story 3.3 Copy authority reports typed source-specific failures and clears obsolete feedback on retry or source change", "project": "vitest", "multiplicity": 1 },
   { "runner": "vitest", "file": "src/core/session/session.test.ts", "title": "Story 3.3 Copy authority supersedes queued and invoked copies after revision epoch classification or attempt changes", "project": "vitest", "multiplicity": 1 },
+  { "runner": "vitest", "file": "src/core/session/session.test.ts", "title": "Story 3.4 recovery authority captures every typed failure from exact Current and Last Valid without editing or History", "project": "vitest", "multiplicity": 1 },
+  { "runner": "vitest", "file": "src/core/session/session.test.ts", "title": "Story 3.4 recovery authority rejects delayed focus and stale outcomes after interaction composition source change or newer attempt", "project": "vitest", "multiplicity": 1 },
+  { "runner": "vitest", "file": "src/core/session/session.test.ts", "title": "Story 3.4 recovery authority retains recovery across interaction and clears it atomically on retry Draft mutation and Undo", "project": "vitest", "multiplicity": 1 },
   {
     "runner": "vitest",
     "file": "src/core/url/codec.test.ts",
@@ -1955,10 +1961,13 @@
   },
   { "runner": "vitest", "file": "src/platform/clipboard/index.test.ts", "title": "Story 3.3 clipboard returns content-free typed boundary outcomes and exact writes", "project": "vitest", "multiplicity": 1 },
   { "runner": "vitest", "file": "src/platform/clipboard/index.test.ts", "title": "Story 3.3 clipboard timeout fences unresolved writes until settlement without late success", "project": "vitest", "multiplicity": 1 },
+  { "runner": "vitest", "file": "src/platform/clipboard/index.test.ts", "title": "Story 3.4 clipboard timeout gives one terminal outcome and late resolve or reject only releases ownership", "project": "vitest", "multiplicity": 1 },
   { "runner": "vitest", "file": "src/platform/effects/index.test.ts", "title": "Story 3.2 effects acknowledge adapter failure without starting the next effect", "project": "vitest", "multiplicity": 1 },
   { "runner": "vitest", "file": "src/platform/effects/index.test.ts", "title": "Story 3.2 effects claim immediately and acknowledge serially exactly once including rejection", "project": "vitest", "multiplicity": 1 },
   { "runner": "vitest", "file": "src/platform/effects/index.test.ts", "title": "Story 3.3 shared executor serializes Copy and Undo claims rejects stale heads and ignores duplicates", "project": "vitest", "multiplicity": 1 },
   { "runner": "vitest", "file": "src/platform/effects/index.test.ts", "title": "Story 3.3 shared executor stops DOM work and queued writes after unmount", "project": "vitest", "multiplicity": 1 },
+  { "runner": "vitest", "file": "src/platform/effects/index.test.ts", "title": "Story 3.4 executor acknowledges obsolete or unmounted recovery without touching DOM", "project": "vitest", "multiplicity": 1 },
+  { "runner": "vitest", "file": "src/platform/effects/index.test.ts", "title": "Story 3.4 executor waits for recovery render then claims and acknowledges focus exactly once", "project": "vitest", "multiplicity": 1 },
   { "runner": "vitest", "file": "src/platform/focus/index.test.ts", "title": "Story 3.2 focus retains restored next then previous source order and filtering fallback", "project": "vitest", "multiplicity": 1 },
   { "runner": "vitest", "file": "src/platform/focus/index.test.ts", "title": "Story 3.2 focus scrolls before focus and uses enabled reorder fallbacks", "project": "vitest", "multiplicity": 1 },
   { "runner": "vitest", "file": "src/platform/focus/index.test.ts", "title": "Story 3.2 missing mounted targets touch no DOM and enqueue no replacement", "project": "vitest", "multiplicity": 1 },
@@ -1987,6 +1996,13 @@
     "runner": "node",
     "file": "evidence/run.test.mjs",
     "title": "failed Vitest without JSON retains its command outcome and typed diagnostics",
+    "project": "node",
+    "multiplicity": 1
+  },
+  {
+    "runner": "node",
+    "file": "evidence/run.test.mjs",
+    "title": "missing Story 3.4 recovery evidence cannot publish success and releases ownership",
     "project": "node",
     "multiplicity": 1
   },
@@ -2077,7 +2093,7 @@
   {
     "runner": "node",
     "file": "evidence/validate.test.mjs",
-    "title": "accepts complete clean-checkout proof with exact inventory and all 48 cells",
+    "title": "accepts complete clean-checkout proof with exact inventory and all 52 cells",
     "project": "node",
     "multiplicity": 1
   },
@@ -2292,10 +2308,42 @@
   { "runner": "node", "file": "evidence/validate.test.mjs", "title": "rejects missing Story 3.3 private-capacity evidence after rehashing", "project": "node", "multiplicity": 1 },
   { "runner": "node", "file": "evidence/validate.test.mjs", "title": "rejects missing Story 3.3 stale-serial evidence after rehashing", "project": "node", "multiplicity": 1 },
   { "runner": "node", "file": "evidence/validate.test.mjs", "title": "rejects missing Story 3.3 typed-failure evidence after rehashing", "project": "node", "multiplicity": 1 },
+  { "runner": "node", "file": "evidence/validate.test.mjs", "title": "rejects missing Story 3.4 exact-recovery evidence after rehashing", "project": "node", "multiplicity": 1 },
+  { "runner": "node", "file": "evidence/validate.test.mjs", "title": "rejects missing Story 3.4 private-capacity evidence after rehashing", "project": "node", "multiplicity": 1 },
+  { "runner": "node", "file": "evidence/validate.test.mjs", "title": "rejects missing Story 3.4 race-focus evidence after rehashing", "project": "node", "multiplicity": 1 },
+  { "runner": "node", "file": "evidence/validate.test.mjs", "title": "rejects missing Story 3.4 recovery-lifecycle evidence after rehashing", "project": "node", "multiplicity": 1 },
   {
     "runner": "node",
     "file": "evidence/validate.test.mjs",
     "title": "rejects traversal, absolute, symlink ancestors and special files before reading",
+    "project": "node",
+    "multiplicity": 1
+  },
+  {
+    "runner": "node",
+    "file": "evidence/validate.test.mjs",
+    "title": "rejects unexecuted Story 3.4 exact-recovery identity despite other passing tests",
+    "project": "node",
+    "multiplicity": 1
+  },
+  {
+    "runner": "node",
+    "file": "evidence/validate.test.mjs",
+    "title": "rejects unexecuted Story 3.4 private-capacity identity despite other passing tests",
+    "project": "node",
+    "multiplicity": 1
+  },
+  {
+    "runner": "node",
+    "file": "evidence/validate.test.mjs",
+    "title": "rejects unexecuted Story 3.4 race-focus identity despite other passing tests",
+    "project": "node",
+    "multiplicity": 1
+  },
+  {
+    "runner": "node",
+    "file": "evidence/validate.test.mjs",
+    "title": "rejects unexecuted Story 3.4 recovery-lifecycle identity despite other passing tests",
     "project": "node",
     "multiplicity": 1
   },
@@ -2520,10 +2568,14 @@
   { "runner": "playwright", "file": "tests/workbench.spec.ts", "title": "Story 3.2 filtering retains Search invalid Draft backward selection and validation on both paths", "project": "chromium", "multiplicity": 1 },
   { "runner": "playwright", "file": "tests/workbench.spec.ts", "title": "Story 3.2 routing leaves native ownership excluded chords and composition untouched", "project": "chromium", "multiplicity": 1 },
   { "runner": "playwright", "file": "tests/workbench.spec.ts", "title": "Story 3.2 shortcut dense Undo focuses privately below 100 ms with all 260 entries", "project": "chromium", "multiplicity": 1 },
-  { "runner": "playwright", "file": "tests/workbench.spec.ts", "title": "Story 3.3 Copy boundary failures retry and timeout fence never overlap or announce late success", "project": "chromium", "multiplicity": 1 },
   { "runner": "playwright", "file": "tests/workbench.spec.ts", "title": "Story 3.3 Copy exact Current and Last Valid preserves pointer editing and keyboard action order", "project": "chromium", "multiplicity": 1 },
   { "runner": "playwright", "file": "tests/workbench.spec.ts", "title": "Story 3.3 Copy serial races supersede queued attempts and stale completions before Undo focus", "project": "chromium", "multiplicity": 1 },
   { "runner": "playwright", "file": "tests/workbench.spec.ts", "title": "Story 3.3 dense Copy edit Undo exact writes private complete rows below 100 ms at 320px", "project": "chromium", "multiplicity": 1 },
+  { "runner": "playwright", "file": "tests/workbench.spec.ts", "title": "Story 3.4 Current recovery retains native selection across Search and clears on mutation retry reload", "project": "chromium", "multiplicity": 1 },
+  { "runner": "playwright", "file": "tests/workbench.spec.ts", "title": "Story 3.4 dense recovery publishes and selects privately below 100 ms with accessible 320px complete rendering", "project": "chromium", "multiplicity": 1 },
+  { "runner": "playwright", "file": "tests/workbench.spec.ts", "title": "Story 3.4 failure matrix selects exact Last Valid recovery and retry preserves native focus", "project": "chromium", "multiplicity": 1 },
+  { "runner": "playwright", "file": "tests/workbench.spec.ts", "title": "Story 3.4 interrupted failures retain manual recovery without stealing focus and obsolete writes stay silent", "project": "chromium", "multiplicity": 1 },
+  { "runner": "playwright", "file": "tests/workbench.spec.ts", "title": "Story 3.4 timeout fence exposes newest exact recovery and late resolve reject cannot focus or succeed", "project": "chromium", "multiplicity": 1 },
   {
     "runner": "playwright",
     "file": "tests/workbench.spec.ts",

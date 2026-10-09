@@ -61,6 +61,14 @@ export interface SessionState {
   readonly latestCopyAttempt: number;
   readonly copySuccess: string | null;
   readonly copyFailure: { readonly source: CopySource; readonly outcome: ClipboardOutcome } | null;
+  readonly copyRecovery: {
+    readonly serialized: string;
+    readonly source: CopySource;
+    readonly epoch: number;
+    readonly stateRevision: number;
+    readonly attemptId: number;
+  } | null;
+  readonly draftRevision: number;
   readonly nextEffectId: number;
   readonly lastAcknowledgedEffectId: number;
   readonly interaction: number;
@@ -123,6 +131,8 @@ export const initialSessionState: SessionState = {
   latestCopyAttempt: 0,
   copySuccess: null,
   copyFailure: null,
+  copyRecovery: null,
+  draftRevision: 0,
   nextEffectId: 1,
   lastAcknowledgedEffectId: 0,
   interaction: 0,
@@ -431,12 +441,13 @@ const sessionTransition = (
     case "copy": {
       if (!state.snapshot) return state;
       return { ...state, latestCopyAttempt: state.latestCopyAttempt + 1,
-        copySuccess: null, copyFailure: null,
+        copySuccess: null, copyFailure: null, copyRecovery: null,
         nextEffectId: state.nextEffectId + 1,
         effects: [...state.effects, {
           kind: "clipboard", effectId: state.nextEffectId,
           attemptId: state.latestCopyAttempt + 1, epoch: state.epoch,
           stateRevision: state.revision, serialized: state.snapshot.serialized,
+          draftRevision: state.draftRevision, interaction: state.interaction,
           source: copySource(state), status: "pending",
         }] };
     }
@@ -452,11 +463,22 @@ const sessionTransition = (
       if (!effect || effect.kind !== "clipboard" || effect.effectId !== action.effectId ||
         effect.status === "pending") return state;
       const current = effect.status === "claimed" && currentCopy(state, effect);
-      return { ...state, effects: state.effects.slice(1), lastAcknowledgedEffectId: effect.effectId,
+      const failed = current && action.outcome !== "success" && action.outcome !== "superseded";
+      return { ...state, effects: [...state.effects.slice(1), ...(failed ? [{
+          kind: "focus" as const, effectId: state.nextEffectId, epoch: effect.epoch,
+          stateRevision: effect.stateRevision, interaction: effect.interaction,
+          target: { kind: "copy-recovery" as const, attemptId: effect.attemptId },
+          status: "pending" as const,
+        }] : [])], lastAcknowledgedEffectId: effect.effectId,
+        nextEffectId: state.nextEffectId + (failed ? 1 : 0),
+        copyRecovery: failed ? {
+          serialized: effect.serialized, source: effect.source, epoch: effect.epoch,
+          stateRevision: effect.stateRevision, attemptId: effect.attemptId,
+        } : state.copyRecovery,
         copySuccess: current && action.outcome === "success"
           ? effect.source === "current" ? "Current URL copied."
             : "Last Valid URL copied; Draft URL is unchanged." : state.copySuccess,
-        copyFailure: current && action.outcome !== "success" && action.outcome !== "superseded"
+        copyFailure: failed
           ? { source: effect.source, outcome: action.outcome } : state.copyFailure };
     }
     case "cancelFocus":
@@ -471,7 +493,10 @@ const sessionTransition = (
         : []);
       const valid = effect.epoch === state.epoch && effect.stateRevision === state.revision &&
         effect.interaction === state.interaction && state.snapshot !== null &&
-        (target.kind === "full-url" || (target.kind === "piece"
+        (target.kind === "copy-recovery"
+          ? state.copyRecovery?.attemptId === target.attemptId &&
+            state.latestCopyAttempt === target.attemptId
+          : target.kind === "full-url" || (target.kind === "piece"
           ? mountedIds.has(target.pieceId) && target.order.every((id) => mountedIds.has(id))
           : target.candidates.every((id) => mountedIds.has(id))));
       return { ...state, effects: [{ ...effect, status: valid ? "claimed" : "rejected" }, ...state.effects.slice(1)] };
@@ -1072,8 +1097,12 @@ const sessionTransition = (
 export const sessionReducer = (state: SessionState, action: SessionAction): SessionState => {
   let next = sessionTransition(state, action);
   if (next.revision !== state.revision || next.epoch !== state.epoch ||
-    copySource(next) !== copySource(state)) {
-    next = { ...next, copySuccess: null, copyFailure: null };
+    copySource(next) !== copySource(state) ||
+    (action.type === "inputChanged" && next.input !== state.input)) {
+    next = { ...next, copySuccess: null, copyFailure: null, copyRecovery: null };
+  }
+  if (action.type === "inputChanged" && next.input !== state.input) {
+    next = { ...next, draftRevision: state.draftRevision + 1 };
   }
   if (next !== state && ["inputChanged", "structuredEdit", "removePiece", "addQueryPiece",
     "moveQueryPiece", "fullUrlFocusBegin"].includes(action.type)) {
@@ -1087,6 +1116,7 @@ const copySource = (state: SessionState): CopySource =>
 const currentCopy = (state: SessionState, effect: CopyEffect): boolean =>
   effect.epoch === state.epoch && effect.stateRevision === state.revision &&
   effect.attemptId === state.latestCopyAttempt &&
+  effect.draftRevision === state.draftRevision &&
   effect.serialized === state.snapshot?.serialized && effect.source === copySource(state);
 
 export const prepareParse = (state: SessionState) => {
