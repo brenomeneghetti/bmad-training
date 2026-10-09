@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   canUndo,
+  advanceFeedback,
+  enqueueFeedback,
+  initialFeedback,
   initialSessionState,
   prepareParse,
   sessionReducer,
@@ -14,6 +17,146 @@ const apply = (state: SessionState, input: string) => {
   const parse = prepareParse(changed);
   return sessionReducer(sessionReducer(changed, parse.start), parse.complete());
 };
+
+describe("Story 3.5 feedback authority", () => {
+  it("publishes all accepted outcomes without changing mutation Undo Copy or stale parse authority", () => {
+    let state = apply(initialSessionState, "https://example.com/a?x=1&y=2");
+    expect(state.feedback.current?.message).toBe("URL parsed. 4 Managed Pieces available.");
+    const id = state.snapshot!.query[0]!.id;
+    state = sessionReducer(state, { type: "structuredEdit", now: 1, command: {
+      pieceId: id, field: "query-value", tokenRevision: 0, start: 0, end: 1, insertedText: "2",
+    } });
+    state = sessionReducer(state, { type: "moveQueryPiece", now: 2, pieceId: id, direction: "down" });
+    state = sessionReducer(state, { type: "addQueryPiece", now: 3 });
+    state = sessionReducer(state, { type: "removePiece", now: 4, removal: { kind: "query", pieceId: id } });
+    expect(state.feedback.history.map((item) => item.message)).toEqual([
+      "URL parsed. 4 Managed Pieces available.",
+      `Edited piece ${id}. Full URL and Structured View updated.`,
+      "Moved Query Parameter 1 of 2 to position 2 of 2. Full URL and Structured View updated.",
+      "Query Parameter 3 added. Full URL and Structured View updated.",
+      "Query Parameter 2 removed. Full URL and Structured View updated.",
+    ]);
+    const history = state.history;
+    state = sessionReducer(state, { type: "feedbackSearch", now: 5, message: "Search count." });
+    expect(state.history).toBe(history);
+    state = sessionReducer(state, { type: "undo", now: 6, revision: state.revision });
+    expect(state.feedback.pending.some((item) => item.message.startsWith("Undid:"))).toBe(true);
+    state = sessionReducer(state, { type: "claimFocus", effectId: state.effects[0]!.effectId });
+    state = sessionReducer(state, { type: "acknowledgeFocus", effectId: state.effects[0]!.effectId });
+    state = sessionReducer(state, { type: "copy", now: 7 });
+    const effectId = state.effects[0]!.effectId;
+    state = sessionReducer(state, { type: "claimCopy", effectId });
+    state = sessionReducer(state, { type: "acknowledgeCopy", effectId, outcome: "success", now: 8 });
+    expect(state.feedback.pending.some((item) => item.message === "Current URL copied.")).toBe(true);
+    const parsed = prepareParse(state);
+    const pending = sessionReducer(state, parsed.start);
+    const superseded = sessionReducer(pending, { type: "inputChanged", value: "/invalid" });
+    expect(sessionReducer(superseded, parsed.complete())).toBe(superseded);
+    expect(state.history).toHaveLength(history.length - 1);
+
+    const baseline = apply(initialSessionState, "https://example.com/a");
+    const edited = apply(baseline, "https://example.com/b");
+    const undone = sessionReducer(edited, { type: "undo", revision: edited.revision });
+    expect(undone.history).toHaveLength(0);
+    expect(undone.feedback.pending.filter((item) => item.kind === "committed")
+      .map((item) => item.message)).toEqual([
+        "Full URL edit committed. Full URL and Structured View updated.",
+        "Undid: Full URL edit. Full URL and Structured View updated.",
+      ]);
+  });
+
+  it("coalesces only same pending classes within 300 ms and preserves committed FIFO minimum exposure", () => {
+    let feedback = enqueueFeedback(initialFeedback, "parse", "committed");
+    feedback = enqueueFeedback(advanceFeedback(feedback, 100), "search one", "search");
+    feedback = enqueueFeedback(advanceFeedback(feedback, 399), "search two", "search");
+    feedback = enqueueFeedback(feedback, "sync one", "synchronization");
+    feedback = enqueueFeedback(advanceFeedback(feedback, 699), "sync two", "synchronization");
+    feedback = enqueueFeedback(feedback, "copy", "committed");
+    feedback = enqueueFeedback(feedback, "undo", "committed");
+    expect(feedback.pending.map((item) => item.message)).toEqual(["search two", "sync two", "copy", "undo"]);
+    expect(advanceFeedback(feedback, 1_999).current?.message).toBe("parse");
+    feedback = advanceFeedback(feedback, 2_000);
+    expect(feedback.current?.message).toBe("copy");
+    expect(advanceFeedback(feedback, 3_999).current?.message).toBe("copy");
+    feedback = advanceFeedback(feedback, 4_000);
+    expect(feedback.current?.message).toBe("undo");
+    const retained = enqueueFeedback(advanceFeedback(feedback, 4_001), "search three", "search");
+    expect(retained.pending.filter((item) => item.kind === "search")).toHaveLength(2);
+    expect(advanceFeedback(feedback, 20_000).current?.started).toBe(20_000);
+  });
+
+  it("promotes only strictly beyond six seconds including current exactly once with accurate repeated summaries", () => {
+    let feedback = enqueueFeedback(initialFeedback, "first", "committed");
+    for (const message of ["second", "third", "fourth"]) feedback = enqueueFeedback(feedback, message, "committed");
+    expect(feedback.history).toHaveLength(0);
+    feedback = enqueueFeedback(feedback, "fifth", "committed");
+    expect(feedback.history.map((item) => item.message)).toEqual(["first", "second", "third", "fourth", "fifth"]);
+    expect(feedback.pending.map((item) => item.message)).toEqual(["5 operation outcomes added to feedback history."]);
+    expect(feedback.current?.message).toBe("first");
+    for (const message of ["sixth", "seventh", "eighth"]) feedback = enqueueFeedback(feedback, message, "committed");
+    expect(feedback.history).toHaveLength(8);
+    expect(new Set(feedback.history.map((item) => item.id)).size).toBe(8);
+    expect(feedback.pending.map((item) => item.message)).toEqual([
+      "5 operation outcomes added to feedback history.", "3 operation outcomes added to feedback history.",
+    ]);
+    expect(advanceFeedback(feedback, 1_999).current?.message).toBe("first");
+    expect(advanceFeedback(feedback, 2_000).current?.message).toBe("5 operation outcomes added to feedback history.");
+    const delayed = advanceFeedback(enqueueFeedback(
+      enqueueFeedback(initialFeedback, "current", "committed"), "pending", "committed"), 6_001);
+    expect(delayed.history.map((item) => item.message)).toEqual(["current", "pending"]);
+    expect(delayed.current?.message).toBe("2 operation outcomes added to feedback history.");
+  });
+
+  it("settles validation after 300 ms suppresses composition and unchanged input and repeats explicit submissions", () => {
+    const boundary = sessionReducer(apply(initialSessionState, "relative"), {
+      type: "feedbackComposition", composing: true, now: 300,
+    });
+    expect(boundary.feedback.validation).toBeNull();
+    expect(boundary.feedback.validationPending).not.toBeNull();
+    let state = apply(initialSessionState, "relative");
+    expect(state.feedback.validation).toBeNull();
+    state = sessionReducer(state, { type: "feedbackTick", now: 299 });
+    expect(state.feedback.validation).toBeNull();
+    state = sessionReducer(state, { type: "feedbackComposition", composing: true, now: 299 });
+    state = sessionReducer(state, { type: "feedbackTick", now: 500 });
+    expect(state.feedback.validation).toBeNull();
+    state = sessionReducer(state, { type: "feedbackComposition", composing: false, now: 500 });
+    state = sessionReducer(state, { type: "feedbackTick", now: 500 });
+    const first = state.feedback.validation;
+    expect(first?.message).toContain("complete HTTP or HTTPS");
+    state = apply(state, "relative");
+    expect(state.feedback.validation).toBe(first);
+    state = apply(state, "relative-again");
+    state = sessionReducer(state, { type: "feedbackTick", now: 800 });
+    expect(state.feedback.validation).toBe(first);
+    state = sessionReducer(state, { type: "closeFullUrlEdit", reason: "enter", now: 501 });
+    expect(state.feedback.validation?.id).not.toBe(first?.id);
+    state = apply(state, "https://example.com/a");
+    expect(state.feedback.validation).toBeNull();
+    expect(state.feedback.validationPending).toBeNull();
+  });
+
+  it("keeps failure validation queue and exact attempted recovery independent until relevant state changes", () => {
+    let state = apply(initialSessionState, "https://example.com/a");
+    state = apply(state, "https://");
+    state = sessionReducer(state, { type: "feedbackTick", now: 300 });
+    const validation = state.feedback.validation;
+    const current = state.feedback.current;
+    state = sessionReducer(state, { type: "copy", now: 301 });
+    state = sessionReducer(state, { type: "claimCopy", effectId: 1 });
+    state = sessionReducer(state, { type: "acknowledgeCopy", effectId: 1, outcome: "timeout", now: 302 });
+    expect(state.copyRecovery?.serialized).toBe("https://example.com/a");
+    expect(state.copyFailure?.source).toBe("last-valid");
+    expect(state.feedback.validation).toBe(validation);
+    expect(state.feedback.current).toEqual(current);
+    state = sessionReducer(state, { type: "feedbackSearch", message: "Search count.", now: 303 });
+    expect(state.copyFailure?.outcome).toBe("timeout");
+    expect(state.problem).not.toBeNull();
+    state = sessionReducer(state, { type: "copy", now: 304 });
+    expect(state.copyFailure).toBeNull();
+    expect(state.feedback.validation).toBe(validation);
+  });
+});
 
 describe("Story 3.2 focus authority", () => {
   it("queues monotonic revisioned targets and guards serial claim duplicate acknowledgement and missing identity", () => {
@@ -1619,7 +1762,7 @@ describe("session authority", () => {
       direction: "down",
     });
     expect(moved.revision).toBe(active.revision + 1);
-    expect(moved.structuredSuccess).toContain('"y=2" moved from position 2 to position 3 of 3');
+    expect(moved.structuredSuccess).toContain('Moved Query Parameter 2 of 3 to position 3 of 3');
   });
 
   it("swaps a Query Parameter with its previous neighbor", () => {
@@ -1637,7 +1780,7 @@ describe("session authority", () => {
     });
 
     expect(moved.input).toBe("https://example.com/a?x=1&z=3&y=2");
-    expect(moved.structuredSuccess).toContain('"z=3" moved from position 3 to position 2 of 3');
+    expect(moved.structuredSuccess).toContain('Moved Query Parameter 3 of 3 to position 2 of 3');
   });
 
   it("creates no mutation, history, or announcement for a boundary no-op", () => {

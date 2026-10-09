@@ -1,5 +1,38 @@
 [
   {
+    "id": "story-3-5-scheduling-overflow", "story": "3.5",
+    "tests": [
+      { "runner": "vitest", "file": "src/core/session/session.test.ts", "title": "Story 3.5 feedback authority publishes all accepted outcomes without changing mutation Undo Copy or stale parse authority", "project": "vitest" },
+      { "runner": "vitest", "file": "src/core/session/session.test.ts", "title": "Story 3.5 feedback authority coalesces only same pending classes within 300 ms and preserves committed FIFO minimum exposure", "project": "vitest" },
+      { "runner": "vitest", "file": "src/core/session/session.test.ts", "title": "Story 3.5 feedback authority promotes only strictly beyond six seconds including current exactly once with accurate repeated summaries", "project": "vitest" },
+      { "runner": "vitest", "file": "src/app/workbench/Workbench.test.tsx", "title": "URL Workbench Story 3.5 queues actual repeated Copy children for two seconds and promotes overflow without taking focus", "project": "vitest" },
+      { "runner": "playwright", "file": "tests/workbench.spec.ts", "title": "Story 3.5 Chromium schedules two-second repeated children and strict six-second exact overflow summaries", "project": "chromium" },
+      { "runner": "playwright", "file": "tests/workbench.spec.ts", "title": "Story 3.5 Chromium coalesces settled Search and synchronization without preempting committed FIFO", "project": "chromium" }
+    ]
+  },
+  {
+    "id": "story-3-5-validation-repeat", "story": "3.5",
+    "tests": [
+      { "runner": "vitest", "file": "src/core/session/session.test.ts", "title": "Story 3.5 feedback authority settles validation after 300 ms suppresses composition and unchanged input and repeats explicit submissions", "project": "vitest" },
+      { "runner": "vitest", "file": "src/app/workbench/Workbench.test.tsx", "title": "URL Workbench Story 3.5 isolates settled assertive validation with persistent associations actual repeated children and IME correction", "project": "vitest" },
+      { "runner": "playwright", "file": "tests/workbench.spec.ts", "title": "Story 3.5 Chromium validation repeats replace nodes and retain help errors through synthetic IME correction", "project": "chromium" }
+    ]
+  },
+  {
+    "id": "story-3-5-independent-channels", "story": "3.5",
+    "tests": [
+      { "runner": "vitest", "file": "src/core/session/session.test.ts", "title": "Story 3.5 feedback authority keeps failure validation queue and exact attempted recovery independent until relevant state changes", "project": "vitest" },
+      { "runner": "vitest", "file": "src/app/workbench/Workbench.test.tsx", "title": "URL Workbench Story 3.5 failure recovery never overwrites assertive validation or the polite queue", "project": "vitest" },
+      { "runner": "playwright", "file": "tests/workbench.spec.ts", "title": "Story 3.5 Chromium failure remains independent of invalid Draft queued mutations and guarded recovery", "project": "chromium" }
+    ]
+  },
+  {
+    "id": "story-3-5-private-capacity", "story": "3.5",
+    "tests": [
+      { "runner": "playwright", "file": "tests/workbench.spec.ts", "title": "Story 3.5 Chromium dense feedback publishes below 100 ms privately with complete accessible 320px reflow", "project": "chromium" }
+    ]
+  },
+  {
     "id": "story-3-4-exact-recovery", "story": "3.4",
     "tests": [
       { "runner": "vitest", "file": "src/core/session/session.test.ts", "title": "Story 3.4 recovery authority captures every typed failure from exact Current and Last Valid without editing or History", "project": "vitest" },
@@ -1629,7 +1662,7 @@
       {
         "runner": "vitest",
         "file": "src/app/workbench/Workbench.test.tsx",
-        "title": "URL Workbench removes old-session announcements when the snapshot is replaced",
+        "title": "URL Workbench retains selected Search exposure across synchronized snapshot changes",
         "project": "vitest"
       },
       {
@@ -1665,7 +1698,7 @@
       {
         "runner": "vitest",
         "file": "src/app/workbench/Workbench.test.tsx",
-        "title": "URL Workbench settles repeatable announcements without replacing live entries or moving focus",
+        "title": "URL Workbench settles repeatable announcements by replacing actual children without moving focus",
         "project": "vitest"
       },
       {
@@ -2127,7 +2160,7 @@
       {
         "runner": "vitest",
         "file": "src/app/workbench/Workbench.test.tsx",
-        "title": "URL Workbench removes old-session announcements when the snapshot is replaced",
+        "title": "URL Workbench retains selected Search exposure across synchronized snapshot changes",
         "project": "vitest"
       },
       {
@@ -2163,7 +2196,7 @@
       {
         "runner": "vitest",
         "file": "src/app/workbench/Workbench.test.tsx",
-        "title": "URL Workbench settles repeatable announcements without replacing live entries or moving focus",
+        "title": "URL Workbench settles repeatable announcements by replacing actual children without moving focus",
         "project": "vitest"
       },
       {
@@ -2625,7 +2658,7 @@
       {
         "runner": "vitest",
         "file": "src/app/workbench/Workbench.test.tsx",
-        "title": "URL Workbench removes old-session announcements when the snapshot is replaced",
+        "title": "URL Workbench retains selected Search exposure across synchronized snapshot changes",
         "project": "vitest"
       },
       {
@@ -2661,7 +2694,7 @@
       {
         "runner": "vitest",
         "file": "src/app/workbench/Workbench.test.tsx",
-        "title": "URL Workbench settles repeatable announcements without replacing live entries or moving focus",
+        "title": "URL Workbench settles repeatable announcements by replacing actual children without moving focus",
         "project": "vitest"
       },
       {
@@ -4515,7 +4548,7 @@
       {
         "runner": "vitest",
         "file": "src/app/workbench/Workbench.test.tsx",
-        "title": "URL Workbench removes old-session announcements when the snapshot is replaced",
+        "title": "URL Workbench retains selected Search exposure across synchronized snapshot changes",
         "project": "vitest"
       },
       {
@@ -4551,7 +4584,7 @@
       {
         "runner": "vitest",
         "file": "src/app/workbench/Workbench.test.tsx",
-        "title": "URL Workbench settles repeatable announcements without replacing live entries or moving focus",
+        "title": "URL Workbench settles repeatable announcements by replacing actual children without moving focus",
         "project": "vitest"
       },
       {
@@ -7113,7 +7146,7 @@
       {
         "runner": "vitest",
         "file": "src/app/workbench/Workbench.test.tsx",
-        "title": "URL Workbench removes old-session announcements when the snapshot is replaced",
+        "title": "URL Workbench retains selected Search exposure across synchronized snapshot changes",
         "project": "vitest"
       },
       {
@@ -7149,7 +7182,7 @@
       {
         "runner": "vitest",
         "file": "src/app/workbench/Workbench.test.tsx",
-        "title": "URL Workbench settles repeatable announcements without replacing live entries or moving focus",
+        "title": "URL Workbench settles repeatable announcements by replacing actual children without moving focus",
         "project": "vitest"
       },
       {
@@ -9057,7 +9090,7 @@
       {
         "runner": "vitest",
         "file": "src/app/workbench/Workbench.test.tsx",
-        "title": "URL Workbench removes old-session announcements when the snapshot is replaced",
+        "title": "URL Workbench retains selected Search exposure across synchronized snapshot changes",
         "project": "vitest"
       },
       {
@@ -9093,7 +9126,7 @@
       {
         "runner": "vitest",
         "file": "src/app/workbench/Workbench.test.tsx",
-        "title": "URL Workbench settles repeatable announcements without replacing live entries or moving focus",
+        "title": "URL Workbench settles repeatable announcements by replacing actual children without moving focus",
         "project": "vitest"
       },
       {
@@ -10035,7 +10068,7 @@
       {
         "runner": "vitest",
         "file": "src/app/workbench/Workbench.test.tsx",
-        "title": "URL Workbench removes old-session announcements when the snapshot is replaced",
+        "title": "URL Workbench retains selected Search exposure across synchronized snapshot changes",
         "project": "vitest"
       },
       {
@@ -10071,7 +10104,7 @@
       {
         "runner": "vitest",
         "file": "src/app/workbench/Workbench.test.tsx",
-        "title": "URL Workbench settles repeatable announcements without replacing live entries or moving focus",
+        "title": "URL Workbench settles repeatable announcements by replacing actual children without moving focus",
         "project": "vitest"
       },
       {
@@ -11937,7 +11970,7 @@
       {
         "runner": "vitest",
         "file": "src/app/workbench/Workbench.test.tsx",
-        "title": "URL Workbench removes old-session announcements when the snapshot is replaced",
+        "title": "URL Workbench retains selected Search exposure across synchronized snapshot changes",
         "project": "vitest"
       },
       {
@@ -11973,7 +12006,7 @@
       {
         "runner": "vitest",
         "file": "src/app/workbench/Workbench.test.tsx",
-        "title": "URL Workbench settles repeatable announcements without replacing live entries or moving focus",
+        "title": "URL Workbench settles repeatable announcements by replacing actual children without moving focus",
         "project": "vitest"
       },
       {
@@ -12921,7 +12954,7 @@
       {
         "runner": "vitest",
         "file": "src/app/workbench/Workbench.test.tsx",
-        "title": "URL Workbench removes old-session announcements when the snapshot is replaced",
+        "title": "URL Workbench retains selected Search exposure across synchronized snapshot changes",
         "project": "vitest"
       },
       {
@@ -12957,7 +12990,7 @@
       {
         "runner": "vitest",
         "file": "src/app/workbench/Workbench.test.tsx",
-        "title": "URL Workbench settles repeatable announcements without replacing live entries or moving focus",
+        "title": "URL Workbench settles repeatable announcements by replacing actual children without moving focus",
         "project": "vitest"
       },
       {
@@ -14835,7 +14868,7 @@
       {
         "runner": "vitest",
         "file": "src/app/workbench/Workbench.test.tsx",
-        "title": "URL Workbench removes old-session announcements when the snapshot is replaced",
+        "title": "URL Workbench retains selected Search exposure across synchronized snapshot changes",
         "project": "vitest"
       },
       {
@@ -14871,7 +14904,7 @@
       {
         "runner": "vitest",
         "file": "src/app/workbench/Workbench.test.tsx",
-        "title": "URL Workbench settles repeatable announcements without replacing live entries or moving focus",
+        "title": "URL Workbench settles repeatable announcements by replacing actual children without moving focus",
         "project": "vitest"
       },
       {
@@ -15819,7 +15852,7 @@
       {
         "runner": "vitest",
         "file": "src/app/workbench/Workbench.test.tsx",
-        "title": "URL Workbench removes old-session announcements when the snapshot is replaced",
+        "title": "URL Workbench retains selected Search exposure across synchronized snapshot changes",
         "project": "vitest"
       },
       {
@@ -15855,7 +15888,7 @@
       {
         "runner": "vitest",
         "file": "src/app/workbench/Workbench.test.tsx",
-        "title": "URL Workbench settles repeatable announcements without replacing live entries or moving focus",
+        "title": "URL Workbench settles repeatable announcements by replacing actual children without moving focus",
         "project": "vitest"
       },
       {
@@ -17757,7 +17790,7 @@
       {
         "runner": "vitest",
         "file": "src/app/workbench/Workbench.test.tsx",
-        "title": "URL Workbench removes old-session announcements when the snapshot is replaced",
+        "title": "URL Workbench retains selected Search exposure across synchronized snapshot changes",
         "project": "vitest"
       },
       {
@@ -17793,7 +17826,7 @@
       {
         "runner": "vitest",
         "file": "src/app/workbench/Workbench.test.tsx",
-        "title": "URL Workbench settles repeatable announcements without replacing live entries or moving focus",
+        "title": "URL Workbench settles repeatable announcements by replacing actual children without moving focus",
         "project": "vitest"
       },
       {
@@ -18771,7 +18804,7 @@
       {
         "runner": "vitest",
         "file": "src/app/workbench/Workbench.test.tsx",
-        "title": "URL Workbench removes old-session announcements when the snapshot is replaced",
+        "title": "URL Workbench retains selected Search exposure across synchronized snapshot changes",
         "project": "vitest"
       },
       {
@@ -18807,7 +18840,7 @@
       {
         "runner": "vitest",
         "file": "src/app/workbench/Workbench.test.tsx",
-        "title": "URL Workbench settles repeatable announcements without replacing live entries or moving focus",
+        "title": "URL Workbench settles repeatable announcements by replacing actual children without moving focus",
         "project": "vitest"
       },
       {
@@ -20229,7 +20262,7 @@
       {
         "runner": "vitest",
         "file": "src/app/workbench/Workbench.test.tsx",
-        "title": "URL Workbench removes old-session announcements when the snapshot is replaced",
+        "title": "URL Workbench retains selected Search exposure across synchronized snapshot changes",
         "project": "vitest"
       },
       {
@@ -20265,7 +20298,7 @@
       {
         "runner": "vitest",
         "file": "src/app/workbench/Workbench.test.tsx",
-        "title": "URL Workbench settles repeatable announcements without replacing live entries or moving focus",
+        "title": "URL Workbench settles repeatable announcements by replacing actual children without moving focus",
         "project": "vitest"
       },
       {
@@ -21729,7 +21762,7 @@
       {
         "runner": "vitest",
         "file": "src/app/workbench/Workbench.test.tsx",
-        "title": "URL Workbench removes old-session announcements when the snapshot is replaced",
+        "title": "URL Workbench retains selected Search exposure across synchronized snapshot changes",
         "project": "vitest"
       },
       {
@@ -21765,7 +21798,7 @@
       {
         "runner": "vitest",
         "file": "src/app/workbench/Workbench.test.tsx",
-        "title": "URL Workbench settles repeatable announcements without replacing live entries or moving focus",
+        "title": "URL Workbench settles repeatable announcements by replacing actual children without moving focus",
         "project": "vitest"
       },
       {

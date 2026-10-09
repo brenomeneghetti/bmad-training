@@ -20,6 +20,7 @@ import {
 } from "../../core/session";
 import type { UrlProblem } from "../../core/contracts";
 import styles from "../../styles/workbench.module.css";
+import { ValidationMessage } from "../feedback/ValidationMessage";
 
 const compositionResult = (
   input: HTMLInputElement,
@@ -70,9 +71,11 @@ interface StructuredViewProps {
   readonly structuredProblem: UrlProblem | null;
   readonly structuredSuccess: string | null;
   readonly editorsDisabled: boolean;
+  readonly onValidateField?: (key: string) => void;
 }
 
 interface DomainEditorProps {
+  readonly onValidateField?: (key: string) => void;
   readonly id: string;
   readonly label: string;
   readonly pieceId: DomainEditCommand["pieceId"];
@@ -96,6 +99,7 @@ function DomainEditor({
   onEdit,
   onCompositionChange,
   disabled,
+  onValidateField,
 }: DomainEditorProps) {
   const [compositionValue, setCompositionValue] = useState<string | null>(null);
   const composing = useRef(false);
@@ -216,8 +220,15 @@ function DomainEditor({
         aria-errormessage={draft ? errorId : undefined}
         aria-describedby={draft ? `${helpId} ${errorId}` : helpId}
         disabled={disabled}
-        onKeyDown={() => {
+        onBlur={() => {
+          if (!composing.current) onValidateField?.(structuredFieldKey(pieceId, field));
+        }}
+        onKeyDown={(event) => {
           if (!composing.current) ignorePostCompositionValue.current = null;
+          if (event.key === "Enter" && !composing.current && !event.nativeEvent.isComposing) {
+            event.preventDefault();
+            onValidateField?.(structuredFieldKey(pieceId, field));
+          }
         }}
         onChange={(event) => {
           if (
@@ -245,13 +256,11 @@ function DomainEditor({
       <div
         id={`${errorId}-feedback`}
         className={draft ? undefined : styles.visuallyHidden}
-        aria-live="polite"
-        aria-atomic="true"
       >
         {draft ? (
-          <p id={errorId} className={styles.validation}>
+          <ValidationMessage id={errorId}>
             {draft.problem.message}
-          </p>
+          </ValidationMessage>
         ) : null}
       </div>
     </>
@@ -259,6 +268,7 @@ function DomainEditor({
 }
 
 interface EditableTokenProps {
+  readonly onValidateField?: (key: string) => void;
   readonly id: string;
   readonly label: string;
   readonly accessibleLabel: string;
@@ -404,6 +414,7 @@ function EditableToken({
   tokenRevision,
   onEdit,
   disabled,
+  onValidateField,
 }: EditableTokenProps) {
   const [compositionValue, setCompositionValue] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -421,7 +432,8 @@ function EditableToken({
   const suppressBeforeInput = useRef(false);
   const publishedValue = draft?.value ?? committedValue;
   const value = compositionValue ?? publishedValue;
-  const errorId = `${id}-error`;
+  const errorId = `error-${pieceId}-${field}`;
+  const helpId = `help-${pieceId}-${field}`;
 
   useEffect(() => setCompositionValue(null), [pieceId, field, committedValue]);
   useLayoutEffect(() => {
@@ -648,15 +660,22 @@ function EditableToken({
         aria-label={accessibleLabel}
         aria-invalid={draft ? true : undefined}
         aria-errormessage={draft ? errorId : undefined}
-        aria-describedby={draft ? errorId : undefined}
+        aria-describedby={draft ? `${helpId} ${errorId}` : helpId}
         disabled={disabled}
-        onKeyDown={keyDown}
+        onKeyDown={(event) => {
+          keyDown(event);
+          if (event.key === "Enter" && !composing.current && !event.nativeEvent.isComposing) {
+            event.preventDefault();
+            onValidateField?.(structuredFieldKey(pieceId, field));
+          }
+        }}
         onSelect={cancelCaretFrame}
         onKeyUp={() => {
           suppressBeforeInput.current = false;
         }}
         onBlur={() => {
           suppressBeforeInput.current = false;
+          if (!composing.current) onValidateField?.(structuredFieldKey(pieceId, field));
         }}
         onPaste={paste}
         onCut={(event) => {
@@ -673,16 +692,15 @@ function EditableToken({
         autoComplete="off"
         spellCheck={false}
       />
+      <p id={helpId}>Edit this field to update the committed URL.</p>
       <div
         id={`${errorId}-feedback`}
         className={draft ? undefined : styles.visuallyHidden}
-        aria-live="polite"
-        aria-atomic="true"
       >
         {draft ? (
-          <p id={errorId} className={styles.validation}>
+          <ValidationMessage id={errorId}>
             {draft.problem.message}
-          </p>
+          </ValidationMessage>
         ) : null}
       </div>
     </>
@@ -707,6 +725,7 @@ export function StructuredView({
   structuredProblem,
   structuredSuccess,
   editorsDisabled,
+  onValidateField,
 }: StructuredViewProps) {
   const [composingDomainField, setComposingDomainField] = useState<
     DomainEditCommand["field"] | null
@@ -800,6 +819,7 @@ export function StructuredView({
                         ] ?? 0
                       }
                       onEdit={onStructuredEdit}
+                      onValidateField={onValidateField}
                       onCompositionChange={setComposingDomainField}
                       disabled={editorsDisabled}
                     />
@@ -820,6 +840,7 @@ export function StructuredView({
                         ] ?? 0
                       }
                       onEdit={onStructuredEdit}
+                      onValidateField={onValidateField}
                       onCompositionChange={setComposingDomainField}
                       disabled={editorsDisabled}
                     />
@@ -860,6 +881,7 @@ export function StructuredView({
                         tokenRevisions[structuredFieldKey(managedPiece.id, "path")] ?? 0
                       }
                       onEdit={onStructuredEdit}
+                      onValidateField={onValidateField}
                       disabled={editorsDisabled}
                     />
                     <button
@@ -915,6 +937,7 @@ export function StructuredView({
                       ] ?? 0
                     }
                     onEdit={onStructuredEdit}
+                    onValidateField={onValidateField}
                     disabled={editorsDisabled}
                   />
                   <EditableToken
@@ -935,6 +958,7 @@ export function StructuredView({
                       ] ?? 0
                     }
                     onEdit={onStructuredEdit}
+                    onValidateField={onValidateField}
                     disabled={editorsDisabled}
                   />
                   <div className={styles.rowActions}>
@@ -998,7 +1022,7 @@ export function StructuredView({
           {problem.message}
         </p>
       ))}
-      <div id="structured-validation" role="status" aria-live="polite" aria-atomic="true">
+      <div id="structured-validation">
         {structuredProblem &&
         !Object.values(structuredDrafts).some(
           (draft) => draft.problem === structuredProblem,
@@ -1009,7 +1033,7 @@ export function StructuredView({
         ) : null}
       </div>
       {structuredSuccess && composingDomainField === null ? (
-        <p className={styles.conversionStatus} role="status" aria-live="polite">
+        <p className={styles.conversionStatus}>
           {structuredSuccess}
         </p>
       ) : null}

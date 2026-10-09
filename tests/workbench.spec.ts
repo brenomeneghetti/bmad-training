@@ -55,6 +55,239 @@ declare global {
   }
 }
 
+test("Story 3.5 Chromium schedules two-second repeated children and strict six-second exact overflow summaries", async ({ page }) => {
+  await installCopyProbe(page);
+  await page.clock.install({ time: new Date("2026-10-08T12:00:00Z") });
+  await page.goto("/");
+  await page.clock.pauseAt(new Date("2026-10-08T12:00:01Z"));
+  await page.getByLabel("Complete HTTP or HTTPS Absolute URL").fill("https://example.com/a");
+  const status = page.locator("#operation-status");
+  await expect(status).toHaveText("URL parsed. 2 Managed Pieces available.");
+  await page.clock.runFor(2_000);
+  const search = page.getByLabel("Search Managed Pieces");
+  await search.focus();
+  const copy = page.getByRole("button", { name: "Copy", exact: true });
+  await copy.dispatchEvent("click");
+  await expect(status).toHaveText("Current URL copied.");
+  await status.evaluate((element) => {
+    Object.defineProperty(window, "__firstStatusChild", { configurable: true, value: element.firstChild });
+  });
+  await copy.dispatchEvent("click");
+  await page.clock.runFor(1_999);
+  expect(await status.evaluate((element) => element.firstChild ===
+    (window as unknown as { __firstStatusChild: Node }).__firstStatusChild)).toBe(true);
+  await page.clock.runFor(1);
+  expect(await status.evaluate((element) => element.firstChild ===
+    (window as unknown as { __firstStatusChild: Node }).__firstStatusChild)).toBe(false);
+  await expect(status).toHaveText("Current URL copied.");
+  for (let i = 0; i < 3; i++) {
+    await copy.dispatchEvent("click");
+    await expect.poll(() => page.evaluate(() => window.__copyProbe.writes.length)).toBe(i + 3);
+  }
+  await expect(page.getByRole("list", { name: "Feedback history" })).toHaveCount(0);
+  await copy.dispatchEvent("click");
+  const history = page.getByRole("list", { name: "Feedback history" });
+  await expect(history.getByRole("listitem")).toHaveCount(5);
+  expect(await history.getByRole("listitem").allTextContents()).toEqual(Array(5).fill("Current URL copied."));
+  await expect(status).toHaveText("Current URL copied.");
+  for (let i = 0; i < 3; i++) {
+    await copy.dispatchEvent("click");
+    await expect.poll(() => page.evaluate(() => window.__copyProbe.writes.length)).toBe(i + 7);
+  }
+  await expect(history.getByRole("listitem")).toHaveCount(8);
+  await page.clock.runFor(1_999);
+  await expect(status).toHaveText("Current URL copied.");
+  await page.clock.runFor(1);
+  await expect(status).toHaveText("5 operation outcomes added to feedback history.");
+  await page.clock.runFor(2_000);
+  await expect(status).toHaveText("3 operation outcomes added to feedback history.");
+  await expect(history.getByRole("listitem")).toHaveCount(8);
+  await expect(search).toBeFocused();
+  await expect(page.getByRole("button", { name: "Undo", exact: true })).toHaveAttribute("aria-disabled", "true");
+});
+
+test("Story 3.5 Chromium coalesces settled Search and synchronization without preempting committed FIFO", async ({ page }) => {
+  await installCopyProbe(page);
+  await page.clock.install({ time: new Date("2026-10-08T12:00:00Z") });
+  await page.goto("/");
+  await page.clock.pauseAt(new Date("2026-10-08T12:00:01Z"));
+  const editor = page.getByLabel("Complete HTTP or HTTPS Absolute URL");
+  await editor.fill("https://example.com/a?x=1&y=2");
+  const search = page.getByLabel("Search Managed Pieces");
+  await search.fill("x");
+  await page.clock.runFor(300);
+  await search.fill("y");
+  await page.clock.runFor(300);
+  await editor.fill("https://example.com/b?x=1&y=2");
+  await page.clock.runFor(100);
+  await editor.fill("https://example.com/c?x=1&y=2");
+  await page.getByRole("button", { name: "Copy", exact: true }).dispatchEvent("click");
+  await expect.poll(() => page.evaluate(() => window.__copyProbe.writes.length)).toBe(1);
+  await page.clock.runFor(1_299);
+  await expect(page.locator("#operation-status")).toHaveText("URL parsed. 4 Managed Pieces available.");
+  await page.clock.runFor(1);
+  await expect(page.locator("#operation-status")).toHaveText("Current URL copied.");
+  await page.clock.runFor(2_000);
+  await expect(page.locator("#operation-status")).toHaveText("1 of 4 Managed Pieces shown.");
+  await page.clock.runFor(2_000);
+  await expect(page.locator("#operation-status")).toHaveText("URL parsed. 4 Managed Pieces available.");
+  await expect(editor).toHaveValue("https://example.com/c?x=1&y=2");
+  await expect(search).toHaveValue("y");
+});
+
+test("Story 3.5 Chromium validation repeats replace nodes and retain help errors through synthetic IME correction", async ({ page }) => {
+  await page.clock.install({ time: new Date("2026-10-08T12:00:00Z") });
+  await page.goto("/");
+  await page.clock.pauseAt(new Date("2026-10-08T12:00:01Z"));
+  const editor = page.getByLabel("Complete HTTP or HTTPS Absolute URL");
+  await editor.fill("https://example.com/a?x=1");
+  await editor.fill("https://");
+  const announcer = page.locator("#validation-announcer");
+  await expect(editor).toHaveAttribute("aria-describedby", "full-url-help error-full-url");
+  await expect(page.locator("#error-full-url")).toBeVisible();
+  await page.clock.runFor(299);
+  await expect(announcer).toBeEmpty();
+  await page.clock.runFor(1);
+  await expect(announcer).toContainText("Draft URL is not valid.");
+  await announcer.evaluate((element) => {
+    Object.defineProperty(window, "__validationChild", { configurable: true, value: element.firstChild });
+  });
+  await editor.press("Enter");
+  expect(await announcer.evaluate((element) => element.firstChild ===
+    (window as unknown as { __validationChild: Node }).__validationChild)).toBe(false);
+  await editor.dispatchEvent("compositionstart");
+  await editor.evaluate((input: HTMLTextAreaElement) => {
+    input.value = "https://valid.example/a?x=1";
+    input.dispatchEvent(new InputEvent("input", { bubbles: true, isComposing: true }));
+  });
+  await page.clock.runFor(500);
+  await expect(page.locator("#error-full-url")).toBeVisible();
+  await editor.dispatchEvent("compositionend", { data: "https://valid.example/a?x=1" });
+  await expect(announcer).toBeEmpty();
+  await expect(editor).not.toHaveAttribute("aria-invalid");
+  await expect(editor).toHaveAttribute("aria-describedby", "full-url-help");
+  for (const label of ["Unicode Domain", "Path Segment 1 of 1", "Key, Query Parameter 1 of 1", "Value, Query Parameter 1 of 1"]) {
+    const field = page.getByLabel(label, { exact: true });
+    const original = await field.inputValue();
+    await field.fill(label === "Unicode Domain" ? "xn--" : "%");
+    const id = await field.getAttribute("aria-errormessage");
+    expect(id).toMatch(/^error-.*-(domain-unicode|path|query-key|query-value)$/);
+    await expect(page.locator(`[id="${id}"]`)).toBeVisible();
+    const help = (await field.getAttribute("aria-describedby"))!.split(" ")[0]!;
+    expect(help).toMatch(/^help-/);
+    await field.press("Enter");
+    await announcer.evaluate((element) => {
+      Object.defineProperty(window, "__validationChild", { configurable: true, value: element.firstChild });
+    });
+    await field.press("Enter");
+    expect(await announcer.evaluate((element) => element.firstChild ===
+      (window as unknown as { __validationChild: Node }).__validationChild)).toBe(false);
+    await field.fill(original);
+    await expect(field).not.toHaveAttribute("aria-invalid");
+    await expect(field).toHaveAttribute("aria-describedby", help);
+    await expect(page.locator(`[id="${id}"]`)).toHaveCount(0);
+  }
+  await page.clock.resume();
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+});
+
+test("Story 3.5 Chromium failure remains independent of invalid Draft queued mutations and guarded recovery", async ({ page }) => {
+  await installCopyProbe(page);
+  await page.goto("/");
+  const editor = page.getByLabel("Complete HTTP or HTTPS Absolute URL");
+  await editor.fill("https://example.com/a?x=1&y=2");
+  await page.getByLabel("Value, Query Parameter 1 of 2", { exact: true }).fill("changed");
+  await editor.fill("https://");
+  await expect(page.locator("#validation-announcer")).toContainText("Draft URL is not valid.");
+  const status = await page.locator("#operation-status").textContent();
+  await page.evaluate(() => { window.__copyProbe.mode = "pending"; });
+  await page.getByRole("button", { name: "Copy", exact: true }).click();
+  const search = page.getByLabel("Search Managed Pieces");
+  await search.focus();
+  await page.evaluate(() => window.__copyProbe.pending.shift()!.reject());
+  await expect(page.getByRole("alert")).toContainText("Couldn’t copy the Last Valid URL.");
+  await expect(page.getByRole("alert")).toContainText("Select the Last Valid URL below");
+  await expect(page.getByRole("alert")).not.toContainText("is selected");
+  await expect(page.getByRole("alert")).toHaveAttribute("aria-atomic", "true");
+  await expect(page.getByLabel("Last Valid URL — copy recovery")).toHaveValue("https://example.com/a?x=changed&y=2");
+  await expect(search).toBeFocused();
+  await expect(page.locator("#operation-status")).toHaveText(status!);
+  await expect(page.locator("#validation-announcer")).toContainText("Draft URL is not valid.");
+  await page.getByRole("button", { name: "Undo", exact: true }).click();
+  await expect(editor).toHaveValue("https://");
+  await expect(page.getByLabel("Value, Query Parameter 1 of 2", { exact: true })).toHaveValue("1");
+  await expect(page.getByRole("alert")).toHaveCount(0);
+  await expect(page.locator("#copy-recovery")).toHaveCount(0);
+  await expect(page.locator("#error-full-url")).toBeVisible();
+});
+
+test("Story 3.5 Chromium dense feedback publishes below 100 ms privately with complete accessible 320px reflow", async ({ page }) => {
+  await installCopyProbe(page);
+  await page.setViewportSize({ width: 320, height: 720 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.addInitScript(() => {
+    const sinks: string[] = [];
+    Object.defineProperty(window, "__feedbackSinks", { value: sinks });
+    Storage.prototype.setItem = () => { sinks.push("storage"); };
+    window.indexedDB.open = () => { sinks.push("indexeddb"); throw new Error("unexpected sink"); };
+    window.caches.open = async () => { sinks.push("cache"); throw new Error("unexpected sink"); };
+    navigator.serviceWorker.register = async () => { sinks.push("service-worker"); throw new Error("unexpected sink"); };
+    navigator.sendBeacon = () => { sinks.push("beacon"); return false; };
+    window.fetch = async () => { sinks.push("fetch"); throw new Error("unexpected sink"); };
+  });
+  await page.goto("/");
+  const requests: string[] = [], diagnostics: string[] = [];
+  page.on("request", (request) => requests.push(request.url()));
+  page.on("console", (message) => diagnostics.push(message.text()));
+  page.on("pageerror", (error) => diagnostics.push(error.message));
+  const url = createCapacityFixture();
+  const editor = page.getByLabel("Complete HTTP or HTTPS Absolute URL");
+  await editor.fill(url);
+  await expect(page.locator("#managed-pieces > li")).toHaveCount(263);
+  const buttons = await page.getByRole("button", { name: "Copy", exact: true }).boundingBox();
+  await page.waitForTimeout(2_000);
+  const publication = await page.evaluate(() => new Promise<number>((resolve, reject) => {
+    const status = document.getElementById("operation-status")!;
+    const start = performance.now();
+    const observer = new MutationObserver(() => {
+      if (status.textContent === "Current URL copied.") {
+        observer.disconnect();
+        resolve(performance.now() - start);
+      }
+    });
+    observer.observe(status, { childList: true, subtree: true });
+    const copy = [...document.querySelectorAll("button")].find((button) => button.textContent === "Copy");
+    if (!copy) { observer.disconnect(); reject(new Error("Copy control missing")); }
+    else copy.click();
+  }));
+  expect(publication).toBeLessThan(100);
+  const after = await page.getByRole("button", { name: "Copy", exact: true }).boundingBox();
+  expect(after?.x).toBe(buttons?.x);
+  expect(after?.y).toBe(buttons?.y);
+  await expect(editor).toHaveValue(url);
+  await expect(page.getByLabel("Key, Query Parameter 260 of 260")).toBeAttached();
+  await page.getByRole("button", { name: "Copy", exact: true }).dispatchEvent("click");
+  await page.getByRole("button", { name: "Copy", exact: true }).dispatchEvent("click");
+  await page.getByRole("button", { name: "Copy", exact: true }).dispatchEvent("click");
+  await page.getByRole("button", { name: "Copy", exact: true }).dispatchEvent("click");
+  await expect(page.getByRole("list", { name: "Feedback history" }).getByRole("listitem")).toHaveCount(5);
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  await page.emulateMedia({ forcedColors: "active", reducedMotion: "reduce" });
+  await page.evaluate(() => {
+    const sheet = document.styleSheets[0]!;
+    sheet.insertRule("* { line-height: 1.5 !important; letter-spacing: .12em !important; word-spacing: .16em !important; }", sheet.cssRules.length);
+    sheet.insertRule("p { margin-bottom: 2em !important; }", sheet.cssRules.length);
+  });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
+  expect(await page.evaluate(() => (window as unknown as { __feedbackSinks: string[] }).__feedbackSinks)).toEqual([]);
+  expect(await page.evaluate(() => [localStorage.length, sessionStorage.length, document.cookie, location.search])).toEqual([0, 0, "", ""]);
+  expect(requests).toEqual([]);
+  expect(diagnostics).toEqual([]);
+  await page.reload();
+  await expect(editor).toHaveValue("");
+  await expect(page.getByRole("list", { name: "Feedback history" })).toHaveCount(0);
+});
+
 test("Story 3.3 Copy exact Current and Last Valid preserves pointer editing and keyboard action order", async ({ page, browser }) => {
   await installCopyProbe(page);
   await page.goto("/");
@@ -130,7 +363,7 @@ test("Story 3.3 Copy serial races supersede queued attempts and stale completion
   await expect.poll(() => page.evaluate(() => window.__copyProbe.writes.length)).toBe(2);
   await expect(page.getByText("Current URL copied.", { exact: true })).toHaveCount(0);
   await page.evaluate(() => { window.__copyProbe.mode = "success"; window.__copyProbe.pending.shift()!.resolve(); });
-  await expect(page.getByText("Current URL copied.", { exact: true })).toBeVisible();
+  await expect(page.getByText("Current URL copied.", { exact: true })).toBeVisible({ timeout: 7_000 });
   await expect(editor).toHaveValue("https://example.com/a?x=1");
   await copy.click();
   await expect.poll(() => page.evaluate(() => window.__copyProbe.writes.length)).toBe(3);
@@ -147,7 +380,7 @@ test("Story 3.4 failure matrix selects exact Last Valid recovery and retry prese
     await editor.fill("https://");
     await page.evaluate((mode) => { window.__copyProbe.mode = mode; }, mode);
     await copy.click();
-    await expect(page.getByRole("alert")).toContainText("Last Valid URL could not be copied.");
+    await expect(page.getByRole("alert")).toContainText("Couldn’t copy the Last Valid URL.");
     const recovery = page.getByLabel("Last Valid URL — copy recovery", { exact: true });
     await expect(recovery).toHaveValue("https://example.com/a");
     await expect(recovery).toBeFocused();
@@ -436,7 +669,7 @@ test("Story 3.3 dense Copy edit Undo exact writes private complete rows below 10
       const start = performance.now(); button.click(); return performance.now() - start;
     });
     expect(elapsed).toBeLessThan(100);
-    await expect(page.getByText(message, { exact: true })).toBeVisible();
+    await expect(page.getByText(message, { exact: true }).first()).toBeVisible({ timeout: 7_000 });
   };
   const ids = await page.locator("#managed-pieces > li").evaluateAll((rows) => rows.map((row) => row.getAttribute("data-piece-id")));
   const originalLastValue = await page.getByLabel("Value, Query Parameter 260 of 260").inputValue();
@@ -502,7 +735,7 @@ test("Story 3.2 both Undo paths restore every operation-specific focus without n
       await expect(editor).toHaveValue(undoFocusFixture);
       await expect(page.locator(`#${destination}`)).toBeFocused();
       await expect(undo).toHaveAttribute("aria-disabled", "true");
-      await expect(page.getByText(/Undid /)).toHaveCount(1);
+      await expect(page.getByText(/Undid: /)).toHaveCount(1);
       expect(await page.locator("#managed-pieces > li").evaluateAll((rows) =>
         rows.map((row) => row.getAttribute("data-piece-id")))).toEqual(ids);
     }
@@ -620,7 +853,7 @@ test("Story 3.2 filtering retains Search invalid Draft backward selection and va
       expect(await editor.evaluate((input: HTMLTextAreaElement) =>
         [input.selectionStart, input.selectionEnd, input.selectionDirection])).toEqual([2, 5, "backward"]);
       expect(await page.locator("#error-full-url").textContent()).toBe(error);
-      await expect(page.getByText(/Undid Query Parameter addition.*Draft URL is unchanged/)).toBeVisible();
+      await expect(page.getByText(/Undid: Query Parameter addition.*Draft URL is unchanged/)).toBeVisible();
       await expect(page.getByText(/Restored target is hidden by Search/)).toBeVisible();
       await expect(undo).toHaveAttribute("aria-disabled", "true");
     }
@@ -690,7 +923,7 @@ test("Story 3.1 Undo remains inactive during native composition in every URL edi
     await expect(page.getByText("Undo inactive: finish text composition first.")).toBeVisible();
     await undo.evaluate((button: HTMLButtonElement) => button.click());
     await expect(composing).toHaveValue(next);
-    await expect(page.getByText(/Undid /)).toHaveCount(0);
+    await expect(page.getByText(/Undid: /)).toHaveCount(0);
     await composing.evaluate((input, value) => {
       input.dispatchEvent(new CompositionEvent("compositionend", { bubbles: true, data: value }));
     }, next);
@@ -779,7 +1012,7 @@ test("Story 3.1 Undo preserves invalid Draft selection errors Search and accessi
   expect(await page.locator("#error-full-url").textContent()).toBe(error);
   await expect(page.getByLabel("Search Managed Pieces")).toHaveValue("a");
   await expect(page.getByLabel("Path Segment 1 of 1")).toHaveValue("a");
-  await expect(page.getByText(/Undid Full URL edit.*Draft URL is unchanged/)).toBeVisible();
+  await expect(page.getByText(/Undid: Full URL edit.*Draft URL is unchanged/)).toBeVisible();
   await expect(undo).toHaveAttribute("aria-disabled", "true");
   await page.getByRole("button", { name: "Clear Search" }).click();
   await expect(page.locator("#managed-pieces > li")).toHaveCount(4);
@@ -1115,7 +1348,7 @@ test("intake preserves lossless semantics and rejects replacement", async ({ pag
     await page.keyboard.press("Enter");
     await expect(page.locator(`#move-down-${targetId}`)).toBeFocused();
     await expect(page.getByLabel("Search Managed Pieces")).toHaveValue("%2F");
-    await expect(page.getByText(/Last Valid URL and Structured View updated. Draft unchanged./)).toBeVisible();
+    await expect(page.getByText(/Moved Query Parameter 2 of 4 to position 1 of 4/)).toBeVisible();
     await page.locator("#add-query-after").focus();
     await page.keyboard.press("Space");
     await expect(page.getByLabel("Search Managed Pieces")).toHaveValue("");
@@ -1225,7 +1458,7 @@ test("Story 2.7 capacity rejection preserves invalid Draft, selection, identitie
     await expect(search).toHaveValue("parameter-259");
     await expect(page.locator("#add-query-after")).toBeFocused();
     await expect(page.locator("#managed-pieces > li")).toHaveCount(1);
-    await expect(page.locator("#structured-validation")).toContainText(/20,000/);
+    await expect(page.getByRole("alert")).toContainText(/20,000/);
     await expect(page.getByText(/Query Parameter \d+ added/)).toHaveCount(0);
     await page.getByRole("button", { name: "Clear Search" }).click();
     const key = page.getByLabel("Key, Query Parameter 260 of 260");
@@ -1350,8 +1583,8 @@ test("Domain editing is synchronized, correctable, IME-safe, and host-only", asy
     await expect(synchronized).toContainText(
       "Unicode Domain, ASCII/Punycode Domain, and Full URL updated",
     );
-    await expect(synchronized).toHaveAttribute("role", "status");
-    await expect(synchronized).toHaveAttribute("aria-live", "polite");
+    await expect(synchronized).not.toHaveAttribute("role");
+    await expect(page.locator("#operation-status")).toHaveAttribute("aria-live", "polite");
     await ascii.evaluate((input) => {
       const field = input as HTMLInputElement;
       field.focus();
@@ -1857,7 +2090,7 @@ test("reorders Query Parameters by keyboard and pointer activation, honoring bou
   await page.keyboard.press("Enter");
   await expect(fullUrl).toHaveValue("https://example.com/a?dup=1&z=3&dup=2");
   await expect(
-    page.getByRole("status").filter({ hasText: /moved from position 2 to position 3 of 3/ }),
+    page.getByRole("status").filter({ hasText: /Moved Query Parameter 2 of 3 to position 3 of 3/ }),
   ).toBeVisible();
   await expect(
     page.getByRole("button", { name: /Move Query Parameter at position 3 of 3 up/ }),
@@ -2098,7 +2331,7 @@ test("structured editing handles search, selections, word deletion, caret, and d
   await expect(value).toBeFocused();
   await expect(value).toHaveValue("%2F😀omega");
   await expect(page.locator("#managed-pieces > li")).toHaveCount(4);
-  await expect(page.locator("#search-status")).toContainText(
+  await expect(page.locator("#operation-status")).toContainText(
     "4 of 4 Managed Pieces shown.",
   );
 
@@ -2216,7 +2449,7 @@ test("structured editing handles search, selections, word deletion, caret, and d
   await value.press("End");
   await page.keyboard.insertText("%");
   await expect(search).toHaveValue("");
-  await expect(page.locator("#search-status")).toContainText(
+  await expect(page.locator("#operation-status")).toContainText(
     "4 of 4 Managed Pieces shown.",
   );
   await expect(value).toHaveAttribute("aria-invalid", "true");
@@ -2301,7 +2534,7 @@ test("an invalid Draft survives structured Add with its selection, error, and fo
     [element.selectionStart, element.selectionEnd])).toEqual([3, 5]);
   await expect(page.locator("#error-full-url")).toHaveText(message!);
   await expect(page.getByLabel("Key, Query Parameter 2 of 2")).toBeFocused();
-  await expect(page.getByText(/Last Valid URL and Structured View updated. Draft unchanged./))
+  await expect(page.getByText(/Last Valid URL and Structured View updated. Draft URL is unchanged./))
     .toBeVisible();
   await editor.fill("https://example.com/corrected?x=1&y=2");
   await expect(page.locator("#error-full-url")).toHaveCount(0);

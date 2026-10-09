@@ -42,8 +42,10 @@ the available native JSON reports and separate command diagnostics under
 - `inventory.json` lists every exact runner/file/full-title/project identity
   and multiplicity, **including tests not mapped to cells**. It is a reviewed
   expectation; the producer never learns expected coverage from its own run.
-- `coverage.json` retains the preceding 48 cells and adds four Story 3.4 cells
-  (52 total), mapping exact executed identities,
+  Authoring order is immaterial: exact identity/multiplicity comparison uses
+  the same canonical ordering on both inventories.
+- `coverage.json` retains the preceding 52 cells and adds four Story 3.5 cells
+  (56 total), mapping exact executed identities,
   including the approved Chromium browser project. File existence and matching aggregate counts
   cannot substitute for these identities.
 - Story 3.1 adds exact-history restoration, guarded Draft preservation,
@@ -94,8 +96,22 @@ the available native JSON reports and separate command diagnostics under
   and 320px reflow without weakening CSP. Integrity/lifecycle negative tests
   reject missing cells and unexecuted exact recovery identities. These are
   injected clipboard outcomes and synthetic events, not native clipboard,
-  manual AT/IME, OS/mobile or additional-browser proof. Outcome scheduling
-  remains Story 3.5; release certification remains Story 3.6.
+  manual AT/IME, OS/mobile or additional-browser proof.
+- Story 3.5 pins reducer-owned per-class feedback scheduling, 300 ms same-class
+  pending coalescing, committed FIFO precedence, two-second selected exposure,
+  and strictly-greater-than-six-second exact-once overflow promotion. Persistent
+  feedback history is separate from mutation History and Undo. Dedicated polite,
+  assertive validation and actionable-failure outputs remain independent.
+  Tests check actual child-node replacement, retained field help/error references,
+  300 ms settled validation, explicit resubmission, synthetic IME, stale parse
+  guards, exact Copy recovery and operation-defined focus. Chromium tests use
+  controlled clocks for deterministic timing and a real monotonic measurement
+  for below-100-ms Copy publication at 20,000 characters/260 queries, with
+  privacy sinks, reload clearing, axe, forced colors, reduced motion and 320px
+  text-spacing reflow. Missing cells and unexecuted identities fail integrity
+  checks. These are DOM/browser observations, not actual AT speech or native
+  clipboard/IME, OS/mobile or additional-browser certification. Release
+  certification remains Story 3.6.
 - Native reports, diagnostics and observed version command outcomes are hashed.
   Every command is bound to the same source/build/delivery identities. Paths
   reject traversal, absolute paths, symlinks and special files before reading.

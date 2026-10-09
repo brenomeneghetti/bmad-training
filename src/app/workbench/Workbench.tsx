@@ -15,7 +15,7 @@ import {
   sessionReducer,
   structuredUpdateMessage,
 } from "../../core/session";
-import type { LosslessUrl, ManagedPieceRemoval, QueryPiece } from "../../core/url";
+import type { ManagedPieceRemoval, QueryPiece } from "../../core/url";
 import { ValidationMessage } from "../feedback/ValidationMessage";
 import { StructuredView } from "../pieces/StructuredView";
 import { buildManagedPieces, filterManagedPieces } from "../pieces/search";
@@ -28,7 +28,9 @@ import { focusRestoredTarget } from "../../platform/focus";
 import type { SessionAction } from "../../core/session";
 
 export function Workbench() {
-  const [state, dispatch] = useReducer(sessionReducer, initialSessionState);
+  const [state, rawDispatch] = useReducer(sessionReducer, initialSessionState);
+  const dispatch = useCallback((action: SessionAction) =>
+    rawDispatch({ ...action, now: action.now ?? performance.now() }), []);
   const stateRef = useRef(state);
   stateRef.current = state;
   const adapterFocusing = useRef(false);
@@ -44,12 +46,6 @@ export function Workbench() {
   const fullUrlComposing = useRef(false);
   const fullUrlEditorRef = useRef<HTMLTextAreaElement>(null);
   const copyRecoveryRef = useRef<HTMLTextAreaElement>(null);
-  const [searchStatuses, setSearchStatuses] = useState<readonly {
-    readonly id: number;
-    readonly message: string;
-    readonly snapshot: LosslessUrl | null;
-    readonly epoch: number | null;
-  }[]>([]);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const pendingRemovalFocus = useRef<{
     readonly epoch: number;
@@ -78,8 +74,6 @@ export function Workbench() {
     readonly revision: number;
     readonly epoch: number;
   } | null>(null);
-  const announcementId = useRef(0);
-  const announcementTimers = useRef(new Map<number, number>());
   const explicitClear = useRef(false);
   const previousSearchTerm = useRef("");
   const allPieces = useMemo(
@@ -96,6 +90,9 @@ export function Workbench() {
     state.phase === "no-session" ||
     state.phase === "parsing";
   const invalidDraft = state.snapshot !== null && state.problem !== null;
+  const operationFailure = state.structuredProblem &&
+    !Object.values(state.structuredDrafts).some((draft) => draft.problem === state.structuredProblem)
+    ? state.structuredProblem : null;
 
   const cancelPendingOperationFocus = () => {
     pendingRemovalFocus.current = null;
@@ -119,6 +116,7 @@ export function Workbench() {
 
   useLayoutEffect(() => {
     const send = (action: SessionAction) => {
+      action = { ...action, now: performance.now() };
       stateRef.current = sessionReducer(stateRef.current, action);
       dispatch(action);
     };
@@ -190,6 +188,7 @@ export function Workbench() {
       const target = composingTarget.current;
       if (target instanceof Node && !target.isConnected) {
         composingTarget.current = null;
+        dispatch({ type: "feedbackComposition", composing: false });
         setWorkbenchComposing(false);
       }
       routeUndo(event, {
@@ -206,12 +205,14 @@ export function Workbench() {
     const workbench = document;
     const start = (event: CompositionEvent) => {
       composingTarget.current = event.target;
+      dispatch({ type: "feedbackComposition", composing: true });
       dispatch({ type: "cancelFocus" });
       setWorkbenchComposing(true);
     };
     const end = (event: CompositionEvent) => {
       if (composingTarget.current !== event.target) return;
       composingTarget.current = null;
+      dispatch({ type: "feedbackComposition", composing: false });
       setWorkbenchComposing(false);
     };
     workbench.addEventListener("compositionstart", start, true);
@@ -226,6 +227,7 @@ export function Workbench() {
     const target = composingTarget.current;
     if (target instanceof Node && !target.isConnected) {
       composingTarget.current = null;
+      dispatch({ type: "feedbackComposition", composing: false });
       setWorkbenchComposing(false);
     }
   });
@@ -235,6 +237,7 @@ export function Workbench() {
     const observer = new MutationObserver(() => {
       if (composingTarget.current instanceof Node && !composingTarget.current.isConnected) {
         composingTarget.current = null;
+        dispatch({ type: "feedbackComposition", composing: false });
         setWorkbenchComposing(false);
       }
     });
@@ -288,7 +291,6 @@ export function Workbench() {
     if (pending.shouldClearSearch) {
       explicitClear.current = true;
       setSearchTerm("");
-      clearAnnouncements();
       announce(
         `${allPieces.length} of ${allPieces.length} Managed Pieces shown.`,
         true,
@@ -387,7 +389,6 @@ export function Workbench() {
     });
     const parse = prepareParse(afterInputChanged);
     const completion = parse.complete();
-    if (value !== state.input && completion.result.ok) clearAnnouncements();
     // Native input/change pairs can arrive before React's next render in Firefox.
     flushSync(() => {
       dispatch({ type: "inputChanged", value });
@@ -441,36 +442,28 @@ export function Workbench() {
     };
   });
 
-  const announce = useCallback((message: string, preserveAcrossSnapshot = false) => {
-    announcementId.current += 1;
-    const id = announcementId.current;
-    setSearchStatuses((statuses) => [
-      ...statuses,
-      {
-        id,
-        message,
-        snapshot: preserveAcrossSnapshot ? null : state.snapshot,
-        epoch: preserveAcrossSnapshot ? state.epoch : null,
-      },
-    ]);
-    announcementTimers.current.set(
-      id,
-      window.setTimeout(() => {
-        setSearchStatuses((statuses) =>
-          statuses.filter((status) => status.id !== id),
-        );
-        announcementTimers.current.delete(id);
-      }, 2_100),
-    );
-  }, [state.epoch, state.snapshot]);
+  const announce = useCallback((message: string, _preserveAcrossSnapshot = false) => {
+    dispatch({ type: "feedbackSearch", message });
+  }, [dispatch]);
 
-  const clearAnnouncements = () => {
-    setSearchStatuses([]);
-    for (const timer of announcementTimers.current.values()) {
-      window.clearTimeout(timer);
+  useLayoutEffect(() => {
+    if (state.feedback.current && !state.feedback.current.presented) {
+      dispatch({ type: "feedbackPresented", id: state.feedback.current.id });
     }
-    announcementTimers.current.clear();
-  };
+  }, [state.feedback.current, dispatch]);
+
+  useEffect(() => {
+    const deadlines = [
+      ...(state.feedback.pending.length && state.feedback.current
+        ? [state.feedback.current.started + 2_000] : []),
+      ...(state.feedback.validationPending && !state.feedback.composing
+        ? [state.feedback.validationPending.due] : []),
+    ];
+    if (!deadlines.length) return;
+    const timer = window.setTimeout(() => dispatch({ type: "feedbackTick" }),
+      Math.max(0, Math.min(...deadlines) - performance.now()));
+    return () => window.clearTimeout(timer);
+  }, [state.feedback, dispatch]);
 
   const clearSearch = () => {
     if (searchTerm === "") return;
@@ -505,15 +498,12 @@ export function Workbench() {
       const destinationPosition =
         direction === "up" ? target.sourcePosition - 1 : target.sourcePosition + 1;
       if (destinationPosition >= 1 && destinationPosition <= target.sourceTotal) {
-        const identity = target.piece.equalsPresent
-          ? `${target.piece.rawKey}=${target.piece.rawValue}`
-          : target.piece.rawKey;
         pendingMoveFocus.current = {
           epoch: state.epoch,
           revision: state.revision,
           pieceId,
           direction,
-          successMessage: `Query Parameter "${identity}" moved from position ${target.sourcePosition} to position ${destinationPosition} of ${target.sourceTotal}. ${structuredUpdateMessage(state)}`,
+          successMessage: `Moved Query Parameter ${target.sourcePosition} of ${target.sourceTotal} to position ${destinationPosition} of ${target.sourceTotal}. ${structuredUpdateMessage(state)}`,
         };
       } else {
         pendingMoveFocus.current = null;
@@ -525,7 +515,7 @@ export function Workbench() {
   };
 
   useEffect(() => {
-    if (!state.snapshot) return;
+    if (!state.snapshot || workbenchComposing) return;
     if (searchTerm === "") {
       if (explicitClear.current) {
         explicitClear.current = false;
@@ -538,7 +528,9 @@ export function Workbench() {
     previousSearchTerm.current = searchTerm;
     const timer = window.setTimeout(() => {
       announce(
-        `${visiblePieces.length} of ${allPieces.length} Managed Pieces shown.`,
+        visiblePieces.length === 0
+          ? `0 of ${allPieces.length} Managed Pieces shown. No Managed Piece matches ‘${searchTerm}’.`
+          : `${visiblePieces.length} of ${allPieces.length} Managed Pieces shown.`,
       );
     }, 300);
     return () => window.clearTimeout(timer);
@@ -548,16 +540,8 @@ export function Workbench() {
     searchTerm,
     state.snapshot,
     visiblePieces.length,
+    workbenchComposing,
   ]);
-
-  useEffect(
-    () => () => {
-      for (const timer of announcementTimers.current.values()) {
-        window.clearTimeout(timer);
-      }
-    },
-    [],
-  );
 
   return (
     <main
@@ -611,7 +595,7 @@ export function Workbench() {
           maxLength={20_000}
           dir="ltr"
         />
-        <div id="full-url-validation" aria-live="polite" aria-atomic="true">
+        <div id="full-url-validation">
           {state.problem ? (
             <ValidationMessage id="error-full-url">
               {invalidDraft
@@ -662,16 +646,20 @@ export function Workbench() {
         <p id="copy-help">{state.snapshot
           ? "Copy the Current URL, or Last Valid URL while the Draft differs."
           : "Copy inactive: enter a valid URL first."}</p>
-        <div role="status" aria-live="polite" aria-atomic="true">
-          {state.copySuccess ? <span key={state.latestCopyAttempt}>{state.copySuccess}</span> : null}
+        <div id="operation-status" role="status" aria-live="polite" aria-atomic="true">
+          {state.feedback.current ? <span key={state.feedback.current.id}>{state.feedback.current.message}</span> : null}
         </div>
-        {state.copyFailure ? <p role="alert" className={styles.copyFailure}>
-          {state.copyFailure.source === "current" ? "Current URL" : "Last Valid URL"} could not be copied.
+        <div id="actionable-failure" role={state.copyFailure || operationFailure ? "alert" : undefined} aria-atomic="true">
+        {state.copyFailure ? <p className={styles.copyFailure}>
+          Couldn’t copy the {state.copyFailure.source === "current" ? "Current URL" : "Last Valid URL"}.
+          {" "}Select the {state.copyFailure.source === "current" ? "Current URL" : "Last Valid URL"} below, then use Copy from your device or press Ctrl+C/Command+C.
           {" "}{state.copyFailure.outcome === "timeout" || state.copyFailure.outcome === "fenced"
             ? "The attempt timed out or was blocked by a pending clipboard write. That write cannot be cancelled and may overwrite text you copy manually. Activate Copy to retry after that write settles."
             : "Check clipboard access and activate Copy to retry."}
           {" "}The attempted URL is available below for native copy.
         </p> : null}
+        {operationFailure ? <p className={styles.copyFailure}>{operationFailure.message}</p> : null}
+        </div>
         {state.copyRecovery ? <div className={styles.copyRecovery}>
           <label htmlFor="copy-recovery">
             {state.copyRecovery.source === "current" ? "Current URL" : "Last Valid URL"} — copy recovery
@@ -690,15 +678,12 @@ export function Workbench() {
             }}
             aria-describedby="copy-recovery-help" />
         </div> : null}
-        <div role="status" aria-live="polite" aria-atomic="true">
-          {state.phase === "active"
-            ? `URL parsed. ${
-                1 +
-                (state.snapshot?.path.length ?? 0) +
-                (state.snapshot?.query.length ?? 0)
-              } Managed Pieces available.`
-            : ""}
-        </div>
+        {state.feedback.history.length ? <div className={styles.feedbackHistory}>
+          <h3>Feedback history</h3>
+          <ol aria-label="Feedback history">
+            {state.feedback.history.map((outcome) => <li key={outcome.id}>{outcome.message}</li>)}
+          </ol>
+        </div> : null}
       </section>
 
       <StructuredView
@@ -716,7 +701,6 @@ export function Workbench() {
           if (searchTerm !== "") {
             explicitClear.current = true;
             setSearchTerm("");
-            clearAnnouncements();
             announce(
               `${allPieces.length} of ${allPieces.length} Managed Pieces shown.`,
               true,
@@ -727,30 +711,17 @@ export function Workbench() {
         onRemovePiece={removePiece}
         onAddQueryPiece={addQueryPiece}
         onMoveQueryPiece={moveQueryPiece}
-        structuredProblem={state.structuredProblem}
-        structuredSuccess={state.structuredSuccess}
+        structuredProblem={operationFailure ? null : state.structuredProblem}
+        structuredSuccess={state.feedback.current?.message === state.structuredSuccess ||
+          state.feedback.history.some((item) => item.message === state.structuredSuccess)
+          ? null : state.structuredSuccess}
+        onValidateField={(key) => dispatch({ type: "validateField", key })}
         editorsDisabled={editorsDisabled}
       />
-      <div
-        id="search-status"
-        className={styles.visuallyHidden}
-      >
-        {searchStatuses
-          .filter(
-            (status) =>
-              status.snapshot === state.snapshot ||
-              (status.snapshot === null && status.epoch === state.epoch),
-          )
-          .map((status) => (
-            <span
-              key={status.id}
-              role="status"
-              aria-live="polite"
-              aria-atomic="true"
-            >
-              {status.message}
-            </span>
-          ))}
+      <div id="validation-announcer" className={styles.visuallyHidden}
+        aria-live="assertive" aria-atomic="true">
+        {state.feedback.validation
+          ? <span key={state.feedback.validation.id}>{state.feedback.validation.message}</span> : null}
       </div>
     </main>
   );

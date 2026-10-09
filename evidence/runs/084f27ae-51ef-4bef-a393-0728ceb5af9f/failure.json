@@ -1,0 +1,1 @@
+{"code":"VALIDATION_FAILED","message":"Unmapped test identity in story-1-5-complete-structured-view: [\"src/app/workbench/Workbench.test.tsx\",\"URL Workbench removes old-session announcements when the snapshot is replaced\",\"vitest\"]"}

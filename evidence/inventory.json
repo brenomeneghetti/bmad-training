@@ -1,4 +1,26 @@
 [
+  { "runner": "node", "file": "evidence/validate.test.mjs", "title": "accepts reordered reviewed identities but still rejects missing multiplicity", "project": "node", "multiplicity": 1 },
+  { "runner": "vitest", "file": "src/core/session/session.test.ts", "title": "Story 3.5 feedback authority publishes all accepted outcomes without changing mutation Undo Copy or stale parse authority", "project": "vitest", "multiplicity": 1 },
+  { "runner": "vitest", "file": "src/core/session/session.test.ts", "title": "Story 3.5 feedback authority coalesces only same pending classes within 300 ms and preserves committed FIFO minimum exposure", "project": "vitest", "multiplicity": 1 },
+  { "runner": "vitest", "file": "src/core/session/session.test.ts", "title": "Story 3.5 feedback authority promotes only strictly beyond six seconds including current exactly once with accurate repeated summaries", "project": "vitest", "multiplicity": 1 },
+  { "runner": "vitest", "file": "src/core/session/session.test.ts", "title": "Story 3.5 feedback authority settles validation after 300 ms suppresses composition and unchanged input and repeats explicit submissions", "project": "vitest", "multiplicity": 1 },
+  { "runner": "vitest", "file": "src/core/session/session.test.ts", "title": "Story 3.5 feedback authority keeps failure validation queue and exact attempted recovery independent until relevant state changes", "project": "vitest", "multiplicity": 1 },
+  { "runner": "vitest", "file": "src/app/workbench/Workbench.test.tsx", "title": "URL Workbench Story 3.5 isolates settled assertive validation with persistent associations actual repeated children and IME correction", "project": "vitest", "multiplicity": 1 },
+  { "runner": "vitest", "file": "src/app/workbench/Workbench.test.tsx", "title": "URL Workbench Story 3.5 queues actual repeated Copy children for two seconds and promotes overflow without taking focus", "project": "vitest", "multiplicity": 1 },
+  { "runner": "vitest", "file": "src/app/workbench/Workbench.test.tsx", "title": "URL Workbench Story 3.5 failure recovery never overwrites assertive validation or the polite queue", "project": "vitest", "multiplicity": 1 },
+  { "runner": "playwright", "file": "tests/workbench.spec.ts", "title": "Story 3.5 Chromium schedules two-second repeated children and strict six-second exact overflow summaries", "project": "chromium", "multiplicity": 1 },
+  { "runner": "playwright", "file": "tests/workbench.spec.ts", "title": "Story 3.5 Chromium coalesces settled Search and synchronization without preempting committed FIFO", "project": "chromium", "multiplicity": 1 },
+  { "runner": "playwright", "file": "tests/workbench.spec.ts", "title": "Story 3.5 Chromium validation repeats replace nodes and retain help errors through synthetic IME correction", "project": "chromium", "multiplicity": 1 },
+  { "runner": "playwright", "file": "tests/workbench.spec.ts", "title": "Story 3.5 Chromium failure remains independent of invalid Draft queued mutations and guarded recovery", "project": "chromium", "multiplicity": 1 },
+  { "runner": "playwright", "file": "tests/workbench.spec.ts", "title": "Story 3.5 Chromium dense feedback publishes below 100 ms privately with complete accessible 320px reflow", "project": "chromium", "multiplicity": 1 },
+  { "runner": "node", "file": "evidence/validate.test.mjs", "title": "rejects missing Story 3.5 scheduling-overflow evidence after rehashing", "project": "node", "multiplicity": 1 },
+  { "runner": "node", "file": "evidence/validate.test.mjs", "title": "rejects missing Story 3.5 validation-repeat evidence after rehashing", "project": "node", "multiplicity": 1 },
+  { "runner": "node", "file": "evidence/validate.test.mjs", "title": "rejects missing Story 3.5 independent-channels evidence after rehashing", "project": "node", "multiplicity": 1 },
+  { "runner": "node", "file": "evidence/validate.test.mjs", "title": "rejects missing Story 3.5 private-capacity evidence after rehashing", "project": "node", "multiplicity": 1 },
+  { "runner": "node", "file": "evidence/validate.test.mjs", "title": "rejects unexecuted Story 3.5 scheduling-overflow identity despite other passing tests", "project": "node", "multiplicity": 1 },
+  { "runner": "node", "file": "evidence/validate.test.mjs", "title": "rejects unexecuted Story 3.5 validation-repeat identity despite other passing tests", "project": "node", "multiplicity": 1 },
+  { "runner": "node", "file": "evidence/validate.test.mjs", "title": "rejects unexecuted Story 3.5 independent-channels identity despite other passing tests", "project": "node", "multiplicity": 1 },
+  { "runner": "node", "file": "evidence/validate.test.mjs", "title": "rejects unexecuted Story 3.5 private-capacity identity despite other passing tests", "project": "node", "multiplicity": 1 },
   { "runner": "vitest", "file": "src/app/workbench/inputArbiter.test.ts", "title": "Story 3.2 input arbiter honors inherited editability plaintext-only and nested noneditable islands", "project": "vitest", "multiplicity": 1 },
   { "runner": "vitest", "file": "src/app/workbench/inputArbiter.test.ts", "title": "Story 3.2 input arbiter leaves excluded Alt chord untouched", "project": "vitest", "multiplicity": 1 },
   { "runner": "vitest", "file": "src/app/workbench/inputArbiter.test.ts", "title": "Story 3.2 input arbiter leaves excluded combined modifiers chord untouched", "project": "vitest", "multiplicity": 1 },
@@ -504,7 +526,7 @@
   {
     "runner": "vitest",
     "file": "src/app/workbench/Workbench.test.tsx",
-    "title": "URL Workbench removes old-session announcements when the snapshot is replaced",
+    "title": "URL Workbench retains selected Search exposure across synchronized snapshot changes",
     "project": "vitest",
     "multiplicity": 1
   },
@@ -546,7 +568,7 @@
   {
     "runner": "vitest",
     "file": "src/app/workbench/Workbench.test.tsx",
-    "title": "URL Workbench settles repeatable announcements without replacing live entries or moving focus",
+    "title": "URL Workbench settles repeatable announcements by replacing actual children without moving focus",
     "project": "vitest",
     "multiplicity": 1
   },
@@ -2093,7 +2115,7 @@
   {
     "runner": "node",
     "file": "evidence/validate.test.mjs",
-    "title": "accepts complete clean-checkout proof with exact inventory and all 52 cells",
+    "title": "accepts complete clean-checkout proof with exact inventory and all 56 cells",
     "project": "node",
     "multiplicity": 1
   },

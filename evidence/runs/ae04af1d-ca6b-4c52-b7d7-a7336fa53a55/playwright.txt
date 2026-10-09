@@ -1,0 +1,209 @@
+argv: ["pnpm","exec","playwright","test","tests/workbench.spec.ts","--reporter=json"]
+exitCode: 1
+signal: null
+
+Running 52 tests using 1 worker
+
+[1/52] [chromium] › tests/workbench.spec.ts:58:1 › Story 3.5 Chromium schedules two-second repeated children and strict six-second exact overflow summaries
+[2/52] [chromium] › tests/workbench.spec.ts:109:1 › Story 3.5 Chromium coalesces settled Search and synchronization without preempting committed FIFO
+[3/52] [chromium] › tests/workbench.spec.ts:138:1 › Story 3.5 Chromium validation repeats replace nodes and retain help errors through synthetic IME correction
+[4/52] [chromium] › tests/workbench.spec.ts:194:1 › Story 3.5 Chromium failure remains independent of invalid Draft queued mutations and guarded recovery
+[5/52] [chromium] › tests/workbench.spec.ts:222:1 › Story 3.5 Chromium dense feedback publishes below 100 ms privately with complete accessible 320px reflow
+[6/52] [chromium] › tests/workbench.spec.ts:289:1 › Story 3.3 Copy exact Current and Last Valid preserves pointer editing and keyboard action order
+[7/52] [chromium] › tests/workbench.spec.ts:347:1 › Story 3.3 Copy serial races supersede queued attempts and stale completions before Undo focus
+  1) [chromium] › tests/workbench.spec.ts:347:1 › Story 3.3 Copy serial races supersede queued attempts and stale completions before Undo focus 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByText('Current URL copied.', { exact: true })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByText('Current URL copied.', { exact: true }) with timeout 5000ms
+      - waiting for getByText('Current URL copied.', { exact: true })
+
+
+      362 |   await expect(page.getByText("Current URL copied.", { exact: true })).toHaveCount(0);
+      363 |   await page.evaluate(() => { window.__copyProbe.mode = "success"; window.__copyProbe.pending.shift()!.resolve(); });
+    > 364 |   await expect(page.getByText("Current URL copied.", { exact: true })).toBeVisible();
+          |                                                                        ^
+      365 |   await expect(editor).toHaveValue("https://example.com/a?x=1");
+      366 |   await copy.click();
+      367 |   await expect.poll(() => page.evaluate(() => window.__copyProbe.writes.length)).toBe(3);
+        at /home/blackdude/Documents/OEProjects/bmad-training/tests/workbench.spec.ts:364:72
+
+    Error Context: test-results/workbench-Story-3-3-Copy-s-6da61-mpletions-before-Undo-focus-chromium/error-context.md
+
+
+[8/52] [chromium] › tests/workbench.spec.ts:371:1 › Story 3.4 failure matrix selects exact Last Valid recovery and retry preserves native focus
+[9/52] [chromium] › tests/workbench.spec.ts:413:1 › Story 3.4 Current recovery retains native selection across Search and clears on mutation retry reload
+[10/52] [chromium] › tests/workbench.spec.ts:477:1 › Story 3.4 timeout fence exposes newest exact recovery and late resolve reject cannot focus or succeed
+[11/52] [chromium] › tests/workbench.spec.ts:515:1 › Story 3.4 interrupted failures retain manual recovery without stealing focus and obsolete writes stay silent
+[12/52] [chromium] › tests/workbench.spec.ts:554:1 › Story 3.4 dense recovery publishes and selects privately below 100 ms with accessible 320px complete rendering
+[13/52] [chromium] › tests/workbench.spec.ts:644:1 › Story 3.3 dense Copy edit Undo exact writes private complete rows below 100 ms at 320px
+  2) [chromium] › tests/workbench.spec.ts:644:1 › Story 3.3 dense Copy edit Undo exact writes private complete rows below 100 ms at 320px 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByText('Current URL copied.', { exact: true })
+    Expected: visible
+    Error: strict mode violation: getByText('Current URL copied.', { exact: true }) resolved to 4 elements:
+        1) <span>Current URL copied.</span> aka getByRole('region', { name: 'Actions' }).locator('span')
+        2) <li>Current URL copied.</li> aka getByText('Current URL copied.').nth(1)
+        3) <li>Current URL copied.</li> aka getByText('Current URL copied.').nth(2)
+        4) <li>Current URL copied.</li> aka getByText('Current URL copied.').nth(3)
+
+    Call log:
+      - Expect "toBeVisible" getByText('Current URL copied.', { exact: true }) with timeout 5000ms
+      - waiting for getByText('Current URL copied.', { exact: true })
+
+
+      668 |     });
+      669 |     expect(elapsed).toBeLessThan(100);
+    > 670 |     await expect(page.getByText(message, { exact: true })).toBeVisible();
+          |                                                            ^
+      671 |   };
+      672 |   const ids = await page.locator("#managed-pieces > li").evaluateAll((rows) => rows.map((row) => row.getAttribute("data-piece-id")));
+      673 |   const originalLastValue = await page.getByLabel("Value, Query Parameter 260 of 260").inputValue();
+        at activate (/home/blackdude/Documents/OEProjects/bmad-training/tests/workbench.spec.ts:670:60)
+        at /home/blackdude/Documents/OEProjects/bmad-training/tests/workbench.spec.ts:679:3
+
+    Error Context: test-results/workbench-Story-3-3-dense--bd89f--rows-below-100-ms-at-320px-chromium/error-context.md
+
+
+[14/52] [chromium] › tests/workbench.spec.ts:696:1 › Story 3.2 both Undo paths restore every operation-specific focus without new history
+[15/52] [chromium] › tests/workbench.spec.ts:743:1 › Story 3.2 routing leaves native ownership excluded chords and composition untouched
+[16/52] [chromium] › tests/workbench.spec.ts:808:1 › Story 3.2 filtering retains Search invalid Draft backward selection and validation on both paths
+[17/52] [chromium] › tests/workbench.spec.ts:861:1 › Story 3.2 shortcut dense Undo focuses privately below 100 ms with all 260 entries
+[18/52] [chromium] › tests/workbench.spec.ts:903:1 › Story 3.1 Undo remains inactive during native composition in every URL editor
+[19/52] [chromium] › tests/workbench.spec.ts:934:1 › Story 3.1 visible Undo restores every committed mutation exactly and branches with fresh IDs
+[20/52] [chromium] › tests/workbench.spec.ts:990:1 › Story 3.1 Undo preserves invalid Draft selection errors Search and accessible cancellation
+[21/52] [chromium] › tests/workbench.spec.ts:1027:1 › Story 3.1 Undo restores capacity privately under 100 ms with complete rows
+[22/52] [chromium] › tests/workbench.spec.ts:1065:1 › Token final beforeinput publishes composition once and preserves normalized prefix caret
+[23/52] [chromium] › tests/workbench.spec.ts:1102:3 › Domain composition publishes once with immediate final input and preserves later edits and selection
+[24/52] [chromium] › tests/workbench.spec.ts:1140:3 › Token composition retains Last Valid until end with immediate final input and later edits
+[25/52] [chromium] › tests/workbench.spec.ts:1102:3 › Domain composition publishes once with delayed final input and preserves later edits and selection
+[26/52] [chromium] › tests/workbench.spec.ts:1140:3 › Token composition retains Last Valid until end with delayed final input and later edits
+[27/52] [chromium] › tests/workbench.spec.ts:1174:1 › intake preserves lossless semantics and rejects replacement
+[28/52] [chromium] › tests/workbench.spec.ts:1309:3 › Story 2.7 invalid Draft source, independent feedback and keyboard mutations remain accessible at 320px
+  3) [chromium] › tests/workbench.spec.ts:1309:3 › Story 2.7 invalid Draft source, independent feedback and keyboard mutations remain accessible at 320px 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByText(/Last Valid URL and Structured View updated. Draft URL is unchanged./)
+    Expected: visible
+    Error: strict mode violation: getByText(/Last Valid URL and Structured View updated. Draft URL is unchanged./) resolved to 4 elements:
+        1) <li>Edited piece piece-1. Last Valid URL and Structur…</li> aka getByText('Edited piece piece-1. Last')
+        2) <li>Edited piece piece-2. Last Valid URL and Structur…</li> aka getByText('Edited piece piece-2. Last')
+        3) <li>Edited piece piece-3. Last Valid URL and Structur…</li> aka getByText('Edited piece piece-3. Last')
+        4) <p class="_conversionStatus_gnny4_226">Moved Query Parameter 2 of 4 to position 1 of 4. …</p> aka getByText('Moved Query Parameter 2 of 4')
+
+    Call log:
+      - Expect "toBeVisible" getByText(/Last Valid URL and Structured View updated. Draft URL is unchanged./) with timeout 5000ms
+      - waiting for getByText(/Last Valid URL and Structured View updated. Draft URL is unchanged./)
+
+
+      1347 |     await expect(page.locator(`#move-down-${targetId}`)).toBeFocused();
+      1348 |     await expect(page.getByLabel("Search Managed Pieces")).toHaveValue("%2F");
+    > 1349 |     await expect(page.getByText(/Last Valid URL and Structured View updated. Draft URL is unchanged./)).toBeVisible();
+           |                                                                                                         ^
+      1350 |     await page.locator("#add-query-after").focus();
+      1351 |     await page.keyboard.press("Space");
+      1352 |     await expect(page.getByLabel("Search Managed Pieces")).toHaveValue("");
+        at /home/blackdude/Documents/OEProjects/bmad-training/tests/workbench.spec.ts:1349:105
+
+    Error Context: test-results/workbench-Story-2-7-invali-56f0a--remain-accessible-at-320px-chromium/error-context.md
+
+
+[29/52] [chromium] › tests/workbench.spec.ts:1369:3 › Story 2.7 invalid Draft capacity preserves all identities and measured edit/reorder response
+[30/52] [chromium] › tests/workbench.spec.ts:1443:1 › Story 2.7 capacity rejection preserves invalid Draft, selection, identities and focus
+  4) [chromium] › tests/workbench.spec.ts:1443:1 › Story 2.7 capacity rejection preserves invalid Draft, selection, identities and focus 
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: locator('#structured-validation')
+    Expected pattern: /20,000/
+    Received string:  ""
+    Timeout: 5000ms
+
+    Call log:
+      - Expect "toContainText" locator('#structured-validation') with timeout 5000ms
+      - waiting for locator('#structured-validation')
+        14 × locator resolved to <div id="structured-validation"></div>
+           - unexpected value ""
+
+
+      1457 |     await expect(page.locator("#add-query-after")).toBeFocused();
+      1458 |     await expect(page.locator("#managed-pieces > li")).toHaveCount(1);
+    > 1459 |     await expect(page.locator("#structured-validation")).toContainText(/20,000/);
+           |                                                          ^
+      1460 |     await expect(page.getByText(/Query Parameter \d+ added/)).toHaveCount(0);
+      1461 |     await page.getByRole("button", { name: "Clear Search" }).click();
+      1462 |     const key = page.getByLabel("Key, Query Parameter 260 of 260");
+        at /home/blackdude/Documents/OEProjects/bmad-training/tests/workbench.spec.ts:1459:58
+
+    Error Context: test-results/workbench-Story-2-7-capaci-ab558-ection-identities-and-focus-chromium/error-context.md
+
+
+[31/52] [chromium] › tests/workbench.spec.ts:1481:1 › Story 2.7 invalid Draft feedback reflows with forced colors and increased text spacing
+[32/52] [chromium] › tests/workbench.spec.ts:1522:1 › Domain editing is synchronized, correctable, IME-safe, and host-only
+  5) [chromium] › tests/workbench.spec.ts:1522:1 › Domain editing is synchronized, correctable, IME-safe, and host-only 
+
+    Error: expect(locator).toHaveAttribute(expected) failed
+
+    Locator:  getByText(/Domain synchronized at revision 3/)
+    Expected: "polite"
+    Received: ""
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveAttribute" getByText(/Domain synchronized at revision 3/) with timeout 5000ms
+      - waiting for getByText(/Domain synchronized at revision 3/)
+        12 × locator resolved to <p class="_conversionStatus_gnny4_226">Domain synchronized at revision 3: Unicode Domain…</p>
+           - unexpected value "null"
+        2 × locator resolved to <span>Domain synchronized at revision 3: Unicode Domain…</span>
+          - unexpected value "null"
+
+
+      1583 |     );
+      1584 |     await expect(synchronized).not.toHaveAttribute("role");
+    > 1585 |     await expect(synchronized).toHaveAttribute("aria-live", "polite");
+           |                                ^
+      1586 |     await ascii.evaluate((input) => {
+      1587 |       const field = input as HTMLInputElement;
+      1588 |       field.focus();
+        at /home/blackdude/Documents/OEProjects/bmad-training/tests/workbench.spec.ts:1585:32
+
+    Error Context: test-results/workbench-Domain-editing-i-fba0d-able-IME-safe-and-host-only-chromium/error-context.md
+
+
+[33/52] [chromium] › tests/workbench.spec.ts:1673:1 › capacity view renders every row and stays usable at 320px
+[34/52] [chromium] › tests/workbench.spec.ts:1900:1 › removal preserves exact survivors, Search, focus, accessibility, and privacy
+[35/52] [chromium] › tests/workbench.spec.ts:1966:1 › Add Query Parameter appends from either control, synchronizes Search, keeps focus, and stays private at capacity
+[36/52] [chromium] › tests/workbench.spec.ts:2032:1 › Add Query Parameter remains reachable and performant at 250+ entries
+[37/52] [chromium] › tests/workbench.spec.ts:2065:1 › reorders Query Parameters by keyboard and pointer activation, honoring boundaries, Search, duplicates, and capacity
+[38/52] [chromium] › tests/workbench.spec.ts:2117:1 › reorders within a 250+ parameter list, keeping boundaries reachable and performant
+[39/52] [chromium] › tests/workbench.spec.ts:2147:1 › initial and populated workbench pass automated accessibility checks
+[40/52] [chromium] › tests/workbench.spec.ts:2216:1 › reload clears URL content and returns to no session
+[41/52] [chromium] › tests/workbench.spec.ts:2229:1 › search no-results and clear remain keyboard and activation safe
+[42/52] [chromium] › tests/workbench.spec.ts:2256:1 › structured editing preserves exact bytes, identity, validation, and focus
+[43/52] [chromium] › tests/workbench.spec.ts:2305:1 › structured editing handles search, selections, word deletion, caret, and drafts
+[44/52] [chromium] › tests/workbench.spec.ts:2464:1 › Full URL edits publish continuously without an Apply step, with no Apply URL affordance anywhere
+[45/52] [chromium] › tests/workbench.spec.ts:2478:1 › Full URL retains row identity across first intake, Enter, blur, and refocus
+[46/52] [chromium] › tests/workbench.spec.ts:2498:1 › Full URL composition leaves Last Valid and validation untouched until composition ends
+[47/52] [chromium] › tests/workbench.spec.ts:2521:1 › an invalid Draft survives structured Add with its selection, error, and focus contract
+[48/52] [chromium] › tests/workbench.spec.ts:2542:1 › continuous Full URL reconciliation meets the response target at 20,000 characters and 260 entries
+[49/52] [chromium] › tests/workbench.spec.ts:2563:1 › Enter outside IME composition suppresses the newline and closes the focus session
+[50/52] [chromium] › tests/workbench.spec.ts:2580:1 › Shift+Enter outside IME composition suppresses the newline without closing the focus session
+[51/52] [chromium] › tests/workbench.spec.ts:2598:1 › Structured View editing controls stay enabled while the Full URL draft is momentarily invalid (loosened gating)
+[52/52] [chromium] › tests/workbench.spec.ts:2624:1 › blur-close and refocus round trip keeps the Structured View synchronized
+  5 failed
+    [chromium] › tests/workbench.spec.ts:347:1 › Story 3.3 Copy serial races supersede queued attempts and stale completions before Undo focus 
+    [chromium] › tests/workbench.spec.ts:644:1 › Story 3.3 dense Copy edit Undo exact writes private complete rows below 100 ms at 320px 
+    [chromium] › tests/workbench.spec.ts:1309:3 › Story 2.7 invalid Draft source, independent feedback and keyboard mutations remain accessible at 320px 
+    [chromium] › tests/workbench.spec.ts:1443:1 › Story 2.7 capacity rejection preserves invalid Draft, selection, identities and focus 
+    [chromium] › tests/workbench.spec.ts:1522:1 › Domain editing is synchronized, correctable, IME-safe, and host-only 
+  47 passed (2.4m)
+

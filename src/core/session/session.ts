@@ -15,6 +15,7 @@ import {
   type TokenEdit,
 } from "../url";
 import type { ClipboardOutcome, CopyEffect, CopySource, SessionEffect, FocusTarget } from "./effects";
+import { advanceFeedback, announceValidation, enqueueFeedback, initialFeedback, promoteDelayedFeedback, type FeedbackState } from "./feedback";
 
 export interface StructuredEditCommand extends TokenEdit {
   readonly tokenRevision: number;
@@ -57,6 +58,7 @@ export type SessionPhase =
   | "invalid-intake";
 
 export interface SessionState {
+  readonly feedback: FeedbackState;
   readonly effects: readonly SessionEffect[];
   readonly latestCopyAttempt: number;
   readonly copySuccess: string | null;
@@ -94,7 +96,12 @@ export interface SessionState {
   } | null;
 }
 
-export type SessionAction =
+export type SessionAction = (
+  | { readonly type: "feedbackTick" }
+  | { readonly type: "feedbackPresented"; readonly id: number }
+  | { readonly type: "feedbackSearch"; readonly message: string }
+  | { readonly type: "feedbackComposition"; readonly composing: boolean }
+  | { readonly type: "validateField"; readonly key: string }
   | { readonly type: "copy" }
   | { readonly type: "claimCopy"; readonly effectId: number }
   | { readonly type: "acknowledgeCopy"; readonly effectId: number; readonly outcome: ClipboardOutcome }
@@ -124,9 +131,10 @@ export type SessionAction =
   | {
       readonly type: "closeFullUrlEdit";
       readonly reason: "blur" | "enter" | "mutation";
-    };
+    }) & { readonly now?: number };
 
 export const initialSessionState: SessionState = {
+  feedback: initialFeedback,
   effects: [],
   latestCopyAttempt: 0,
   copySuccess: null,
@@ -368,7 +376,7 @@ const closeFullUrlEditIfOpen = (
 export const structuredUpdateMessage = (state: SessionState): string =>
   state.input === state.snapshot?.serialized
     ? "Full URL and Structured View updated."
-    : "Last Valid URL and Structured View updated. Draft unchanged.";
+    : "Last Valid URL and Structured View updated. Draft URL is unchanged.";
 
 const structuredPublication = (state: SessionState, snapshot: LosslessUrl) => {
   const preservesDraft = state.input !== state.snapshot?.serialized;
@@ -438,6 +446,12 @@ const sessionTransition = (
   action: SessionAction,
 ): SessionState => {
   switch (action.type) {
+    case "feedbackTick":
+    case "feedbackPresented":
+    case "feedbackSearch":
+    case "feedbackComposition":
+    case "validateField":
+      return state;
     case "copy": {
       if (!state.snapshot) return state;
       return { ...state, latestCopyAttempt: state.latestCopyAttempt + 1,
@@ -530,10 +544,10 @@ const sessionTransition = (
         tokenRevisions: entry.beforeTokenRevisions,
         structuredDrafts,
         structuredProblem,
-        structuredSuccess: `Undid ${undoLabels[entry.field]}. ${
+        structuredSuccess: `Undid: ${undoLabels[entry.field]}. ${
           preservesDraft
-            ? "Last Valid URL and Structured View restored. Draft URL is unchanged."
-            : "Full URL and Structured View restored."
+            ? "Last Valid URL and Structured View updated; Draft URL is unchanged."
+            : "Full URL and Structured View updated."
         }`,
         history: closed.history.slice(0, -1),
         revision: state.revision + 1,
@@ -560,7 +574,6 @@ const sessionTransition = (
           : null),
         generation: state.generation + 1,
         pendingInput: null,
-        problem: null,
       };
     case "parseStarted":
       if (
@@ -574,7 +587,6 @@ const sessionTransition = (
         phase: "parsing",
         generation: action.generation,
         pendingInput: action.input,
-        problem: null,
       };
     case "parseCompleted": {
       if (
@@ -790,21 +802,14 @@ const sessionTransition = (
 
       const destinationIndex =
         action.direction === "up" ? sourceIndex - 1 : sourceIndex + 1;
-      const moved = result.value.query[destinationIndex];
       const total = result.value.query.length;
-      const identity =
-        moved && moved.equalsPresent
-          ? `${moved.rawKey}=${moved.rawValue}`
-          : (moved?.rawKey ?? "");
       const closed = closeFullUrlEditIfOpen(state, "mutation");
 
       return {
         ...closed,
         ...structuredPublication(closed, result.value),
         structuredProblem: null,
-        structuredSuccess: `Query Parameter "${identity}" moved from position ${
-          sourceIndex + 1
-        } to position ${destinationIndex + 1} of ${total}. ${structuredUpdateMessage(state)}`,
+        structuredSuccess: `Moved Query Parameter ${sourceIndex + 1} of ${total} to position ${destinationIndex + 1} of ${total}. ${structuredUpdateMessage(state)}`,
         revision: state.revision + 1,
         history: [
           ...closed.history,
@@ -948,7 +953,7 @@ const sessionTransition = (
           }: Unicode Domain, ASCII/Punycode Domain, and ${
             state.input === state.snapshot.serialized
               ? "Full URL updated."
-              : "Last Valid URL updated. Draft unchanged."
+              : "Last Valid URL updated. Draft URL is unchanged."
           }`,
           structuredDrafts,
           tokenRevisions: {
@@ -1011,13 +1016,14 @@ const sessionTransition = (
 
       const existingDraft = state.structuredDrafts[key];
       if (tokenCommand.insertedText.length > 20_000) {
+        const problem: UrlProblem = {
+          code: "url-capacity-exceeded",
+          field: "component",
+          message: "This edit would exceed the 20,000-character URL limit.",
+        };
         return {
           ...state,
-          structuredProblem: {
-            code: "url-capacity-exceeded",
-            field: "component",
-            message: "This edit would exceed the 20,000-character URL limit.",
-          },
+          structuredProblem: problem,
           structuredSuccess: null,
         };
       }
@@ -1094,6 +1100,13 @@ const sessionTransition = (
   }
 };
 
+const validationErrors = (state: SessionState): Readonly<Record<string, string>> => ({
+  ...(state.problem ? { "full-url": state.snapshot
+    ? `Draft URL is not valid. Structured View changes use the Last Valid URL. ${state.problem.message}`
+    : state.problem.message } : {}),
+  ...Object.fromEntries(Object.entries(state.structuredDrafts).map(([key, draft]) => [key, draft.problem.message])),
+});
+
 export const sessionReducer = (state: SessionState, action: SessionAction): SessionState => {
   let next = sessionTransition(state, action);
   if (next.revision !== state.revision || next.epoch !== state.epoch ||
@@ -1106,9 +1119,64 @@ export const sessionReducer = (state: SessionState, action: SessionAction): Sess
   }
   if (next !== state && ["inputChanged", "structuredEdit", "removePiece", "addQueryPiece",
     "moveQueryPiece", "fullUrlFocusBegin"].includes(action.type)) {
-    return { ...next, interaction: state.interaction + 1 };
+    next = { ...next, interaction: state.interaction + 1 };
   }
-  return next;
+  let feedback = advanceFeedback(action.type === "feedbackComposition"
+    ? { ...state.feedback, composing: action.composing } : state.feedback,
+    action.now ?? state.feedback.now);
+  if (action.type === "feedbackPresented" && feedback.current?.id === action.id &&
+    !feedback.current.presented) {
+    feedback = { ...feedback, current: { ...feedback.current, started: feedback.now, presented: true } };
+    feedback = promoteDelayedFeedback(feedback);
+  }
+  const errors = validationErrors(next);
+  const previousErrors = validationErrors(state);
+  const changedErrors = Object.keys(errors).filter((key) => errors[key] !== previousErrors[key]);
+  const changedInvalidInput = Object.keys(errors).some((key) =>
+    key === "full-url" ? next.input !== state.input :
+      next.structuredDrafts[key]?.value !== state.structuredDrafts[key]?.value);
+  if (changedErrors.length || (feedback.validationPending && changedInvalidInput)) {
+    feedback = { ...feedback, validationPending: {
+      message: Object.values(errors).join(" "), due: feedback.now + 300,
+    } };
+  } else if (Object.keys(errors).length === 0 &&
+    (feedback.validation !== null || feedback.validationPending !== null)) {
+    feedback = { ...feedback, validation: null, validationPending: null };
+  } else if (Object.keys(previousErrors).some((key) => !(key in errors))) {
+    feedback = { ...feedback, validation: null, validationPending: feedback.validationPending
+      ? { message: Object.values(errors).join(" "), due: feedback.now + 300 } : null };
+  }
+  const explicitKey = action.type === "validateField" ? action.key :
+    action.type === "closeFullUrlEdit" && action.reason !== "mutation" ? "full-url" : null;
+  if (explicitKey && errors[explicitKey]) feedback = announceValidation(feedback, errors[explicitKey]);
+  if (action.type === "feedbackSearch") {
+    feedback = enqueueFeedback(feedback, action.message, "search");
+  }
+  if (next !== state && action.type === "parseCompleted" && action.result.ok &&
+    next.pendingInput === null && action.generation === state.generation &&
+    action.input === state.pendingInput && action.epoch === state.epoch && action.revision === state.revision) {
+    feedback = enqueueFeedback(feedback, `URL parsed. ${1 + next.snapshot!.path.length + next.snapshot!.query.length} Managed Pieces available.`,
+      state.snapshot ? "synchronization" : "committed");
+  }
+  if (state.fullUrlFocus && next.fullUrlFocus === null &&
+    state.fullUrlFocus.baseline !== state.fullUrlFocus.lastAccepted) {
+    feedback = enqueueFeedback(feedback,
+      `Full URL edit committed. ${structuredUpdateMessage(state)}`, "committed");
+  }
+  if (next.revision !== state.revision && action.type !== "parseCompleted") {
+    const message = next.structuredSuccess ??
+      `Edited piece ${action.type === "structuredEdit" ? action.command.pieceId : ""}. ${structuredUpdateMessage(state)}`;
+    feedback = enqueueFeedback(feedback, message, "committed");
+  }
+  if (action.type === "acknowledgeCopy" && next.copySuccess && next !== state) {
+    feedback = enqueueFeedback(feedback, next.copySuccess, "committed");
+  }
+  if (action.type === "acknowledgeFocus" && action.filtered && next.structuredSuccess !== state.structuredSuccess) {
+    feedback = enqueueFeedback(feedback,
+      "Restored target is hidden by Search. Focus moved to the nearest visible field or Full URL; Search is unchanged.",
+      "committed");
+  }
+  return feedback === next.feedback ? next : { ...next, feedback };
 };
 
 const copySource = (state: SessionState): CopySource =>

@@ -143,3 +143,7 @@ Implementation and build review are complete; sprint status remains `review` pen
 - Fresh full `pnpm run evidence:run`, `node evidence/validate.mjs` and `git diff --check` pass: 52 mandatory cells and 441 exact executed tests (328 Vitest, 66 Node, 47 Chromium), zero skips/retries.
 - Final proof: [9777c6f5-2aed-4944-b31d-456f67e0bcd6](../../evidence/runs/9777c6f5-2aed-4944-b31d-456f67e0bcd6/). Artifact digest `11c4e9360cddb7860d2687944ceb907cea822e547f601e6a29241a576e1e433a`.
 - All three independent review layers completed; every finding was triaged separately above. Review patches are resolved, with no new deferred work. Human acceptance remains pending.
+
+### Human acceptance — 2026-10-08
+
+The user explicitly accepted Story 3.4 and requested continuation with Story 3.5. Sprint tracking now records `done`; the documented verification limits remain unchanged.

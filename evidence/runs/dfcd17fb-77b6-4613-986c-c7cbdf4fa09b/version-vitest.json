@@ -1,0 +1,1 @@
+{"argv":["pnpm","exec","vitest","--version"],"exitCode":0,"signal":null,"stdout":"vitest/5.0.1 linux-x64 node-v24.21.0\n","stderr":""}

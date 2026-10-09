@@ -1,0 +1,5 @@
+argv: ["pnpm","exec","vitest","run","--reporter=json","--outputFile=.cache/evidence-vitest.json"]
+exitCode: 1
+signal: null
+JSON report written to /home/blackdude/Documents/OEProjects/bmad-training/.cache/evidence-vitest.json
+

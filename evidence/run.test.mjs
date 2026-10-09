@@ -86,7 +86,7 @@ for (const phase of ["before", "after"]) {
     const { root, manifest } = await createFixture(context);
     const result = await executeRun(root, { produce: producer(root, manifest) });
     const { validateEvidence } = await import("./validation.mjs");
-    assert.equal((await validateEvidence(root)).cellCount, 52);
+    assert.equal((await validateEvidence(root)).cellCount, 56);
     assert.equal(JSON.parse(await readFile(resolve(root, "evidence/manifest.json"))).runId, result.runId);
     await assert.rejects(access(resolve(root, "evidence/.owner.json")));
   });

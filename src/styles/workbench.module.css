@@ -178,6 +178,7 @@ h2 {
 
 .actionBar :global(h2),
 .actionBar :global([role="status"]),
+.actionBar :global(#actionable-failure),
 .actionBar :global(#actions-note) {
   flex-basis: 100%;
 }
@@ -313,4 +314,21 @@ h2 {
 .copyRecovery :global(textarea) {
   max-height: 16rem;
   overflow: auto;
+}
+.feedbackHistory {
+  flex-basis: 100%;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  border-block-start: 1px solid currentColor;
+  padding-block-start: 0.75rem;
+}
+
+.feedbackHistory ol {
+  padding-inline-start: 1.5rem;
+}
+
+.actionBar :global(#operation-status) {
+  min-height: 3em;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }

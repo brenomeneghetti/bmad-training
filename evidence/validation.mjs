@@ -7,6 +7,10 @@ import { commands, engines, sourcePaths } from "./contracts.mjs";
 import { identity, inventoryOf, normalizeReport } from "./adapters.mjs";
 
 export const requiredCells = new Map([
+  ["story-3-5-scheduling-overflow", "3.5"],
+  ["story-3-5-validation-repeat", "3.5"],
+  ["story-3-5-independent-channels", "3.5"],
+  ["story-3-5-private-capacity", "3.5"],
   ["story-1-1-static-foundation", "1.1"],
   ["story-1-2-supported-intake", "1.2"],
   ["story-1-3-lossless-pieces", "1.3"],
@@ -207,7 +211,8 @@ export const validateEvidence = async (root, manifestPath = "evidence/manifest.j
       if (!tests.length || tests.some((item) => item.status !== "passed")) {
         throw new Error(`Missing/skipped/nonpassing tests: ${execution.runner}`);
       }
-      const expected = inventory.filter((item) => item.runner === execution.runner);
+      const expected = inventory.filter((item) => item.runner === execution.runner)
+        .sort((a, b) => identity(a).localeCompare(identity(b)));
       if (JSON.stringify(inventoryOf(execution.runner, tests)) !== JSON.stringify(expected)) {
         throw new Error(`Exact inventory/multiplicity mismatch: ${execution.runner}`);
       }

@@ -14,6 +14,113 @@ import { Workbench } from "./Workbench";
 describe("URL Workbench", () => {
   afterEach(() => vi.useRealTimers());
 
+  it("Story 3.5 isolates settled assertive validation with persistent associations actual repeated children and IME correction", () => {
+    vi.useFakeTimers();
+    render(<Workbench />);
+    const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
+    const announcer = document.getElementById("validation-announcer")!;
+    expect(announcer).toHaveAttribute("aria-live", "assertive");
+    fireEvent.change(editor, { target: { value: "https://example.com/a?x=1" } });
+    fireEvent.change(editor, { target: { value: "https://" } });
+    expect(editor).toHaveAttribute("aria-describedby", "full-url-help error-full-url");
+    expect(document.getElementById("error-full-url")).toBeVisible();
+    act(() => vi.advanceTimersByTime(299));
+    expect(announcer).toBeEmptyDOMElement();
+    act(() => vi.advanceTimersByTime(1));
+    const settledChild = announcer.firstChild;
+    expect(announcer).toHaveTextContent("Draft URL is not valid.");
+    fireEvent.change(editor, { target: { value: "https://" } });
+    act(() => vi.advanceTimersByTime(300));
+    expect(announcer.firstChild).toBe(settledChild);
+    fireEvent.keyDown(editor, { key: "Enter" });
+    expect(announcer.firstChild).not.toBe(settledChild);
+    expect(announcer).not.toBeEmptyDOMElement();
+    const explicitChild = announcer.firstChild;
+    fireEvent.compositionStart(editor);
+    fireEvent.change(editor, { target: { value: "https://valid.example" } });
+    fireEvent.keyDown(editor, { key: "Enter", isComposing: true });
+    act(() => vi.advanceTimersByTime(500));
+    expect(announcer.firstChild).toBe(explicitChild);
+    fireEvent.compositionEnd(editor);
+    expect(announcer).toBeEmptyDOMElement();
+    expect(editor).not.toHaveAttribute("aria-invalid");
+    expect(editor).toHaveAttribute("aria-describedby", "full-url-help");
+
+    const domain = screen.getByLabelText("Unicode Domain");
+    fireEvent.change(domain, { target: { value: "xn--" } });
+    const errorId = domain.getAttribute("aria-errormessage")!;
+    expect(errorId).toMatch(/^error-.*-domain-unicode$/);
+    expect(document.getElementById(errorId)).toBeVisible();
+    fireEvent.blur(domain);
+    const firstDomainChild = announcer.firstChild;
+    expect(announcer).not.toBeEmptyDOMElement();
+    fireEvent.keyDown(domain, { key: "Enter" });
+    expect(announcer.firstChild).not.toBe(firstDomainChild);
+    fireEvent.change(domain, { target: { value: "valid.example" } });
+    expect(domain).not.toHaveAttribute("aria-invalid");
+    expect(domain.getAttribute("aria-describedby")).toMatch(/^help-.*-domain$/);
+    expect(document.getElementById(errorId)).not.toBeInTheDocument();
+  });
+
+  it("Story 3.5 queues actual repeated Copy children for two seconds and promotes overflow without taking focus", async () => {
+    vi.useFakeTimers();
+    Object.defineProperty(navigator, "clipboard", { configurable: true, value: {
+      writeText: vi.fn(async () => {}),
+    } });
+    render(<Workbench />);
+    const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
+    fireEvent.change(editor, { target: { value: "https://example.com/a" } });
+    act(() => vi.advanceTimersByTime(2_000));
+    const search = screen.getByLabelText("Search Managed Pieces");
+    act(() => search.focus());
+    const copy = screen.getByRole("button", { name: "Copy" });
+    await act(async () => fireEvent.click(copy));
+    act(() => vi.advanceTimersByTime(0));
+    const status = document.getElementById("operation-status")!;
+    expect(status).toHaveTextContent("Current URL copied.");
+    const first = status.firstChild;
+    await act(async () => fireEvent.click(copy));
+    act(() => vi.advanceTimersByTime(1_999));
+    expect(status.firstChild).toBe(first);
+    act(() => vi.advanceTimersByTime(1));
+    expect(status.firstChild).not.toBe(first);
+    expect(status).toHaveTextContent("Current URL copied.");
+    expect(search).toHaveFocus();
+    for (let i = 0; i < 4; i++) await act(async () => fireEvent.click(copy));
+    const history = screen.getByRole("list", { name: "Feedback history" });
+    expect(within(history).getAllByRole("listitem")).toHaveLength(5);
+    expect(status).toHaveTextContent("Current URL copied.");
+    act(() => vi.advanceTimersByTime(2_000));
+    expect(status).toHaveTextContent("5 operation outcomes added to feedback history.");
+    expect(search).toHaveFocus();
+    expect(screen.getByRole("button", { name: "Undo" })).toHaveAttribute("aria-disabled", "true");
+  });
+
+  it("Story 3.5 failure recovery never overwrites assertive validation or the polite queue", async () => {
+    vi.useFakeTimers();
+    Object.defineProperty(navigator, "clipboard", { configurable: true, value: undefined });
+    render(<Workbench />);
+    const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
+    fireEvent.change(editor, { target: { value: "https://example.com/a?x=1" } });
+    fireEvent.change(editor, { target: { value: "https://" } });
+    act(() => vi.advanceTimersByTime(300));
+    const validation = document.getElementById("validation-announcer")!.firstChild;
+    const status = document.getElementById("operation-status")!.firstChild;
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Copy" })));
+    expect(screen.getByRole("alert")).toHaveAttribute("aria-atomic", "true");
+    expect(screen.getByRole("alert")).toHaveTextContent("Couldn’t copy the Last Valid URL.");
+    expect(screen.getByRole("alert")).toHaveTextContent("Select the Last Valid URL below");
+    expect(screen.getByRole("alert")).not.toHaveTextContent("is selected");
+    expect(screen.getByLabelText("Last Valid URL — copy recovery")).toHaveValue("https://example.com/a?x=1");
+    expect(document.getElementById("validation-announcer")!.firstChild).toBe(validation);
+    expect(document.getElementById("operation-status")!.firstChild).toBe(status);
+    fireEvent.change(screen.getByLabelText("Search Managed Pieces"), { target: { value: "x" } });
+    act(() => vi.advanceTimersByTime(300));
+    expect(screen.getByRole("alert")).toBeVisible();
+    expect(editor).toHaveValue("https://");
+    expect(document.getElementById("error-full-url")).toBeVisible();
+  });
+
   it("Story 3.3 Copy retains Draft backward selection Search and open editing without History", async () => {
     const writeText = vi.fn(async () => {});
     Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText } });
@@ -30,7 +137,7 @@ describe("URL Workbench", () => {
     expect(writeText).not.toHaveBeenCalled();
     fireEvent.pointerCancel(copy);
     fireEvent.click(copy);
-    await waitFor(() => expect(screen.getByText("Current URL copied.")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText("Current URL copied.")).toBeInTheDocument(), { timeout: 7_000 });
     expect(writeText).toHaveBeenLastCalledWith(semanticFixture);
     expect(editor).toHaveFocus();
     expect([editor.selectionStart, editor.selectionEnd, editor.selectionDirection]).toEqual([2, 8, "backward"]);
@@ -41,7 +148,7 @@ describe("URL Workbench", () => {
     editor.setSelectionRange(2, 5, "backward");
     const error = document.getElementById("error-full-url")!.textContent;
     fireEvent.click(copy);
-    await waitFor(() => expect(screen.getByText("Last Valid URL copied; Draft URL is unchanged.")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText("Last Valid URL copied; Draft URL is unchanged.")).toBeInTheDocument(), { timeout: 7_000 });
     expect(writeText).toHaveBeenCalledTimes(2);
     expect(editor).toHaveValue("https://");
     expect(editor).toHaveFocus();
@@ -60,7 +167,7 @@ describe("URL Workbench", () => {
     editor.focus();
     const copy = screen.getByRole("button", { name: "Copy" });
     fireEvent.click(copy);
-    await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent("Last Valid URL could not be copied."));
+    await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent("Couldn’t copy the Last Valid URL."));
     expect(screen.getByRole("alert")).not.toHaveTextContent("secret");
     const recovery = screen.getByLabelText("Last Valid URL — copy recovery") as HTMLTextAreaElement;
     expect(recovery).toHaveValue("https://example.com/a");
@@ -72,7 +179,7 @@ describe("URL Workbench", () => {
     fireEvent.click(copy);
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     expect(screen.queryByLabelText(/copy recovery/)).not.toBeInTheDocument();
-    await waitFor(() => expect(screen.getByText("Last Valid URL copied; Draft URL is unchanged.")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText("Last Valid URL copied; Draft URL is unchanged.")).toBeInTheDocument(), { timeout: 7_000 });
     expect(search).toHaveFocus();
   });
 
@@ -211,7 +318,7 @@ describe("URL Workbench", () => {
     expect(fireEvent.keyDown(undo, { key: "z", ctrlKey: true })).toBe(false);
     expect(editor).toHaveValue("https://example.com/a?x=1");
     expect(value).toHaveFocus();
-    expect(screen.getAllByText(/Undid Query Parameter value edit/)).toHaveLength(1);
+    expect(screen.getAllByText(/Undid: Query Parameter value edit/)).toHaveLength(1);
   });
 
   it.each(["MacIntel", "Win32", "Linux x86_64"])(
@@ -235,12 +342,12 @@ describe("URL Workbench", () => {
         })).toBe(true);
         expect(editor).toHaveValue("https://example.com/a?x=2");
         expect(undo).toHaveFocus();
-        expect(screen.queryByText(/Undid /)).not.toBeInTheDocument();
+        expect(screen.queryByText(/Undid: /)).not.toBeInTheDocument();
         expect(fireEvent.keyDown(undo, { key: "z", ...primary })).toBe(false);
         expect(editor).toHaveValue("https://example.com/a?x=1");
         expect(value).toHaveFocus();
         expect(undo).toHaveAttribute("aria-disabled", "true");
-        expect(screen.getAllByText(/Undid Query Parameter value edit/)).toHaveLength(1);
+        expect(screen.getAllByText(/Undid: Query Parameter value edit/)).toHaveLength(1);
       } finally {
         platformGetter.mockRestore();
       }
@@ -315,7 +422,7 @@ describe("URL Workbench", () => {
       fireEvent.click(undo);
       expect(composing).toHaveValue(value);
       if (kind !== "Full URL") expect(editor).toHaveValue("https://example.org/a?x=1");
-      expect(screen.queryByText(/Undid /)).not.toBeInTheDocument();
+      expect(screen.queryByText(/Undid: /)).not.toBeInTheDocument();
       fireEvent.compositionEnd(composing, { data: value });
       expect(undo).toHaveAttribute("aria-disabled", "false");
       fireEvent.click(undo);
@@ -351,7 +458,7 @@ describe("URL Workbench", () => {
     undo.focus();
     await user.keyboard("{Enter}");
     expect(undo).toHaveFocus();
-    expect(screen.getByText(/Undid Query Parameter value edit/)).toBeVisible();
+    expect(screen.getByText(/Undid: Query Parameter value edit/)).toBeVisible();
   });
 
   it("Story 3.1 Undo re-enables when a composing editor is removed without compositionend", () => {
@@ -391,7 +498,7 @@ describe("URL Workbench", () => {
     expect(document.getElementById("error-full-url")).toHaveTextContent(error!);
     expect(search).toHaveValue("a");
     expect(screen.getByLabelText("Path Segment 1 of 1")).toHaveValue("a");
-    expect(screen.getByText(/Undid Full URL edit.*Draft URL is unchanged/)).toBeVisible();
+    expect(screen.getByText(/Undid: Full URL edit.*Draft URL is unchanged/)).toBeVisible();
   });
 
   it("expires Domain composition suppression after the other representation changes", () => {
@@ -515,10 +622,12 @@ describe("URL Workbench", () => {
     search.focus();
     fireEvent.change(search, { target: { value: "x" } });
     act(() => vi.advanceTimersByTime(300));
-    expect(document.getElementById("search-status")).toHaveTextContent("2 of 4 Managed Pieces shown.");
+    act(() => vi.advanceTimersByTime(2_000));
+    act(() => vi.advanceTimersByTime(2_000));
+    expect(document.getElementById("operation-status")).toHaveTextContent("2 of 4 Managed Pieces shown.");
     fireEvent.change(editor, { target: { value: "/still-invalid" } });
     expect(screen.getByText(/Query Parameter 2 added/)).toHaveTextContent(status!);
-    expect(document.getElementById("search-status")).toHaveTextContent("2 of 4 Managed Pieces shown.");
+    expect(document.getElementById("operation-status")).toHaveTextContent("2 of 4 Managed Pieces shown.");
     expect(search).toHaveFocus();
     const error = document.getElementById("error-full-url")!.textContent;
     fireEvent.compositionStart(editor);
@@ -546,7 +655,7 @@ describe("URL Workbench", () => {
       up.dispatchEvent(new MouseEvent("click", { bubbles: true }));
       down.dispatchEvent(new MouseEvent("click", { bubbles: true }));
     });
-    expect(screen.getByText(/"y=2" moved from position 2 to position 3 of 3/)).toBeVisible();
+    expect(screen.getByText(/Moved Query Parameter 2 of 3 to position 3 of 3/)).toBeVisible();
     expect(search).toHaveFocus();
     expect(editor).toHaveValue("/invalid");
   });
@@ -629,15 +738,15 @@ describe("URL Workbench", () => {
     const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
     const fullUrlRegion = document.getElementById("full-url-validation");
     const structuredRegion = document.getElementById("structured-validation");
-    expect(fullUrlRegion).toHaveAttribute("aria-live", "polite");
-    expect(structuredRegion).toHaveAttribute("aria-live", "polite");
+    expect(fullUrlRegion).not.toHaveAttribute("aria-live");
+    expect(structuredRegion).not.toHaveAttribute("aria-live");
     expect(fullUrlRegion).toBeEmptyDOMElement();
     fireEvent.change(editor, { target: { value: "https://example.com/a?x=1" } });
     const domain = screen.getByLabelText("Unicode Domain");
     const domainRegion = document.getElementById(
       `error-${domain.closest("li")!.dataset.pieceId}-domain-unicode-feedback`,
     );
-    expect(domainRegion).toHaveAttribute("aria-live", "polite");
+    expect(domainRegion).not.toHaveAttribute("aria-live");
     expect(domainRegion).toBeEmptyDOMElement();
     fireEvent.change(domain, { target: { value: "xn--" } });
     const domainError = document.getElementById(domain.getAttribute("aria-errormessage")!)!;
@@ -654,20 +763,20 @@ describe("URL Workbench", () => {
       const input = screen.getByLabelText(label);
       const validValue = (input as HTMLInputElement).value;
       const fieldRegion = document.getElementById(
-        `${input.id}-error-feedback`,
+        `error-${input.closest("li")!.dataset.pieceId}-${input.id.startsWith("path") ? "path" : input.id.startsWith("query-key") ? "query-key" : "query-value"}-feedback`,
       );
-      expect(fieldRegion).toHaveAttribute("aria-live", "polite");
+      expect(fieldRegion).not.toHaveAttribute("aria-live");
       expect(fieldRegion).toBeEmptyDOMElement();
       fireEvent.change(input, { target: { value: "%" } });
       const error = document.getElementById(input.getAttribute("aria-errormessage")!)!;
-      expect(input).toHaveAccessibleDescription(error.textContent!);
+      expect(input).toHaveAccessibleDescription(expect.stringContaining(error.textContent!));
       expect(fieldRegion).toHaveTextContent(error.textContent!);
       fireEvent.change(editor, { target: { value: "https://" } });
       expect(editor).toHaveAccessibleDescription(expect.stringContaining("Draft URL is not valid."));
       expect(fullUrlRegion).toHaveTextContent("Structured View changes use the Last Valid URL.");
       expect(fieldRegion).toHaveTextContent(error.textContent!);
       fireEvent.change(input, { target: { value: validValue } });
-      expect(input).not.toHaveAttribute("aria-describedby");
+      expect(input).toHaveAttribute("aria-describedby", expect.stringContaining("help-"));
       expect(fieldRegion).toBeEmptyDOMElement();
       fireEvent.change(editor, { target: { value: "https://example.com/a?x=1" } });
       expect(editor).toHaveAccessibleDescription(document.getElementById("full-url-help")!.textContent!);
@@ -850,16 +959,16 @@ describe("URL Workbench", () => {
     expect(screen.getByLabelText(/^Value, Query Parameter/)).toHaveValue("Needle");
   });
 
-  it("filters presentation only and restores stable identity and source order", async () => {
-    const user = userEvent.setup();
+  it("filters presentation only and restores stable identity and source order", () => {
+    vi.useFakeTimers();
     render(<Workbench />);
     const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
-    await user.type(editor, semanticFixture);
+    fireEvent.change(editor, { target: { value: semanticFixture } });
     const originalRows = screen.getAllByRole("listitem");
     const originalIds = originalRows.map((row) => row.dataset.pieceId);
     const search = screen.getByLabelText("Search Managed Pieces");
 
-    await user.type(search, "dup");
+    fireEvent.change(search, { target: { value: "dup" } });
     expect(screen.getByText("2 of 13 Managed Pieces shown")).toBeVisible();
     const filteredRows = screen.getAllByRole("listitem");
     expect(filteredRows.map((row) => row.dataset.pieceId)).toEqual(
@@ -884,11 +993,14 @@ describe("URL Workbench", () => {
     fireEvent.change(search, { target: { value: "a&b=c" } });
     expect(screen.queryAllByRole("listitem")).toHaveLength(0);
 
-    await user.click(screen.getByRole("button", { name: "Clear Search" }));
+    fireEvent.click(screen.getByRole("button", { name: "Clear Search" }));
     expect(search).toHaveFocus();
     expect(search).toHaveValue("");
+    act(() => vi.advanceTimersByTime(2_000));
+    act(() => vi.advanceTimersByTime(2_000));
+    act(() => vi.advanceTimersByTime(2_000));
     expect(
-      within(document.querySelector("#search-status") as HTMLElement).getByText(
+      within(document.querySelector("#operation-status") as HTMLElement).getByText(
         "13 of 13 Managed Pieces shown.",
       ),
     ).toBeInTheDocument();
@@ -941,7 +1053,8 @@ describe("URL Workbench", () => {
     expect(screen.queryAllByRole("listitem")).toHaveLength(0);
   });
 
-  it("settles repeatable announcements without replacing live entries or moving focus", async () => {
+  it("settles repeatable announcements by replacing actual children without moving focus", () => {
+    vi.useFakeTimers();
     render(<Workbench />);
     fireEvent.change(
       screen.getByLabelText("Complete HTTP or HTTPS Absolute URL"),
@@ -953,29 +1066,28 @@ describe("URL Workbench", () => {
     fireEvent.change(search, { target: { value: "x" } });
     fireEvent.change(search, { target: { value: "no" } });
     fireEvent.change(search, { target: { value: "x" } });
-    await waitFor(() =>
-      expect(screen.getByText("3 of 4 Managed Pieces shown.")).toBeInTheDocument(),
-    );
-    const firstAnnouncement = document.querySelector("#search-status span");
-    expect(firstAnnouncement).toHaveAttribute("role", "status");
-    expect(firstAnnouncement).toHaveAttribute("aria-live", "polite");
-    expect(firstAnnouncement).toHaveAttribute("aria-atomic", "true");
+    act(() => vi.advanceTimersByTime(300));
+    act(() => vi.advanceTimersByTime(1_700));
+    expect(screen.getByText("3 of 4 Managed Pieces shown.")).toBeInTheDocument();
+    const firstAnnouncement = document.querySelector("#operation-status span");
+    expect(firstAnnouncement?.parentElement).toHaveAttribute("role", "status");
+    expect(firstAnnouncement?.parentElement).toHaveAttribute("aria-live", "polite");
+    expect(firstAnnouncement?.parentElement).toHaveAttribute("aria-atomic", "true");
     expect(search).toHaveFocus();
 
     fireEvent.change(search, { target: { value: "no" } });
     fireEvent.change(search, { target: { value: "x" } });
-    await waitFor(() =>
-      expect(
-        within(document.querySelector("#search-status") as HTMLElement).getAllByText(
-          "3 of 4 Managed Pieces shown.",
-        ),
-      ).toHaveLength(2),
-    );
-    expect(document.querySelector("#search-status span")).toBe(firstAnnouncement);
+    act(() => vi.advanceTimersByTime(300));
+    expect(document.querySelector("#operation-status span")).toBe(firstAnnouncement);
+    act(() => vi.advanceTimersByTime(1_700));
+    expect(document.querySelector("#operation-status span")).not.toBe(firstAnnouncement);
+    expect(firstAnnouncement).not.toBeInTheDocument();
+    expect(screen.getAllByText("3 of 4 Managed Pieces shown.")).toHaveLength(1);
     expect(search).toHaveFocus();
   });
 
   it("announces restoration when the final search character is deleted", () => {
+    vi.useFakeTimers();
     render(<Workbench />);
     fireEvent.change(
       screen.getByLabelText("Complete HTTP or HTTPS Absolute URL"),
@@ -984,15 +1096,16 @@ describe("URL Workbench", () => {
     const search = screen.getByLabelText("Search Managed Pieces");
     fireEvent.change(search, { target: { value: "x" } });
     fireEvent.change(search, { target: { value: "" } });
+    act(() => vi.advanceTimersByTime(2_000));
 
     expect(
-      within(document.querySelector("#search-status") as HTMLElement).getByText(
+      within(document.querySelector("#operation-status") as HTMLElement).getByText(
         "3 of 3 Managed Pieces shown.",
       ),
     ).toBeInTheDocument();
   });
 
-  it("removes old-session announcements when the snapshot is replaced", () => {
+  it("retains selected Search exposure across synchronized snapshot changes", () => {
     vi.useFakeTimers();
     render(<Workbench />);
     const editor = screen.getByLabelText("Complete HTTP or HTTPS Absolute URL");
@@ -1003,14 +1116,19 @@ describe("URL Workbench", () => {
       target: { value: "1" },
     });
     act(() => vi.advanceTimersByTime(300));
+    act(() => vi.advanceTimersByTime(1_700));
     expect(screen.getByText("1 of 3 Managed Pieces shown.")).toBeInTheDocument();
 
     fireEvent.change(editor, { target: { value: "https://second.example/b" } });
     expect(
       screen.queryByText("1 of 3 Managed Pieces shown."),
-    ).not.toBeInTheDocument();
+    ).toBeInTheDocument();
     act(() => vi.advanceTimersByTime(300));
-    expect(screen.getByText("0 of 2 Managed Pieces shown.")).toBeInTheDocument();
+    expect(screen.getByText("1 of 3 Managed Pieces shown.")).toBeInTheDocument();
+    act(() => vi.advanceTimersByTime(1_700));
+    expect(document.getElementById("operation-status")).toHaveTextContent("URL parsed. 2 Managed Pieces available.");
+    act(() => vi.advanceTimersByTime(2_000));
+    expect(document.getElementById("operation-status")).toHaveTextContent("0 of 2 Managed Pieces shown. No Managed Piece matches ‘1’.");
   });
 
   it("exposes a settled search announcement for at least two seconds", () => {
@@ -1025,24 +1143,25 @@ describe("URL Workbench", () => {
     });
 
     act(() => vi.advanceTimersByTime(250));
-    expect(document.querySelector("#search-status span")).not.toBeInTheDocument();
+    expect(document.getElementById("operation-status")).toHaveTextContent("URL parsed");
     fireEvent.change(screen.getByLabelText("Search Managed Pieces"), {
       target: { value: "not-present" },
     });
     act(() => vi.advanceTimersByTime(299));
-    expect(document.querySelector("#search-status span")).not.toBeInTheDocument();
+    expect(document.getElementById("operation-status")).toHaveTextContent("URL parsed");
     act(() => vi.advanceTimersByTime(1));
-    expect(screen.getByText("0 of 3 Managed Pieces shown.")).toBeInTheDocument();
+    act(() => vi.advanceTimersByTime(1_450));
+    expect(document.getElementById("operation-status")).toHaveTextContent("0 of 3 Managed Pieces shown.");
+    const selected = document.querySelector("#operation-status span");
     fireEvent.change(screen.getByLabelText("Search Managed Pieces"), {
       target: { value: "x" },
     });
     act(() => vi.advanceTimersByTime(300));
-    expect(document.querySelector("#search-status span")).toBeInTheDocument();
-    expect(screen.getByText("2 of 3 Managed Pieces shown.")).toBeInTheDocument();
-    act(() => vi.advanceTimersByTime(2_099));
-    expect(document.querySelector("#search-status span")).toBeInTheDocument();
+    expect(document.querySelector("#operation-status span")).toBe(selected);
+    act(() => vi.advanceTimersByTime(1_699));
+    expect(document.querySelector("#operation-status span")).toBe(selected);
     act(() => vi.advanceTimersByTime(1));
-    expect(document.querySelector("#search-status span")).not.toBeInTheDocument();
+    expect(document.getElementById("operation-status")).toHaveTextContent("2 of 3 Managed Pieces shown.");
   });
 
   it("edits only the selected duplicate and keeps focus", () => {
@@ -1168,8 +1287,8 @@ describe("URL Workbench", () => {
       "Unicode Domain, ASCII/Punycode Domain, and Full URL updated",
     );
     const status = screen.getByText(/Domain synchronized at revision/);
-    expect(status).toHaveAttribute("role", "status");
-    expect(status).toHaveAttribute("aria-live", "polite");
+    expect(status).not.toHaveAttribute("role");
+    expect(document.getElementById("operation-status")).toHaveAttribute("aria-live", "polite");
 
     fireEvent.change(ascii, { target: { value: "xn--" } });
     expect(screen.queryByText(/Domain synchronized at revision/)).not.toBeInTheDocument();
@@ -1261,6 +1380,7 @@ describe("URL Workbench", () => {
   });
 
   it("clears active Search before editing and retains the edited control", () => {
+    vi.useFakeTimers();
     render(<Workbench />);
     fireEvent.change(
       screen.getByLabelText("Complete HTTP or HTTPS Absolute URL"),
@@ -1278,8 +1398,10 @@ describe("URL Workbench", () => {
     expect(screen.getAllByRole("listitem")).toHaveLength(4);
     expect(key).toHaveFocus();
     expect(key).toHaveValue("renamed");
+    act(() => vi.advanceTimersByTime(2_000));
+    act(() => vi.advanceTimersByTime(2_000));
     expect(
-      within(document.querySelector("#search-status") as HTMLElement).getByText(
+      within(document.querySelector("#operation-status") as HTMLElement).getByText(
         "4 of 4 Managed Pieces shown.",
       ),
     ).toBeInTheDocument();
@@ -1386,6 +1508,7 @@ describe("URL Workbench", () => {
   });
 
   it("announces Search restoration even when a structured edit is rejected", () => {
+    vi.useFakeTimers();
     render(<Workbench />);
     fireEvent.change(
       screen.getByLabelText("Complete HTTP or HTTPS Absolute URL"),
@@ -1398,13 +1521,16 @@ describe("URL Workbench", () => {
       target: { value: "%" },
     });
     expect(screen.getByLabelText("Search Managed Pieces")).toHaveValue("");
+    act(() => vi.advanceTimersByTime(300));
+    act(() => vi.advanceTimersByTime(1_700));
+    act(() => vi.advanceTimersByTime(0));
     expect(
-      within(document.querySelector("#search-status") as HTMLElement).getByText(
+      within(document.querySelector("#operation-status") as HTMLElement).getByText(
         "3 of 3 Managed Pieces shown.",
       ),
     ).toBeInTheDocument();
     expect(
-      within(document.querySelector("#search-status") as HTMLElement).queryByText(
+      within(document.querySelector("#operation-status") as HTMLElement).queryByText(
         "1 of 3 Managed Pieces shown.",
       ),
     ).not.toBeInTheDocument();
@@ -1414,10 +1540,10 @@ describe("URL Workbench", () => {
       { target: { value: "https://example.com/b?y=2" } },
     );
     expect(
-      within(document.querySelector("#search-status") as HTMLElement).queryByText(
+      within(document.querySelector("#operation-status") as HTMLElement).queryByText(
         "3 of 3 Managed Pieces shown.",
       ),
-    ).not.toBeInTheDocument();
+    ).toBeInTheDocument();
   });
 
   it("preserves untouched raw Unicode in fallback and IME changes", () => {
@@ -1486,7 +1612,7 @@ describe("URL Workbench", () => {
     ).toHaveFocus();
     expect(
       screen.getByText("Query Parameter 1 removed. Full URL and Structured View updated."),
-    ).toHaveAttribute("role", "status");
+    ).not.toHaveAttribute("role");
     expect(screen.getByLabelText(/^Value, Query Parameter 1 of 2/)).toHaveValue("");
   });
 
@@ -1584,7 +1710,7 @@ describe("URL Workbench", () => {
     expect(editor).toHaveValue("https://example.com/?first=1&third=3");
     expect(
       screen.getByText("Query Parameter 2 removed. Full URL and Structured View updated."),
-    ).toHaveAttribute("role", "status");
+    ).not.toHaveAttribute("role");
   });
 
   it("offers a skip link to the after-list Add Query Parameter control", async () => {
@@ -1613,7 +1739,7 @@ describe("URL Workbench", () => {
     expect(screen.getAllByRole("listitem")).toHaveLength(3);
     expect(
       screen.getByText("Query Parameter 1 added. Full URL and Structured View updated."),
-    ).toHaveAttribute("role", "status");
+    ).not.toHaveAttribute("role");
   });
 
   it("appends exactly one fresh Query Parameter from the after-list Add control after existing entries and focuses the new key", async () => {
@@ -1779,8 +1905,8 @@ describe("URL Workbench", () => {
       }),
     ).toHaveFocus();
     expect(
-      screen.getByText(/"y=2" moved from position 2 to position 3 of 3/),
-    ).toHaveAttribute("role", "status");
+      screen.getByText(/Moved Query Parameter 2 of 3 to position 3 of 3/),
+    ).not.toHaveAttribute("role");
   });
 
   it("moves focus to the enabled opposite control when a move lands on a boundary", async () => {
@@ -1842,7 +1968,7 @@ describe("URL Workbench", () => {
 
     expect(search).toHaveFocus();
     expect(editor).toHaveValue("https://example.com/a?x=1&y=2");
-    expect(screen.queryByText(/moved from position/)).toBeNull();
+    expect(screen.queryByText(/Moved Query Parameter/)).toBeNull();
   });
 
   it("permits Move while the Full URL textarea has a pending unclosed draft", async () => {
@@ -1975,7 +2101,7 @@ describe("URL Workbench", () => {
       expect(editor.selectionEnd).toBe(5);
       expect(document.getElementById("error-full-url")?.textContent).toBe(error);
       expect(screen.getByLabelText("Key, Query Parameter 2 of 2")).toHaveFocus();
-      expect(screen.getByText(/Last Valid URL and Structured View updated. Draft unchanged./))
+      expect(screen.getByText(/Last Valid URL and Structured View updated. Draft URL is unchanged./))
         .toBeVisible();
     });
 
