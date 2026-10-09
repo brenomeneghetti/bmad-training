@@ -52,6 +52,11 @@ Enable developers to edit, add, remove, reorder, or replace URL content through 
 
 ## Cross-Story Dependencies
 
+**2026-10-09 planning update:** the former Epic 4 browser-validation scope below
+is now Epic 5. Epic 4 owns the approved redesign; its final UX contracts supersede
+historical light-layout, duplicate-Add and permanent-Move descriptions in this
+completed-epic context. Historical decisions and execution coverage are unchanged.
+
 - Stories 2.1–2.5 depend on the lossless URL model, immutable identity, synchronized session authority, and semantic list established by Epic 1.
 - Stories 2.3–2.5 depend on the exact snapshot/history and focus-intent contracts needed for later Undo behavior.
 - Stories 2.6 and 2.7 share the Full URL session lifecycle, stale-parse protection, and close-and-rebase transition; Story 2.7 extends structured mutations from Stories 2.1–2.5 to operate safely while a Draft is invalid.

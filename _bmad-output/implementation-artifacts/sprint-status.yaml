@@ -29,7 +29,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 # - Retrospective appends its action items to action_items; the status view surfaces open ones
 generated: 09-29-2026 20:17
-last_updated: 10-09-2026 10:41
+last_updated: 10-09-2026 14:27
 project: bmad-training
 project_key: NOKEY
 tracking_system: file-system
@@ -56,12 +56,13 @@ development_status:
   2-6-edit-the-full-url-as-one-continuous-intent: done
   # Original committed scope closed by user; verification follow-up moved to Story 2.8.
   2-7-keep-working-through-an-invalid-full-url-draft: done
-  # Chromium-only MVP evidence passes; additional browsers deferred to Epic 4.
+  # Chromium-only MVP evidence passes; additional browsers deferred to Epic 5.
+  # User renumbered the browser scope on 2026-10-09; Epic 4 now owns redesign.
   # Human review accepted by the user on 2026-10-07.
   2-8-close-deferred-verification-gaps: done
   epic-2-retrospective: optional
 
-  epic-3: in-progress
+  epic-3: done
   # User-authorized direct review completed; human acceptance recorded on 2026-10-08.
   3-1-undo-every-committed-url-change-exactly: done
   # User-authorized direct review completed; human acceptance recorded on 2026-10-08.
@@ -70,9 +71,22 @@ development_status:
   3-3-copy-the-latest-valid-url-truthfully: done
   # Independent review completed and patched; human acceptance recorded on 2026-10-08.
   3-4-recover-safely-from-clipboard-failure-and-races: done
-  # User-authorized direct review complete; Chromium-only proof passes; human acceptance pending.
-  3-5-receive-every-outcome-without-losing-focus: review
-  # User-authorized direct review complete; independent review waived; human acceptance pending.
+  # User-authorized direct review complete; Chromium-only proof passes; human acceptance recorded on 2026-10-09.
+  3-5-receive-every-outcome-without-losing-focus: done
+  # User-authorized direct review complete; independent review waived; human acceptance recorded on 2026-10-09.
   # Broader release remains blocked by missing external and actual delivery observations.
-  3-6-enforce-the-trusted-release-evidence-gate: review
+  3-6-enforce-the-trusted-release-evidence-gate: done
   epic-3-retrospective: optional
+
+  epic-4: backlog
+  4-1-use-a-polished-dark-workbench-with-contextual-copy: backlog
+  4-2-show-or-hide-url-details-without-losing-context: backlog
+  4-3-add-at-the-bottom-and-navigate-long-query-lists: backlog
+  4-4-distinguish-query-shapes-and-changing-row-labels: backlog
+  4-5-reveal-query-move-controls-through-focus-or-selection: backlog
+  4-6-drag-query-parameters-without-losing-exact-state: backlog
+  4-7-complete-the-redesigned-journey-at-supported-limits: backlog
+  epic-4-retrospective: optional
+
+  epic-5: backlog
+  epic-5-retrospective: optional

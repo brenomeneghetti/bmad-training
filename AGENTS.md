@@ -22,5 +22,6 @@ the evidence runner. Update exact identities deliberately when tests change;
 do not accept counts, source references, or prior manifests as execution proof.
 
 The user approved Chromium-only MVP browser validation on 2026-10-07.
-Additional-browser verification belongs to Epic 4. A Chromium passing manifest
+Additional-browser verification belongs to Epic 5; Epic 4 is the approved UI/UX
+redesign, following the user's 2026-10-09 renumbering. A Chromium passing manifest
 does not establish Firefox, WebKit, released-browser OS/mobile or manual coverage.

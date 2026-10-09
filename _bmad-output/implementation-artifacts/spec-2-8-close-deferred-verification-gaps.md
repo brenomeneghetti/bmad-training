@@ -13,6 +13,11 @@ context:
 
 <frozen-after-approval reason="human-owned intent - do not modify unless human renegotiates">
 
+**Planning supersession, 2026-10-09:** the user moved the browser-validation work
+formerly assigned to Epic 4 to Epic 5 and assigned Epic 4 to the redesign.
+Historical Epic 4 references in this completed story record the original
+decision; its delivered scope, acceptance and execution evidence are unchanged.
+
 ## Intent
 
 **Problem:** The 36-cell gate proves source references, not execution. Chromium behavior needs execution-bound MVP proof; additional browsers remain deferred to Epic 4.

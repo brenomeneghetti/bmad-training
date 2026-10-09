@@ -17,6 +17,11 @@ Complete the trustworthy editing loop: reverse every committed change to the exa
 
 ## Requirements & Constraints
 
+**2026-10-09 planning update:** additional-browser validation is now Epic 5,
+renumbered from the historical Epic 4 references below. Epic 4 owns the approved
+redesign; final UX contracts govern its layout and presentation changes.
+Completed-story acceptance and historical evidence remain unchanged.
+
 - Record one chronological History Entry per accepted URL-changing intent, excluding Search, focus, selection, scrolling, rejected validation, and status changes. Undo restores exact snapshots, creates no entry, reaches Initial URL, and becomes inactive with empty History. No Redo.
 - During invalid Full URL Drafts, Undo and Copy use Last Valid while preserving Draft text, selection, and validation. Never describe Draft as synchronized or export it as committed content.
 - Keep processing browser-local. No URL, Draft, piece, clipboard, or History content enters logs, telemetry, traces, requests, storage, cookies, or query strings. Reload/close clears the session and recovery. Failures use non-content codes.

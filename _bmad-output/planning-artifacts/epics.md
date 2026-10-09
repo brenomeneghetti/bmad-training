@@ -4,12 +4,41 @@ stepsCompleted:
   - step-02-design-epics
   - step-03-create-stories
   - step-04-final-validation
+baselineStepsCompleted:
+  - step-01-validate-prerequisites
+  - step-02-design-epics
+  - step-03-create-stories
+  - step-04-final-validation
+planningUpdate: approved-workbench-redesign
+updated: 2026-10-09
+redesignEpic: 4
+broaderBrowserEpic: 5
+broaderBrowserPlanning: deferred
+requirementsConfirmed: 2026-10-09
+epicStructureApproved: 2026-10-09
+redesignStoryBreakdownApproved: 2026-10-09
+redesignValidation: passed
+redesignValidationScope: Epic 4 planning only
+redesignPlanningStatus: complete
+redesignStoriesApproved:
+  - '4.1'
+  - '4.2'
+  - '4.3'
+  - '4.4'
+  - '4.5'
+  - '4.6'
+  - '4.7'
+redesignPlanCommit: 305b004256e7cd7cf604588a29cbf4e6f3dfa94a
 inputDocuments:
   - _bmad-output/planning-artifacts/prds/prd-bmad-training-2026-09-24/prd.md
   - _bmad-output/planning-artifacts/prds/prd-bmad-training-2026-09-24/addendum.md
   - _bmad-output/planning-artifacts/architecture/architecture-bmad-training-2026-09-24/ARCHITECTURE-SPINE.md
   - _bmad-output/planning-artifacts/ux-designs/ux-bmad-training-2026-09-24/DESIGN.md
   - _bmad-output/planning-artifacts/ux-designs/ux-bmad-training-2026-09-24/EXPERIENCE.md
+  - _bmad-output/planning-artifacts/ux-designs/ux-bmad-training-2026-09-24/reconcile-redesign.md
+  - _bmad-output/implementation-artifacts/deferred-work.md
+  - evidence/README.md
+  - AGENTS.md
 ---
 
 # bmad-training - Epic Breakdown
@@ -17,6 +46,15 @@ inputDocuments:
 ## Overview
 
 This document provides the complete epic and story breakdown for bmad-training, decomposing the requirements from the PRD, UX Design, and Architecture requirements into implementable stories.
+
+**2026-10-09 planning update:** preserve the original Epics 1–3 and their
+acceptance history. The user assigned the approved workbench redesign to Epic 4
+and moved the unchanged deferred broader-browser scope to Epic 5. The redesign
+requirements, five-epic structure and seven-story Epic 4 breakdown are approved;
+Epic 4 planning validation passed and the user confirmed workflow completion.
+Epic 5's detailed planning remains deferred, and no implementation or release
+evidence is established by this update. `baselineStepsCompleted` records the original completed
+planning run; `stepsCompleted` tracks this update.
 
 ## Requirements Inventory
 
@@ -114,6 +152,13 @@ NFR17: All required V1 data and actions must remain available without page-level
 
 ### UX Design Requirements
 
+UX-DR1–UX-DR28 preserve the original Epics 1–3 baseline and historical evidence
+identities. They are not instructions to restore old light styling, the Actions
+landmark, duplicate Add buttons or permanent Move controls. For Epic 4, use the
+current redesign requirements below and the finalized UX spines. Any changed
+release mapping must be reviewed and versioned deliberately, not inferred from
+this document or automatically refreshed by the evidence runner.
+
 UX-DR1: Implement the committed light visual token system from `DESIGN.md`, including neutral surfaces, blue primary actions, semantic error/success/change colors, border contrast, spacing, radii, content width, and component tokens; do not add dark mode, gradients, decorative color coding, or a separate icon language.
 
 UX-DR2: Use the specified system font stack and role-based typography, with monospace typography for Full URL, Domain forms, and URL-value fields; isolate URL and Domain text bidirectionally without altering stored characters and never visually truncate editable or verification values.
@@ -170,6 +215,228 @@ UX-DR27: Use static, non-modal change cues and reduced-motion behavior with no f
 
 UX-DR28: Validate keyboard-only use, 200%/400% zoom, 320px reflow, forced colors, WCAG text spacing, pointer cancellation, live-region repetition/ordering, IME composition, parse races, safe-copy touch/AT recovery, focus after DOM movement, and all failure paths across the named desktop and mobile browser/AT matrix.
 
+### Current Redesign Requirements — Epic 4 Input
+
+**Authority:** finalized `DESIGN.md` and `EXPERIENCE.md` at redesign plan commit
+`305b004256e7cd7cf604588a29cbf4e6f3dfa94a`, with the PRD's FR1–FR16 and
+NFR1–NFR17 retained. These requirements describe work to build and preserve;
+they do not assert that the redesign or its evidence has been implemented.
+Completed stories below describe the original baseline, not the new acceptance.
+
+#### Additional Architecture Requirements
+
+RD-AR1: Before implementation handoff, reconcile architecture AD-6 ordinary
+blur closure, AD-7 grouped full-DOM lists, AD-12 completed pointer activation,
+AD-13 presentation-aware focus/feedback intents and the structural Workbench
+seed with the final UX contract. Remove contradictory old placement/gesture
+instructions without reopening lossless parsing, IDN or History decisions.
+Cancellation microcopy must say no reorder was saved rather than imply a
+preceding legitimate Full URL blur-close entry disappeared.
+
+RD-AR2: Keep the existing React/TypeScript/Vite application, native HTML and
+CSS Modules; implement committed tokens without a new component library,
+external fonts, theme switcher, production dependency or application network
+facility. The original create-vite requirement is already baseline work, not
+a redesign task to repeat.
+
+RD-AR3: Keep committed URL mutations in the immutable core reducer. Define
+disclosure, pinned selection and drag transaction ownership separately from
+URL snapshots/History; capture immutable query ID and source revision after
+ordinary focus processing, validate the drop and commit one reorder intent.
+Do not reconstruct Copy from UI fields or use visible/filtered indexes as IDs.
+
+RD-AR4: Preserve exact session/Copy/Undo effects, local invalid field drafts,
+composition/native-editing guards, stale parse/effect cancellation and browser
+privacy. Focus adapters must expand and render an allowed destination before
+focus, retain Search for Undo fallbacks and invalidate drag previews on source,
+Search or lifecycle changes.
+
+RD-AR5: Deliberately map new/changed exact core, component and Chromium test
+identities into reviewed inventory and story coverage. Existing manifests,
+source references, counts and static mocks are not proof. Epic 4 must produce
+fresh execution-bound Chromium MVP evidence for delivered changes without
+waiving any broader release cell.
+
+RD-AR6: Epic 5 retains Firefox/WebKit/prerequisites and latest-two-major
+released-browser Windows/macOS/mobile scope formerly called Epic 4. Manual
+screen-reader/native clipboard/IME/real 400% zoom observations remain unverified
+until supplied through the existing release contract; renumbering neither
+changes historical runs nor satisfies or waives release gates.
+
+#### UX Design Requirements
+
+RD-UX1: Implement the exact 14-color dark navy palette, eight typography roles,
+10px/16px radii, spacing and all 22 component token groups from DESIGN.
+Use blue/violet/teal accents only for body/Paths/query identity, not validity;
+retain system sans/monospace, tonal layers and clear boundaries without grid,
+marketing gradients, shadows, new icons or reference-product features.
+
+RD-UX2: Implement the two-section Workbench (Full URL, Structured View) with
+one main, unique stable headings/landmarks and source-ordered body/Paths/query
+groups. Retire the separate Actions landmark without hiding required actions.
+
+RD-UX3: Keep `full-url-editor` a persistently labeled wrapping textarea at its
+100px token minimum; Copy is alongside it above 700 CSS px and may wrap below
+at 320–700px. Undo remains below in the same panel. Full URL, Copy and commit
+help stay visible regardless of group expansion.
+
+RD-UX4: Implement `detail-group` and `disclosure-control` for three independent
+initially expanded groups. Native disclosure or heading/button semantics expose
+state/controlled identity, support keyboard/tap/click, hide descendants from
+tab/browse interaction and relocate descendant focus before programmatic
+collapse. No accordion exclusivity, persistence or URL/History mutation.
+
+RD-UX5: Implement `passive-url-context` for supported scheme, present port/
+userinfo and Fragment alongside the existing editable Unicode/ASCII Domain
+forms. Preserve raw values and bidi isolation; unmanaged context is read-only,
+not a new editor, Search target or History capability.
+
+RD-UX6: Render `managed-piece-list` groups with every source piece represented
+once when expanded; no virtualization or infinite-scroll omission. Markerless
+native ordered lists retain explicit list role and list-item semantics.
+Counts and source order must remain correct with 250+ entries.
+
+RD-UX7: Update `managed-piece-row` and `piece-type-label` with persistent type,
+source ordinal/total, duplicate occurrence/total, field/action name and separate
+per-group filtered position. Only the opaque ID is immutable; key/membership/
+structural changes refresh labels without reallocating IDs or swapping focus.
+
+RD-UX8: Show associated query-state text distinguishing `flag`, `flag=`, empty
+entry and `=`. Preserve parser Add defaults (empty key, absent equals, empty
+value), no-op absence, present-equals retention after clearing and exact
+Copy/Undo shape. Do not add the separately deferred presence-toggle feature.
+
+RD-UX9: Preserve `search-field` and `no-results-state`: case-insensitive Managed
+Piece search, N-of-M summary and Clear Search focus/feedback, no source mutation.
+Collapsed headers show matching counts; Search does not change disclosure state
+and the query Add/navigation destinations remain available with zero matches.
+
+RD-UX10: Implement the sole `add-query-parameter-control` below query rows,
+including empty/no-match lists. Accepted Add clears Search with feedback,
+expands query, appends after the full source list, mounts/focuses the new key and
+records one Add entry against Current/Last Valid; invalid Draft stays exact.
+No valid session means inactive Add with guidance, not a fabricated snapshot.
+
+RD-UX11: Replace pre-list Add with `add-query-jump-link`, which expands/focuses
+the sole bottom Add but does not add or clear Search. Keep the top results skip
+link; navigation itself adds no History, though ordinary blur may close an
+already accepted Full URL edit.
+
+RD-UX12: Add bottom and focus-revealed row return links to Full URL/Copy and
+Search, using explicit stable mounted focus destinations and unobscured scroll.
+Users near the end of 250+ queries must reach utilities without traversing all
+remaining rows; preserve Search, pinned selection, invalid text and native keys.
+
+RD-UX13: Implement `query-drag-handle` as a visible named 44px-target button on
+queries only. Tap/click/Enter/Space toggles pinned selection with `aria-pressed`;
+effective `aria-expanded` and `aria-controls` expose Move visibility. Another
+selection transfers the pinned row; focus or selection retains its controls.
+
+RD-UX14: Implement `query-move-controls` only on focused/selected query rows,
+not permanently or hover-only. Keep keyboard/screen-reader/touch Up/Down,
+full-source filtered/boundary behavior, enabled/opposite/field focus fallbacks,
+no false success/History at boundaries and no interception of text arrows.
+
+RD-UX15: Implement primary handle-only query drag with source/destination
+positions and `drop-indicator`. A changed valid drop preserves duplicate
+values/IDs, commits one reorder entry and restores moved-handle focus/selection.
+No Path drag/reorder or direct DOM-only URL mutation.
+
+RD-UX16: Disable drag whenever Search is nonempty, even if every row matches;
+show explicit Clear Search guidance without silently clearing it. The handle's
+selection/reveal and Up/Down alternative remain usable against full source order.
+
+RD-UX17: Pending drag does not mutate; same-position/invalid/outside drop,
+Escape, pointer cancellation/lost capture, missing target, changed revision or
+activated Search cancel with no reorder entry. Preserve any preceding ordinary
+Full URL blur-close entry and exact invalid Draft; a later valid drop owns its
+own single entry.
+
+RD-UX18: Distinguish handle tap from recognized drag, suppress the post-drag
+synthetic click and retain touch scroll/text selection outside the handle.
+Constrain gesture capture/touch-action to the handle. Choose and test technical
+threshold/edge-scroll mechanics without requiring hover or long-press discovery.
+
+RD-UX19: Implement transient drag-destination feedback: latest changed logical
+destination coalesced at 300ms, bound to transaction/revision, discarded before
+drop/cancel final feedback. Keep static readable destination text; no preview
+entries in persistent outcome history or speech from cancelled transactions.
+
+RD-UX20: Keep `remove-control` labeled on path/query only; preserve exact
+delimiter/duplicate removal and next/previous matching-subcontrol focus,
+Clear Search/Add/heading fallbacks with reveal-before-focus as needed.
+
+RD-UX21: Keep `undo-control`, native/product shortcut arbitration and the full
+operation-specific Undo table. Expand a collapsed unfiltered target before
+focus; preserve Search and existing filtered fallback. Restore exact snapshots,
+IDs and Draft text without selection/disclosure/navigation entries.
+
+RD-UX22: Keep `copy-control` exact-source and truthful, with `safe-copy-readonly`
+outside disclosures containing the captured Current/Last Valid value, visible
+selection, native copy guidance and stable focus. Preserve attempt fencing,
+timeout/recovery lifetime and newer-attempt ownership.
+
+RD-UX23: Implement `committed-state-banner` outside disclosures identifying
+Current/Last Valid and unchanged invalid Draft. Keep Full URL validation,
+structured error summary, safe-copy recovery and all feedback outside groups.
+No collapse hides the explanation or treats invalid Draft as synchronized.
+
+RD-UX24: Implement `validation-message` with stable IDs and persistent field
+associations. Error-summary activation clears Search only when it hides the
+target and the action explicitly says so; then expand/render/focus that same
+field with rejected text/error intact. Preserve help, validation channels,
+repeat/IME guards and ordinary focus processing.
+
+RD-UX25: Preserve `status-message`'s separate validation, polite and actionable
+failure channels and existing timing/overflow rules. Render promoted outcomes
+once in a labeled chronological ordinary "Operation feedback" list outside
+disclosures, with wrapping text, no extra live role/focus movement, session
+retention and reload/close reset; distinguish it from Undo History.
+
+RD-UX26: Preserve raw URL/IDN bidi isolation and no truncation. Verify main
+reading contrast 7:1, normal text 4.5:1 and functional boundaries/focus 3:1 on
+actual surfaces, including selected/disabled/error states. Use the 3px offset
+focus outline and native/system colors; selection/drop/type never use color
+alone or box-shadow-only focus.
+
+RD-UX27: Implement responsive stacking at 320–700px, adequate-width inline
+fields/actions above 700px, 320px reflow and the stated 400% zoom contract.
+Apply 24px minimum/spacing exception and 44px control targets, 52px disclosure
+headings, and normative WCAG text-spacing overrides without lost function,
+clipping or page overflow. Only essential value fields may scroll internally.
+
+RD-UX28: Cover No session, Parsing/stale publication, valid/invalid Initial/
+Draft/field, independent collapse, focus/pinned selection, drag/cancel,
+empty/no-match, clipboard denial/recovery, reload, reduced motion and forced
+colors. Preserve local-only already-loaded offline behavior; no service-worker
+or cold-load offline scope. Static/reduced-motion cues retain every action.
+
+RD-UX29: Use concise source-aware microcopy and stable DOM/tab order; no
+routine mutation modals, hover-only actions or vague success. Escape prioritizes
+drag cancellation, then may clear pinned selection outside editing; it never
+discards Draft, collapses a permanent group or cancels a prior accepted edit.
+
+RD-UX30: Verify the complete named Devon journey and edge cases on fresh mapped
+Chromium evidence: `A→B` plus invalid `X` followed by jump/cancel/Add/drop;
+Search-hidden errors in collapsed groups; duplicate-key label refresh; query
+shape preservation; rapid drag preview/drop/cancel; 250+ row return navigation;
+overflow feedback; existing exact Copy/Undo/privacy/performance/IME guarantees.
+
+RD-UX31: Treat the approved `mockups/dark-workbench.html` as the visual anchor,
+not code/behavior proof. Do not ship its annotation/mobile-example rail,
+historical pending notes, static grips or undersized handle. Final spines win;
+recovery/drag/density states remain spine-only by user choice.
+
+#### Scope and Confirmation Status
+
+All FR1–FR16 and NFR1–NFR17 remain in force. Epic 4 delivers the redesign while
+preserving the previously built editing/recovery features; it does not rebuild
+Epics 1–3, add Path reorder, a light/theme toggle, equals-presence controls,
+accounts/persistence/networking or claim deferred browser/manual coverage.
+Epic 5 retains the former browser-verification assignment. Requirements and
+epic structure were explicitly approved on 2026-10-09; the current story-writing
+scope is Epic 4 only. Epic 5's detailed stories remain deferred.
+
 ### FR Coverage Map
 
 FR1: Epic 1 - Accept a supported Absolute URL without replacing a session on rejection.
@@ -204,6 +471,21 @@ FR15: Epic 3 - Copy the exact Current or Last Valid URL with truthful feedback a
 
 FR16: Epic 3 - Confirm validation and operation outcomes through accessible, non-interrupting feedback channels.
 
+#### Redesign and Compatibility Coverage
+
+The original primary assignments above remain unchanged. Epic 4 preserves every
+FR while changing the interface; Epic 5 validates compatibility rather than
+reimplementing capabilities.
+
+| Requirement scope | Epic 4 — redesign | Epic 5 — deferred compatibility |
+|---|---|---|
+| FR1, FR3, FR6, FR7, FR10, FR11, FR12, FR13, FR14 | Preserve exact intake/semantics/edit/History behavior through the new UI; regression coverage | Verify the same contracts on approved additional released-browser targets |
+| FR2, FR4, FR5, FR8, FR9, FR15, FR16 | Grouped disclosures, Search/identity, bottom Add/navigation, primary drag/on-demand moves, adjacent Copy and external feedback | Verify equivalent interaction, focus, gestures and recovery on the expanded matrix |
+| NFR1–NFR10, NFR12–NFR17 | Preserve browser-local privacy, integrity, capacity, accessibility and responsive contracts with fresh Chromium MVP evidence | Supply the broader release/platform/manual observations required by the unchanged gates |
+| NFR11 | Do not claim latest-two-major coverage from Chromium-only results | Establish exact additional-browser and released-browser/version coverage |
+| RD-AR1–RD-AR5; RD-UX1–RD-UX31 | Full current redesign scope | No duplicated implementation scope |
+| RD-AR6 | Preserve deferral boundaries and use Epic 5 in current planning references | Own former Epic 4 browser-validation scope; no historical-result rewrite or waived cells |
+
 ## Epic List
 
 ### Epic 1: Safely Inspect and Find URL Pieces
@@ -229,6 +511,37 @@ A developer can reverse every committed change to the exact Initial URL, copy th
 **FRs covered:** FR13, FR14, FR15, FR16
 
 **Implementation notes:** Add exact snapshot History, product/native Undo arbitration, revisioned effects, Copy attempt fencing and safe-copy recovery, reducer-owned feedback queues, release evidence, and complete browser/AT verification. The epic builds on the prior editing experience and requires no future epic to function.
+
+### Epic 4: Edit URLs in a Clear, Polished Workbench
+
+A developer can inspect and edit URLs in the approved dark workbench, with Copy
+beside Full URL, one bottom query Add, independent detail disclosures and query
+dragging backed by focused/selected keyboard move controls, without losing exact
+URL, Draft, Undo or Copy behavior.
+
+**FRs covered:** FR1, FR2, FR3, FR4, FR5, FR6, FR7, FR8, FR9, FR10, FR11, FR12, FR13, FR14, FR15, FR16.
+
+**Implementation notes:** Build on delivered Epics 1–3. Reconcile upstream
+architecture, implement the approved visual/interaction contracts incrementally
+and bind fresh Chromium regression evidence. No new component library,
+production dependencies, expanded URL editors, persistence or deferred
+browser-coverage claims. The epic delivers its Chromium MVP outcome independently
+of Epic 5; evidence is progressive and story-specific.
+
+### Epic 5: Use the Workbench Reliably Across Supported Browsers and Devices
+
+A developer can rely on the existing workbench across the approved additional
+browsers and released-browser OS/mobile targets, backed by concrete compatibility
+observations rather than inferred Chromium equivalence.
+
+**FRs covered:** FR1, FR2, FR3, FR4, FR5, FR6, FR7, FR8, FR9, FR10, FR11, FR12, FR13, FR14, FR15, FR16, as compatibility verification.
+
+**Implementation notes:** Preserve the unchanged scope formerly deferred to
+Epic 4: Firefox/WebKit/prerequisites, latest-two-major released-browser targets
+and the documented still-unverified native/manual/AT/real-zoom boundaries.
+Validation applies to the delivered workbench, including Epic 4 changes;
+requirements, exact evidence identity and release gating are not waived.
+Detailed Epic 5 stories are outside this redesign-planning run.
 
 ## Epic 1: Safely Inspect and Find URL Pieces
 
@@ -1190,3 +1503,563 @@ So that an artifact cannot be promoted unless its semantics, privacy, performanc
 **When** the release command evaluates the manifest
 **Then** it exits non-zero with stable non-content failure codes and identifies the missing/failed cell without exposing URL fixture content
 **And** no preview promotion, production promotion, or success-shaped fallback occurs; required FR1–FR16, NFR1–NFR17, UX-DR1–UX-DR28, and AG-1–AG-3 release cells must all pass.
+
+## Epic 4: Edit URLs in a Clear, Polished Workbench
+
+A developer can use the approved dark workbench with contextual Copy/Add,
+independent details and accessible query dragging while exact URL, Draft,
+History, Undo, Copy and browser-local privacy remain intact.
+
+**Dependencies:** delivered Epics 1–3. Each new story owns its changed-behavior
+tests and mapped Chromium evidence; later integration work and Epic 5's broader
+observations are not prerequisites for an earlier story's usable MVP outcome.
+No new feature is falsely presented as implemented before its owning story.
+
+### Story 4.1: Use a Polished Dark Workbench with Contextual Copy
+
+As a web developer,
+I want a clearly styled workbench with Copy beside the Full URL,
+So that I can inspect and export my result without searching for controls.
+
+**Requirements:** RD-UX1–RD-UX3, RD-UX22, RD-UX26–RD-UX29, RD-UX31;
+RD-AR1–RD-AR2, RD-AR4–RD-AR6. Direct FR2/FR15/FR16 changes and regression
+preservation of FR1–FR16; privacy, capacity and accessibility NFRs remain in force.
+
+**Implementation surfaces:** `src/styles/workbench.module.css` consumes the
+approved tokens; `src/app/workbench/Workbench.tsx` owns contextual action layout;
+`src/app/pieces/StructuredView.tsx` retains existing rows/actions with styled
+fields; `src/app/workbench/Workbench.test.tsx` and `tests/workbench.spec.ts`
+cover behavior/reflow. Synchronize the architecture spine and related UX
+reconciliation before implementation handoff; update reviewed evidence mappings
+for this story's exact changed test identities.
+
+**Acceptance Criteria:**
+
+**Given** the finalized DESIGN tokens and approved dark mockup
+**When** the workbench renders
+**Then** its 14 colors, eight typography roles, 10px/16px radii, spacing and
+component token definitions match the contract, with styled controls and navy
+hierarchy using system UI/monospace typography
+**And** no light/theme toggle, component library, external font, background grid,
+marketing gradient, annotation/mobile-preview rail or new production dependency
+is introduced; later interaction components are not advertised as functioning.
+
+**Given** the Full URL panel at a width above 700 CSS pixels
+**When** a session, invalid input or long supported URL is displayed
+**Then** the labeled wrapping textarea has its 100px minimum, Copy shares its
+line and Undo sits below in the same panel without a separate Actions landmark
+**And** at 320–700px Copy may wrap below in unchanged reading order, with no
+page-level horizontal overflow or clipped labels, feedback or actions.
+
+**Given** valid, invalid-Draft and clipboard-failure states
+**When** Copy or Undo is activated from its new position
+**Then** the existing exact Current/Last Valid source, chronological History,
+attempt fencing, truthful feedback and selected safe-copy recovery are preserved
+**And** Draft text, field/native editing guards and required focus behavior do
+not change merely because controls move.
+
+**Given** keyboard-only, selected/error/disabled, forced-colors and text-spacing
+states
+**When** the styled controls are traversed or inspected
+**Then** persistent labels and visible 3px-offset focus survive, main reading
+targets 7:1, normal text 4.5:1 and functional boundaries/focus 3:1 on actual
+surfaces, with the normative control-target and reflow contracts
+**And** no meaning relies on color/shadow alone and no WCAG spacing override
+clips or hides a required function.
+
+**Given** the delivered baseline and this story's mapped tests
+**When** fresh Chromium MVP evidence executes
+**Then** intake, edits, Search, Add, Remove, existing reorder, native/product
+Undo, exact Copy/recovery, privacy and capacity remain functional
+**And** reviewed inventory/coverage identifies the actual executions for this
+change; broader-browser/manual release observations remain unverified in Epic 5,
+not waived or inferred from the static mock.
+
+### Story 4.2: Show or Hide URL Details Without Losing Context
+
+As a web developer,
+I want independent body, path and query detail groups,
+So that I can focus on relevant pieces without hiding my URL, errors or recovery.
+
+**Requirements:** RD-UX4–RD-UX6, RD-UX9, RD-UX20–RD-UX24, RD-UX28;
+RD-AR1, RD-AR3–RD-AR5. FR2–FR7/FR11/FR14–FR16 and full-DOM accessibility.
+
+**Dependencies:** Story 4.1 and delivered baseline behavior. This story does not
+depend on later bottom-Add placement or dragging; current Add/Undo destinations
+must already work with disclosure reveal-before-focus.
+
+**Implementation surfaces:** `src/app/pieces/StructuredView.tsx` and
+`src/app/workbench/Workbench.tsx` render disclosures, passive context, counts and
+external errors; `src/platform/focus/index.ts` and
+`src/platform/effects/index.ts` support typed render-ready targets as necessary.
+Keep URL mutations in `src/core/session/session.ts`. Extend existing component,
+focus/effect and Chromium tests, styles and story evidence.
+
+**Acceptance Criteria:**
+
+**Given** a new valid session
+**When** Structured View renders
+**Then** URL body details, Paths and Query Parameters are independent initially
+expanded groups in source order with unique stable headings/content IDs
+**And** keyboard/tap/click toggles one group with correct native disclosure or
+equivalent expanded/controlled semantics, never a mutually exclusive accordion.
+
+**Given** collapsed content or a focused descendant
+**When** a control-driven or programmatic collapse occurs
+**Then** hidden descendants leave tab/browse interaction, control activation
+retains control focus and programmatic hiding first relocates descendant focus
+**And** Full URL/Copy, committed-state banner, errors, operation feedback and
+safe-copy recovery remain outside disclosures; local invalid text is not lost.
+
+**Given** an invalid structured field excluded by Search or group collapse
+**When** its persistent external error-summary action is activated
+**Then** the action explicitly discloses any needed Search clearing, clears only
+when necessary with count feedback, expands/renders the same stable-ID field,
+retains rejected text/error/help associations and focuses it unobscured
+**And** the summary is not a duplicate live announcer; navigation creates no
+entry of its own while legitimate preceding Full URL blur closure is retained.
+
+**Given** Add or Undo resolves to a collapsed destination
+**When** the accepted operation applies its existing focus contract
+**Then** the owning group expands and the allowed stable target renders before
+focus; invalid Full URL Draft stays exact
+**And** Add's established Search clearing and Undo's preserved-Search/filtered
+fallback remain distinct; disclosure state never changes URL History.
+
+**Given** a supported URL with unmanaged pieces and 250+ query entries
+**When** groups render, collapse, expand or are searched
+**Then** every expanded source piece appears exactly once in complete native
+lists, markerless lists retain explicit list semantics and collapsed headers
+report matching counts without changing Search or source order
+**And** body shows existing editable Domain forms plus passive supported
+scheme/port/userinfo/Fragment; no new unmanaged editor, Search target,
+virtualization or content persistence is introduced.
+
+**Given** the story's keyboard, focus, field-draft, group/count and responsive
+fixtures
+**When** fresh mapped Chromium tests execute
+**Then** independent collapse, filtered-error recovery, Add/Undo reveal and
+320px/text-spacing/forced-colors behavior have actual execution proof
+**And** WebKit/VoiceOver and real manual/zoom observations remain Epic 5 work.
+
+### Story 4.3: Add at the Bottom and Navigate Long Query Lists
+
+As a web developer,
+I want Add beneath the query list and short routes back to primary controls,
+So that long URLs do not make routine actions hard to reach.
+
+**Requirements:** RD-UX10–RD-UX12, RD-UX20–RD-UX21, RD-UX27, RD-UX29;
+RD-AR3–RD-AR5. FR4/FR7/FR8/FR10–FR14 with dense-list focus and capacity.
+
+**Dependencies:** Stories 4.1–4.2 and existing Add/History behavior; no later
+selection or drag implementation is required for focus-revealed return links.
+
+**Implementation surfaces:** Workbench/StructuredView and CSS Module replace
+duplicate Add placement with top jump/bottom action and utility return links.
+Use existing reducer-owned Add and typed focus effects; remove stale top-action
+selectors/fallbacks from affected component, focus and Chromium tests and update
+their exact reviewed evidence identities.
+
+**Acceptance Criteria:**
+
+**Given** a valid session with full, empty or Search-no-match query results
+**When** Query Parameters renders
+**Then** one Add Query Parameter button follows the query list and there is no
+second top Add button
+**And** the top "Skip to Add Query Parameter" and results skip links remain
+reachable without traversing rows.
+
+**Given** the query group is collapsed and Search is active
+**When** the top Add jump is activated
+**Then** it expands query, mounts the sole Add and focuses it without adding,
+clearing Search or creating navigation History
+**And** any ordinary Full URL blur closes its prior accepted edit normally,
+without losing invalid Draft or confusing that entry with an Add.
+
+**Given** Current/Last Valid URL, optional invalid Draft and active Search
+**When** the bottom Add is accepted
+**Then** existing close-and-rebase ordering is preserved, Search clears with
+feedback, query expands and the new entry appends after all source parameters
+with existing empty-key/absent-equals/empty-value defaults
+**And** its key receives render-ready focus, the accepted Add owns one History
+entry, invalid Draft stays exact and Undo restores the pre-Add snapshot.
+
+**Given** focus on a deep query row or beside bottom Add in a 250+ entry session
+**When** "Back to Full URL and Copy" or "Back to Search" is activated
+**Then** row-focus-revealed and bottom links focus the respective stable
+textarea/Search destination with adjacent Copy next in tab order
+**And** Search, pinned state if present, invalid text and URL are preserved;
+focus is unobscured at 320px/400% reflow without intercepting native edit keys.
+
+**Given** no valid session or a pointer press cancelled before completed
+activation
+**When** Add is unavailable or aborted
+**Then** guidance explains the inactive action and no session, row, URL mutation,
+History entry or success outcome is fabricated
+**And** required targets, labels and empty/no-match navigation remain perceivable.
+
+**Given** exact Add/Undo and dense-navigation fixtures
+**When** fresh story-mapped Chromium evidence executes
+**Then** append source order, duplicate preservation, Search clearing,
+invalid-Draft chronology and bounded return focus are proven for delivered code
+**And** existing evidence does not stand in for new executions or real browser
+zoom/manual observations deferred to Epic 5.
+
+### Story 4.4: Distinguish Query Shapes and Changing Row Labels
+
+As a web developer,
+I want query rows and feedback to explain their exact state,
+So that blank values, duplicate entries and recent outcomes are not ambiguous.
+
+**Requirements:** RD-UX7–RD-UX8, RD-UX25–RD-UX26, RD-UX29;
+RD-AR3–RD-AR5. FR3/FR5/FR6/FR8/FR13–FR16 and non-color/state semantics.
+
+**Dependencies:** Stories 4.1–4.3 and existing lossless-model/feedback behavior.
+No later handle or drag capability is required.
+
+**Implementation surfaces:** StructuredView and `src/app/pieces/search.ts`
+derive current display labels/descriptions from immutable source IDs and raw
+query shape; Workbench and CSS Module render external operation history with
+existing reducer-owned feedback. Add focused component/Chromium assertions and
+core goldens only if touched semantics require them. Do not rewrite working
+parser, ID allocation or feedback queues merely for presentation.
+
+**Acceptance Criteria:**
+
+**Given** query entries `flag`, `flag=`, an empty entry and `=`
+**When** their rows render or values are edited
+**Then** persistent text associated with each value field distinguishes absent
+equals, present-but-empty value, empty entry and empty key/value
+**And** Add keeps the existing empty-entry default, no-op empty edits preserve
+absence, clearing a present value retains equals, and unrelated bytes remain
+exact; Full URL can remove equals without adding a presence-toggle feature.
+
+**Given** duplicate keys and immutable row IDs
+**When** keys change, entries are added/removed or source order changes
+**Then** source ordinal/total and duplicate occurrence/total refresh from their
+actual dependencies while IDs, field/error associations and focus remain stable
+**And** names identify type, source position, applicable duplicate occurrence
+and field/action; display labels are never used as internal identity.
+
+**Given** Search filters separate body/Path/query groups
+**When** names, positions and counts are exposed
+**Then** filtering does not rename source positions or duplicate membership,
+and filtered-result position is separately described within its owning group
+**And** any set-position/size semantics describe that group's actual result
+list rather than a synthetic cross-group list.
+
+**Given** the existing status queue promotes overflow outcomes
+**When** persistent operation feedback is rendered
+**Then** exact promoted messages appear once, oldest first, in a labeled ordinary
+"Operation feedback" list outside disclosures with readable wrapping
+**And** existing timing/promotion rules remain authoritative, there is no extra
+live role or focus stealing, outcomes remain for the session until reload/close,
+and this list is not product Undo History.
+
+**Given** shape-sensitive and duplicate fixtures such as `?flag&flag=&`
+**When** unrelated edits, Add, reorder, Copy and Undo execute
+**Then** exact serialized shapes and snapshot IDs remain correct and restored
+labels reflect the restored model
+**And** fresh mapped Chromium evidence covers names/descriptions/feedback plus
+the delivered preservation cases without implying additional-browser coverage.
+
+### Story 4.5: Reveal Query Move Controls Through Focus or Selection
+
+As a web developer,
+I want move controls only on the row I am attending to,
+So that reordering stays accessible without cluttering every query row.
+
+**Requirements:** RD-UX13–RD-UX14, RD-UX16, RD-UX21, RD-UX26, RD-UX29;
+RD-AR3–RD-AR5. FR5/FR9/FR13–FR14 and keyboard/touch/focus requirements.
+
+**Dependencies:** Stories 4.1–4.4 and delivered Up/Down/Undo transitions.
+The handle-shaped reveal button is usable now; drag help/gesture affordances
+must not claim dragging works until Story 4.6 implements it.
+
+**Implementation surfaces:** StructuredView/Workbench and CSS Module own
+on-demand row presentation and pinned selection keyed by immutable PieceId.
+Use existing session move/Undo transitions and typed focus adapters; update
+component, focus/effect and Chromium tests plus exact evidence mappings.
+
+**Acceptance Criteria:**
+
+**Given** an idle query row with no descendant focus or pinned selection
+**When** it renders
+**Then** Up/Down controls are absent from visual, tab and interactive browse
+access, while a visible named 44px-target reveal button remains available
+**And** no Path reveal/drag handle or permanently cluttering Move pair is added.
+
+**Given** focus anywhere in a query row or tap/click/Enter/Space on its handle
+**When** selection or focus changes
+**Then** Up/Down reveals, `aria-pressed` identifies pinned selection,
+`aria-expanded` reports effective visibility and `aria-controls` resolves
+**And** another selection transfers the pinned row; unpinning does not hide
+controls while the row still contains focus; a focused Move is never unmounted.
+
+**Given** a middle, first, last or one-item query row
+**When** Up/Down succeeds or a boundary action is unavailable
+**Then** full-source boundaries and stable IDs govern movement; retain the
+activated enabled control, otherwise enabled opposite, then row/first field
+**And** reveal the target before focus, announce exact old/new position/total
+and boundary outcome, and create no History/success for impossible moves.
+
+**Given** Search is active or Undo restores a reordered row
+**When** Move or Undo resolves
+**Then** source-adjacent movement and existing filtered-target fallback remain
+correct, Search is not silently cleared and collapsed allowed targets expand
+before render-ready focus
+**And** invalid Draft stays exact and one completed reorder retains its one
+snapshot entry; on-demand presentation adds no History.
+
+**Given** focus in editable inputs, composition or a selected row
+**When** arrow keys, platform Undo or Escape are used
+**Then** native editing/composition behavior is preserved; Escape outside editing
+may clear pinned state without blurring/hiding a focused Move action
+**And** pointer cancellation before completed activation creates no mutation.
+
+**Given** the changed reveal, selection, filtered and boundary focus cases
+**When** fresh story-mapped Chromium evidence executes
+**Then** keyboard and non-drag pointer access are proven without hover-only
+controls, stale IDs or false successful actions
+**And** drag itself is not asserted by this story or required for its completion.
+
+### Story 4.6: Drag Query Parameters Without Losing Exact State
+
+As a web developer,
+I want to drag a query parameter to another position,
+So that I can reorder quickly while preserving duplicates, Undo and keyboard access.
+
+**Requirements:** RD-UX15–RD-UX19, RD-UX13–RD-UX14, RD-UX21,
+RD-UX25–RD-UX29; RD-AR1, RD-AR3–RD-AR5. FR3/FR5/FR9–FR14/FR16
+with exact-snapshot, focus, pointer-cancellation and privacy requirements.
+
+**Dependencies:** Stories 4.1–4.5 and existing lossless query/History behavior.
+Drag becomes a working primary gesture in this story; Up/Down remains a complete
+keyboard, screen-reader and non-drag pointer alternative.
+
+**Implementation surfaces:** Workbench/StructuredView own the handle gesture,
+transaction-local preview and insertion indicator; CSS constrains touch behavior
+to handles. Extend existing pure lossless reorder/session transitions for an
+explicit validated source/destination rather than replaying multiple Up/Down
+mutations. Keep committed snapshots in the reducer and typed render-ready
+handle focus in platform adapters. Update exact core/session, component/focus,
+gesture and Chromium evidence identities; no new production dependency.
+
+**Acceptance Criteria:**
+
+**Given** Search is empty and a query handle receives pointer interaction
+**When** a recognized drag begins after ordinary focus/blur processing
+**Then** capture the immutable source ID and current source revision, show
+readable source/destination positions and a non-color-only insertion indicator
+**And** preview stays outside committed URL/History, Paths never reorder and
+visible indexes never substitute for identity or source validation.
+
+**Given** a valid unchanged source revision and a changed valid destination
+**When** completed drop is accepted
+**Then** one reducer-owned reorder preserves IDs, duplicates, raw values,
+query shapes and required delimiter rules, and records exactly one reorder entry
+**And** focus/selection resolves to the moved handle after rendering, labels
+refresh, exact Undo restores the snapshot and invalid Full URL Draft stays exact.
+
+**Given** a same-position, invalid/outside or missing-target drop, Escape,
+pointer cancellation/lost capture, changed source revision or activated Search
+**When** the transaction ends or becomes invalid
+**Then** preview clears and no reorder entry or false success is created
+**And** preceding ordinary Full URL blur-close History is retained; cancellation
+says no reorder was saved, never that all History stayed unchanged.
+
+**Given** any nonempty Search, including one matching every query row
+**When** the user attempts dragging
+**Then** no drag transaction starts and visible guidance says to clear Search
+to drag, without clearing it automatically
+**And** handle selection/reveal and source-order Up/Down remain operable; the
+whole handle is not disabled merely to disable its drag gesture.
+
+**Given** touch or mouse interaction on and outside a query handle
+**When** a tap stays a tap or movement crosses the chosen drag threshold
+**Then** taps retain selection behavior, a recognized drag suppresses its
+post-drag synthetic click, and outside-handle scroll/text selection remain native
+**And** capture/touch-action is handle-scoped; documented tested threshold and
+edge-scroll mechanics permit long-list drops without hover/long-press discovery.
+
+**Given** rapid destination changes during a drag
+**When** preview is announced or the transaction drops/cancels
+**Then** only the latest changed logical destination is coalesced at 300ms,
+bound to transaction/revision, and pending preview is invalidated before final
+feedback, including after source/Search/lifecycle changes
+**And** static destination text stays readable; transient previews never enter
+persistent operation feedback or announce after a completed/cancelled drag.
+
+**Given** exact-shape, duplicate, stale-source, boundary and cancellation fixtures
+**When** fresh core/component and real Chromium pointer-path tests execute
+**Then** arbitrary changed drops own one entry, all rejected/cancelled/no-op
+paths own zero reorder entries, prior blur-close chronology remains correct
+and moved-handle focus, touch policy and announcement fencing are proven
+**And** browser simulation is not claimed as physical mobile/AT/manual evidence,
+and later integration Story 4.7 is not required to prove this story's behavior.
+
+### Story 4.7: Complete the Redesigned Journey at Supported Limits
+
+As a web developer,
+I want the redesigned workbench to stay reliable with long, complex URLs,
+So that improved appearance never compromises editing or recovery.
+
+**Requirements:** RD-UX30, integrated RD-UX1–RD-UX31;
+RD-AR4–RD-AR6. Preserve FR1–FR16 and NFR1–NFR17 without claiming
+unexecuted browser, manual or usability coverage.
+
+**Dependencies:** Stories 4.1–4.6, each already usable and proven for its own
+mapped scope. This story connects the completed capabilities into journey and
+limit evidence; it is not a deferred acceptance prerequisite for earlier stories.
+
+**Implementation surfaces:** Extend existing shared exact fixtures and
+`tests/workbench.spec.ts` journey/capacity/privacy scenarios, reusing core and
+component proof rather than rebuilding completed behavior. Deliberately revise
+reviewed inventory/coverage and related release mappings for exact changed
+identities; use the existing evidence runner, supported runtime and local
+cache/browser prerequisites. Fix only integration defects this work exposes.
+
+**Acceptance Criteria:**
+
+**Given** the delivered redesign and EXPERIENCE UJ-1 plus Flows 2–3
+**When** Devon completes valid intake, Search/edit/variation/Undo, top jump,
+bottom Add and exact Copy, then the invalid-Draft and IDN/high-density paths
+**Then** synchronized Current/Last Valid, clipboard recovery, removal, handle
+selection, Up/Down, explicit Search clearing, cancelled/accepted drag and
+stepwise Undo work together with specified focus and feedback
+**And** the final full Undo restores Initial URL bytes and identities exactly,
+not merely a canonical equivalent; recovery never changes the attempted source.
+
+**Given** `A→B` Full URL editing followed by exact invalid `X`
+**When** jump/cancel/Add/drop and subsequent Undo/correction are exercised
+**Then** ordinary blur records at most the legitimate `A→B` entry, navigation
+and cancelled/no-op drag add none, accepted Add/drop each own one entry against
+Last Valid, and correction rebases on the latest committed snapshot
+**And** hidden-field error recovery, duplicate-label refresh, absent/empty query
+shapes, rapid preview/drop/cancel, overflow feedback and long-list returns have
+fresh explicit assertions rather than only a happy-path screenshot.
+
+**Given** a 20,000-character URL with at least 250 query parameters
+**When** initial parse, Search, edits, Add/Remove, both reorder methods, Undo
+and Copy execute using the existing 260-entry fixtures where applicable
+**Then** every expanded piece remains represented, no blocking overflow or
+browser freeze occurs, parse meets 1 second and local interactions meet 100 ms
+on recorded hardware with at least four logical cores and 8 GB RAM
+**And** threshold breaches fail evidence; counts, an unrelated shorter fixture
+or relaxed limits cannot substitute for supported-limit execution.
+
+**Given** the canonical 22 components and delivered UI states
+**When** Chromium checks keyboard/focus, 320px and wider reflow, text spacing,
+actual contrast, control targets, reduced motion and forced colors
+**Then** required functions, readable values, errors, selected/drop cues and
+recovery remain available without color-only meaning or page-level overflow
+**And** No session, parsing/stale publication, valid/invalid Initial/Draft/field,
+independent collapse, empty/no-match, clipboard failure and reload are covered;
+viewport simulation is not claimed as real 400% zoom or physical mobile proof.
+
+**Given** already-loaded browser-local execution
+**When** integrated editing, drag, recovery and reload scenarios are monitored
+**Then** URL/Draft/History/clipboard content reaches no external sink or
+browser persistence, the loaded app works offline, and reload/close clears
+session and promoted operation feedback
+**And** no service worker, cold-load offline promise, new production dependency,
+telemetry or content-bearing diagnostic artifact is introduced.
+
+**Given** the reviewed evidence contracts and story traceability below
+**When** a fresh execution-bound Chromium manifest is produced
+**Then** exact changed tests, fixtures, story ownership, artifacts and tested
+versions map deliberately, with failures and missing prerequisites explicit
+**And** existing gate identities are not silently replaced or weakened;
+Firefox/WebKit, released-version OS/mobile, native clipboard/IME, AT, real zoom
+and representative-user observations remain unverified Epic 5 release work.
+
+### Epic 4 Story Traceability
+
+These mappings identify implementation responsibility, not completed evidence.
+Story 4.7 integrates all delivered capabilities; each earlier story owns its
+changed tests and usable outcome independently.
+
+| Requirement | Owning story or stories |
+|---|---|
+| RD-UX1–RD-UX3 | 4.1 |
+| RD-UX4–RD-UX6 | 4.2 |
+| RD-UX7–RD-UX8 | 4.4 |
+| RD-UX9 | 4.2 |
+| RD-UX10–RD-UX12 | 4.3 |
+| RD-UX13–RD-UX14 | 4.5; 4.6 adds the working drag gesture |
+| RD-UX15 | 4.6 |
+| RD-UX16 | 4.5 preserves filtered Up/Down; 4.6 disables filtered drag |
+| RD-UX17–RD-UX19 | 4.6 |
+| RD-UX20 | 4.2 reveal-aware Remove; 4.3 bottom-Add focus fallback |
+| RD-UX21 | 4.2 disclosure-aware Undo; 4.3/4.5/4.6 changed focus paths |
+| RD-UX22 | 4.1 |
+| RD-UX23–RD-UX24 | 4.2 |
+| RD-UX25 | 4.4 persistent outcomes; 4.6 transient preview isolation |
+| RD-UX26 | 4.1 visual/bidi floor; 4.4 labels; 4.5/4.6 selection/drop states |
+| RD-UX27 | 4.1 reflow/targets; 4.3 navigation; 4.5/4.6 gesture targets |
+| RD-UX28 | 4.1 baseline states; 4.2 disclosure; 4.5/4.6 selection/drag |
+| RD-UX29 | 4.1/4.3/4.4 baseline navigation/text; 4.5/4.6 selection/Escape |
+| RD-UX30 | 4.7 |
+| RD-UX31 | 4.1; 4.7 checks final integration against the spines |
+| RD-AR1 | 4.1 reconciles handoff; 4.2/4.6 apply grouped focus/blur/drag |
+| RD-AR2 | 4.1, retained throughout 4.2–4.7 |
+| RD-AR3 | 4.2–4.6 |
+| RD-AR4 | 4.1–4.7 |
+| RD-AR5 | 4.1–4.7, with fresh exact mapped evidence per changed story |
+| RD-AR6 | 4.1/4.7 preserve deferral; Epic 5 owns broader verification |
+
+#### Canonical Component Coverage
+
+Story 4.1 supplies the shared tokens for all 22 components; later stories own
+their changed behavior. Story 4.7 checks the complete integrated set.
+
+| DESIGN component | Behavioral owner |
+|---|---|
+| `full-url-editor` | 4.1 |
+| `action-bar` | 4.1 |
+| `search-field` | 4.2 |
+| `detail-group` | 4.2 |
+| `disclosure-control` | 4.2 |
+| `passive-url-context` | 4.2 |
+| `managed-piece-list` | 4.2 |
+| `managed-piece-row` | 4.4; 4.5 selection presentation |
+| `piece-type-label` | 4.4 |
+| `query-drag-handle` | 4.5 reveal; 4.6 drag |
+| `query-move-controls` | 4.5 |
+| `drop-indicator` | 4.6 |
+| `remove-control` | 4.2/4.3 |
+| `add-query-parameter-control` | 4.3 |
+| `add-query-jump-link` | 4.3, including return links |
+| `undo-control` | 4.1 placement; 4.2/4.3/4.5/4.6 focus integration |
+| `copy-control` | 4.1 |
+| `safe-copy-readonly` | 4.1 |
+| `status-message` | 4.1 placement; 4.4 outcome list; 4.6 drag previews |
+| `committed-state-banner` | 4.2 |
+| `validation-message` | 4.2 |
+| `no-results-state` | 4.2; 4.3 Add/navigation availability |
+
+#### Retained Functional and Nonfunctional Coverage
+
+Original primary FR assignments and Epics 1–3 acceptance bodies remain intact.
+This table identifies redesign regression ownership rather than rebuilding them.
+
+| Retained contract | Redesign coverage |
+|---|---|
+| FR1 | 4.1 intake/state preservation; 4.7 integrated intake |
+| FR2 | 4.1 layout; 4.2 full-DOM/context; 4.7 integration |
+| FR3 | 4.4 shape/identity; 4.6 lossless drag; 4.7 exact goldens |
+| FR4 | 4.2 search/counts; 4.3 navigation/Add; 4.5/4.6 filtered reorder |
+| FR5 | 4.4 names/positions; 4.5/4.6 stable-ID movement |
+| FR6 | 4.2 validation/reveal; 4.4 shape/label updates; 4.7 edits/IDN |
+| FR7 | 4.2/4.3 Remove/fallback; 4.7 integrated removal |
+| FR8 | 4.3 sole Add; 4.4 shape defaults; 4.7 journey |
+| FR9 | 4.5 Up/Down; 4.6 drag; 4.7 integration |
+| FR10–FR12 | 4.1 baseline; 4.2/4.3/4.6 blur/Draft chronology; 4.7 rebase |
+| FR13–FR14 | Every changed mutation/focus story; 4.7 exact full Undo |
+| FR15 | 4.1 Copy/recovery; 4.7 exact source/races |
+| FR16 | 4.2 validation; 4.4 outcomes; 4.6 previews; 4.7 integration |
+| NFR1–NFR7 | Preserved throughout; 4.7 privacy/atomic/exact-state integration |
+| NFR8–NFR10 | Per-story changed capacity paths; 4.7 measured supported limits |
+| NFR11 | Epic 5 broader released-browser verification, not waived |
+| NFR12–NFR15 | Per-story keyboard/focus/semantics; 4.7 integrated checks |
+| NFR16–NFR17 | Per-story automated checks and 4.7 reflow; Epic 5 manual/real zoom/AT evidence |

@@ -36,7 +36,10 @@ gate behavior, **not** external release observations.
 
 No external observations are presently supplied. Release evaluation therefore
 exits 1, identifies each missing reviewed cell and emits **no authorization**.
-Approved Epic 4/manual deferrals remain release-blocking, not waived passes.
+Approved Epic 5/manual deferrals remain release-blocking, not waived passes.
+On 2026-10-09 the user reassigned the former Epic 4 browser-validation scope to
+Epic 5 and assigned Epic 4 to the approved UI/UX redesign. This numbering change
+does not alter evidence identities, historical results, or coverage claims.
 Story 3.5 remains pending human acceptance.
 
 ## Supplying external observations
@@ -294,7 +297,7 @@ without the explicit stale-owner operation.
 ## Operator checks that are still unverified
 
 Chromium is the user-approved MVP target as of 2026-10-07. Firefox, WebKit and
-additional released-browser targets are deferred to Epic 4; no current passing
+additional released-browser targets are deferred to Epic 5; no current passing
 manifest claims their coverage. Story 3.6 consumes this Chromium proof foundation.
 Installed headless engines are **not**
 latest-two-major released browsers, Windows/macOS/mobile coverage, real IMEs or
