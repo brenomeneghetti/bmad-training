@@ -48,6 +48,127 @@
     }
   },
   "$defs": {
+    "digest": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "promotionAuthorization": {
+      "type": "object", "additionalProperties": false,
+      "required": ["schemaVersion", "matrixVersion", "evaluatorVersion", "action", "rebuild", "artifactDigest", "sourceDigest", "runId", "bundleDigest", "headersDigest", "deliveryDigest", "manifestDigest", "contractDigest", "evidenceDigest", "records", "transport", "htmlCacheControl", "assetsCacheControl", "rollback", "expiresAt"],
+      "properties": {
+        "schemaVersion": {"const": 1},
+        "matrixVersion": {"type": "integer", "minimum": 1},
+        "evaluatorVersion": {"type": "string", "minLength": 1},
+        "action": {"const": "promote-identical-tested-artifact-and-headers"},
+        "rebuild": {"const": false},
+        "artifactDigest": {"$ref": "#/$defs/digest"},
+        "sourceDigest": {"$ref": "#/$defs/digest"},
+        "runId": {"type": "string", "pattern": "^[a-f0-9-]{36}$"},
+        "bundleDigest": {"$ref": "#/$defs/digest"},
+        "headersDigest": {"$ref": "#/$defs/digest"},
+        "deliveryDigest": {"$ref": "#/$defs/digest"},
+        "manifestDigest": {"$ref": "#/$defs/digest"},
+        "contractDigest": {"$ref": "#/$defs/digest"},
+        "evidenceDigest": {"$ref": "#/$defs/digest"},
+        "records": {"$ref": "#/$defs/releaseEvidence/properties/records"},
+        "transport": {"const": "https"},
+        "htmlCacheControl": {"const": "no-cache"},
+        "assetsCacheControl": {"const": "public, max-age=31536000, immutable"},
+        "expiresAt": {"type": "string", "format": "date-time"},
+        "rollback": {
+          "type": "object", "additionalProperties": false,
+          "required": ["priorArtifact", "priorHeaders", "restoredArtifactHash", "restoredHeadersHash", "atomic", "observed"],
+          "properties": {
+            "priorArtifact": {"$ref": "#/$defs/object"},
+            "priorHeaders": {"$ref": "#/$defs/object"},
+            "restoredArtifactHash": {"$ref": "#/$defs/digest"},
+            "restoredHeadersHash": {"$ref": "#/$defs/digest"},
+            "atomic": {"const": true},
+            "observed": {"const": true}
+          }
+        }
+      }
+    },
+    "releaseEvidence": {
+      "type": "object", "additionalProperties": false,
+      "required": ["schemaVersion", "matrixVersion", "evaluatorVersion", "provenance", "runId", "sourceDigest", "artifactDigest", "records"],
+      "properties": {
+        "schemaVersion": {"const": 1},
+        "matrixVersion": {"type": "integer", "minimum": 1},
+        "evaluatorVersion": {"type": "string", "minLength": 1},
+        "provenance": {"enum": ["observed", "synthetic"]},
+        "runId": {"type": "string", "pattern": "^[a-f0-9-]{36}$"},
+        "sourceDigest": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "artifactDigest": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "records": {
+          "type": "array",
+          "items": {
+            "type": "object", "additionalProperties": false, "required": ["cellId", "path", "hash"],
+            "properties": {
+              "cellId": {"type": "string", "minLength": 1},
+              "path": {"type": "string", "pattern": "^evidence/observations/[a-f0-9]{64}\\.json$"},
+              "hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+            }
+          }
+        }
+      }
+    },
+    "signOff": {
+      "type": "object", "additionalProperties": false,
+      "required": ["attestor", "date", "approval", "signature"],
+      "properties": {
+        "attestor": {"type": "string", "minLength": 1},
+        "date": {"type": "string", "format": "date-time"},
+        "approval": {"const": "approved"},
+        "signature": {"type": "string", "minLength": 1}
+      }
+    },
+    "releaseRecord": {
+      "type": "object", "additionalProperties": false,
+      "required": ["schemaVersion", "matrixVersion", "evaluatorVersion", "provenance", "cellId", "kind", "requirements", "stories", "fixture", "owner", "ownerRole", "result", "channel", "runId", "sourceDigest", "artifactDigest", "recordedAt", "signOff", "testedVersions", "criticalFailures", "details"],
+      "properties": {
+        "schemaVersion": {"const": 1},
+        "matrixVersion": {"type": "integer", "minimum": 1},
+        "evaluatorVersion": {"type": "string", "minLength": 1},
+        "cellId": {"type": "string"},
+        "provenance": {"enum": ["observed", "synthetic"]},
+        "kind": {"enum": ["requirement", "baseline", "browser", "manual", "keyboard", "performance", "study", "critical", "privacy", "delivery"]},
+        "requirements": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+        "stories": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+        "fixture": {"type": "string", "minLength": 1},
+        "owner": {"type": "string", "minLength": 1},
+        "ownerRole": {"type": "string", "minLength": 1},
+        "result": {"enum": ["pass", "fail", "skip", "waived", "deferred"]},
+        "channel": {"enum": ["manual", "browser", "performance", "study", "privacy", "delivery", "summary"]},
+        "runId": {"type": "string", "pattern": "^[a-f0-9-]{36}$"},
+        "sourceDigest": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "artifactDigest": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "recordedAt": {"type": "string", "format": "date-time"},
+        "signOff": {"$ref": "#/$defs/signOff"},
+        "testedVersions": {
+          "type": "array", "minItems": 1, "uniqueItems": true,
+          "items": {
+            "type": "object", "additionalProperties": false,
+            "required": ["os", "osVersion", "browser", "version"],
+            "properties": {
+              "os": {"enum": ["windows", "macos", "ios", "android"]},
+              "osVersion": {"type": "string", "minLength": 1},
+              "browser": {"enum": ["chrome", "firefox", "edge", "safari"]},
+              "version": {"type": "string", "pattern": "^[1-9][0-9]*\\.[0-9]+(?:\\.[0-9]+)*$"},
+              "at": {"enum": ["nvda", "voiceover", "talkback", "none"]},
+              "atVersion": {"type": "string", "minLength": 1}
+            }
+          }
+        },
+        "criticalFailures": {
+          "type": "object", "additionalProperties": false,
+          "required": ["synchronization", "undo-identity-focus", "stale-copy"],
+          "properties": {
+            "synchronization": {"type": "integer", "minimum": 0},
+            "undo-identity-focus": {"type": "integer", "minimum": 0},
+            "stale-copy": {"type": "integer", "minimum": 0}
+          }
+        },
+        "details": {"type": "object"}
+      }
+    },
     "object": {
       "type": "object", "additionalProperties": false, "required": ["path", "hash"],
       "properties": {

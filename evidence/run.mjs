@@ -11,6 +11,11 @@ export class RunError extends Error {
   constructor(code, message) { super(message); this.code = code; }
 }
 
+const safeRunCode = (error) => [
+  "OWNED", "STALE_UNSAFE", "OWNERSHIP_LOST", "CANCELLED", "STALE_SOURCE",
+  "STALE_ARTIFACT", "PREREQUISITE", "COMMAND_FAILED", "MISSING_REPORT",
+].includes(error.code) ? error.code : "VALIDATION_FAILED";
+
 export function stopChild(child, signal = "SIGTERM", kill = process.kill) {
   if (!child?.pid || child.exitCode !== null || child.signalCode !== null) return;
   signalGroup(child.pid, signal, kill);
@@ -248,12 +253,12 @@ export async function executeRun(root, { recover = false, controller = new Abort
     stopChild(child);
     if (await owns(root, token)) {
       await rm(resolve(root, "evidence/manifest.json"), { force: true });
-      const failure = { code: error.code ?? "VALIDATION_FAILED", message: error.message };
+      const failure = { code: safeRunCode(error) };
       try {
         await writeFile(resolve(root, `${directory}/failure.json`), JSON.stringify(failure), { flag: "wx" });
         if (attempt) await writeFile(resolve(root, `${directory}/attempt.json`), JSON.stringify({ ...attempt, failure }, null, 2), { flag: "wx" });
-      } catch (diagnosticError) {
-        console.error(`DIAGNOSTIC_FAILED: ${diagnosticError.message}; original failure: ${error.message}`);
+      } catch {
+        console.error("DIAGNOSTIC_FAILED");
       }
     }
     throw error;
@@ -273,7 +278,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
     const result = await executeRun(root, { recover: process.argv.includes("--recover-stale") });
     console.log(`Validated immutable execution objects: ${result.directory}`);
   } catch (error) {
-    console.error(`${error.code ?? "VALIDATION_FAILED"}: ${error.message}`);
+    console.error(safeRunCode(error));
     process.exitCode = 1;
   }
 }

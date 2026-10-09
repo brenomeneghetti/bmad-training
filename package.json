@@ -12,11 +12,13 @@
     "build": "tsc -b && vite build",
     "typecheck": "tsc -b --pretty false",
     "lint": "oxlint src tests evidence/*.mjs vite.config.ts playwright.config.ts",
-    "test": "vitest run && node --test evidence/validate.test.mjs evidence/run.test.mjs",
+    "test": "vitest run && node --test evidence/validate.test.mjs evidence/run.test.mjs evidence/release.test.mjs",
     "test:e2e:install": "PLAYWRIGHT_BROWSERS_PATH=$PWD/.cache/browsers TMPDIR=$PWD/.cache/tmp XDG_CACHE_HOME=$PWD/.cache playwright install chromium",
     "test:e2e": "playwright test",
     "evidence:validate": "node evidence/validate.mjs",
-    "evidence:run": "node evidence/run.mjs"
+    "evidence:run": "node evidence/run.mjs",
+    "evidence:release": "node evidence/validate.mjs --release",
+    "evidence:story": "node evidence/validate.mjs --story"
   },
   "dependencies": {
     "react": "19.3.0",

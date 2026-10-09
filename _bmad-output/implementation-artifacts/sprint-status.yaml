@@ -29,7 +29,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 # - Retrospective appends its action items to action_items; the status view surfaces open ones
 generated: 09-29-2026 20:17
-last_updated: 10-09-2026 10:02
+last_updated: 10-09-2026 10:41
 project: bmad-training
 project_key: NOKEY
 tracking_system: file-system
@@ -72,5 +72,7 @@ development_status:
   3-4-recover-safely-from-clipboard-failure-and-races: done
   # User-authorized direct review complete; Chromium-only proof passes; human acceptance pending.
   3-5-receive-every-outcome-without-losing-focus: review
-  3-6-enforce-the-trusted-release-evidence-gate: backlog
+  # User-authorized direct review complete; independent review waived; human acceptance pending.
+  # Broader release remains blocked by missing external and actual delivery observations.
+  3-6-enforce-the-trusted-release-evidence-gate: review
   epic-3-retrospective: optional

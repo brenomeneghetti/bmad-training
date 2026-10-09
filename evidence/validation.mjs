@@ -303,3 +303,344 @@ export const validateEvidence = async (root, manifestPath = "evidence/manifest.j
   }
   return { artifactDigest, cellCount: coverage.length, testCount: inventory.reduce((total, item) => total + item.multiplicity, 0) };
 };
+
+const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+const digestBytes = (bytes) => createHash("sha256").update(bytes).digest("hex");
+const exactKeys = (value, keys) => value && typeof value === "object" && !Array.isArray(value) &&
+  same(Object.keys(value).sort(), [...keys].sort());
+const allChecks = (value, keys) => exactKeys(value, keys) && keys.every((key) => value[key] === true);
+const channelFor = {
+  requirement: "manual", baseline: "browser", browser: "browser", manual: "manual",
+  keyboard: "manual", performance: "performance", study: "study", critical: "summary",
+  privacy: "privacy", delivery: "delivery",
+};
+
+// Numbered requirements are conservatively shared, not inferred from test counts.
+// The reviewed contract can narrow mappings in a later matrix version.
+export function releaseCells(contract) {
+  const cells = contract.requirements.map((requirement) => ({
+    id: `release-${requirement.toLowerCase()}`, kind: "requirement", requirements: [requirement],
+    stories: contract.stories, ownerRole: "requirement-owner",
+  }));
+  for (const browser of contract.browsers) for (const slot of contract.majorSlots) cells.push({
+    id: `release-browser-${browser}-${slot}`, kind: "browser", browser, slot,
+    requirements: contract.requirements, stories: contract.stories, ownerRole: "browser-owner",
+  });
+  for (const platform of contract.platforms) for (const slot of contract.majorSlots) cells.push({
+    ...platform, id: `release-manual-${platform.id}-${slot}`, kind: "manual", slot,
+    requirements: contract.requirements, stories: contract.stories, ownerRole: "accessibility-owner",
+  });
+  for (const cell of contract.specialCells) cells.push({
+    ...cell, requirements: contract.requirements,
+    stories: cell.scope === "gate" ? ["3.6"] : contract.stories,
+  });
+  return cells.map((cell) => ({ ...cell, fixture: `${cell.id}-v${contract.matrixVersion}` }));
+}
+
+function fresh(date, earliest, now, days) {
+  const time = Date.parse(date);
+  return Number.isFinite(time) && time >= Date.parse(earliest) && time <= now &&
+    now - time <= days * 86400000;
+}
+
+function validBaseline(details, contract) {
+  if (!exactKeys(details, ["latestMajors", "checkedAt"]) ||
+    !exactKeys(details.latestMajors, contract.browsers)) return false;
+  return contract.browsers.every((browser) =>
+    Number.isSafeInteger(details.latestMajors[browser]) && details.latestMajors[browser] >= 2);
+}
+
+function supportedVersion(version, baseline) {
+  if (!baseline) return false;
+  const latest = baseline.details.latestMajors[version.browser];
+  const major = Number(version.version.split(".")[0]);
+  return major === latest || major === latest - 1;
+}
+
+function exactTarget(record, cell, baseline) {
+  const versions = record.testedVersions;
+  if (versions.length !== 1 || !baseline) return false;
+  const target = versions[0];
+  const major = baseline.details.latestMajors[cell.browser] - (cell.slot === "previous" ? 1 : 0);
+  return target.browser === cell.browser && Number(target.version.split(".")[0]) === major &&
+    (!cell.os || target.os === cell.os) && (!cell.at || (target.at === cell.at && Boolean(target.atVersion)));
+}
+
+function validPerformance(details, contract) {
+  if (!exactKeys(details, ["hardware", "fixture", "measurementMethod", "initialParseMs", "operationsMs"]) ||
+    !exactKeys(details.hardware, ["logicalCpus", "ramBytes", "model"]) ||
+    !exactKeys(details.fixture, ["characters", "queryEntries"]) ||
+    !exactKeys(details.operationsMs, contract.operations)) return false;
+  return Number.isSafeInteger(details.hardware.logicalCpus) && details.hardware.logicalCpus >= 4 &&
+    Number.isSafeInteger(details.hardware.ramBytes) && details.hardware.ramBytes >= 8_000_000_000 &&
+    typeof details.hardware.model === "string" && details.hardware.model.length > 0 &&
+    details.fixture.characters === 20000 && details.fixture.queryEntries === 260 &&
+    typeof details.measurementMethod === "string" && details.measurementMethod.trim().length > 0 &&
+    Number.isFinite(details.initialParseMs) && details.initialParseMs >= 0 && details.initialParseMs <= 1000 &&
+    contract.operations.every((operation) => Number.isFinite(details.operationsMs[operation]) &&
+      details.operationsMs[operation] >= 0 && details.operationsMs[operation] <= 100);
+}
+
+function validStudy(details, contract, validateSignOff, earliest, now) {
+  if (!exactKeys(details, ["journey", "roster", "participants", "unassistedCompleters", "totalParticipants"]) ||
+    details.journey !== "UJ-1" || !Array.isArray(details.roster) || !Array.isArray(details.participants)) return false;
+  const count = details.roster.length;
+  if (count < 5 || count > 8 || new Set(details.roster).size !== count ||
+    details.roster.some((id) => typeof id !== "string" || !id) || details.participants.length !== count) return false;
+  const seen = new Set();
+  let successes = 0;
+  for (const participant of details.participants) {
+    if (!exactKeys(participant, ["id", "representativeDeveloper", "completed", "assistance", "steps", "signOff"]) ||
+      !details.roster.includes(participant.id) || seen.has(participant.id) ||
+      participant.representativeDeveloper !== true || typeof participant.completed !== "boolean" ||
+      !["none", "provided"].includes(participant.assistance) ||
+      !exactKeys(participant.steps, contract.journeySteps) || !validateSignOff(participant.signOff) ||
+      participant.signOff.attestor !== participant.id ||
+      !fresh(participant.signOff.date, earliest, now, contract.maxAgeDays)) return false;
+    seen.add(participant.id);
+    const steps = contract.journeySteps.map((step) => participant.steps[step]);
+    if (steps.some((step) => !exactKeys(step, ["completed", "assisted"]) ||
+      typeof step.completed !== "boolean" || typeof step.assisted !== "boolean")) return false;
+    if (participant.completed !== steps.every((step) => step.completed) ||
+      (steps.some((step) => step.assisted) && participant.assistance !== "provided")) return false;
+    if (participant.completed && participant.assistance === "none" && steps.every((step) => !step.assisted)) successes++;
+  }
+  return details.totalParticipants === count && details.unassistedCompleters === successes &&
+    successes * 10 >= count * 9;
+}
+
+async function attachment(root, reference) {
+  if (!exactKeys(reference, ["path", "hash"]) ||
+    typeof reference.path !== "string" || !/^evidence\/attachments\/[a-f0-9]{64}\.[a-z0-9]+$/.test(reference.path) ||
+    !/^[a-f0-9]{64}$/.test(reference.hash) ||
+    reference.path.split("/").at(-1).split(".")[0] !== reference.hash) return false;
+  return reference.hash === await hashFile(root, reference.path);
+}
+
+async function validDelivery(root, details, manifest) {
+  const keys = ["transport", "testedBundleDigest", "deliveredBundleDigest", "testedHeadersDigest",
+    "deliveredHeadersDigest", "deliveryDigest", "htmlCacheControl", "assets", "promotion", "rollback"];
+  if (!exactKeys(details, keys)) return false;
+  const policy = await readJson(root, manifest.artifact.delivery);
+  const headersDigest = digestBytes(JSON.stringify(policy.headers));
+  const bundleDigest = await calculateTreeDigest(root, ["dist"]);
+  if (details.transport !== "https" || policy.transport !== "https" ||
+    policy.promotion !== "copy-tested-artifact" || policy.rollback !== "restore-prior-artifact-and-headers" ||
+    policy.authorization?.rebuild !== false || policy.authorization?.atomicArtifactAndHeaders !== true ||
+    policy.authorization?.adapter !== null || policy.authorization?.schemaVersion !== 1 ||
+    policy.authorization?.contract !== "evidence/release-contract.json" ||
+    policy.authorization?.objects !== "evidence/authorizations/<sha256>.json" ||
+    policy.cache?.["index.html"] !== "no-cache" ||
+    policy.cache?.["assets/*"] !== "public, max-age=31536000, immutable" ||
+    details.testedBundleDigest !== bundleDigest || details.deliveredBundleDigest !== bundleDigest ||
+    details.testedHeadersDigest !== headersDigest || details.deliveredHeadersDigest !== headersDigest ||
+    details.deliveryDigest !== await hashFile(root, manifest.artifact.delivery) ||
+    details.htmlCacheControl !== "no-cache" || details.promotion !== "identical-tested-bytes-no-rebuild" ||
+    !Array.isArray(details.assets) || !details.assets.length) return false;
+  const files = [];
+  const collect = async (path) => {
+    for (const entry of await readdir(await safePath(root, path, "directory"), { withFileTypes: true })) {
+      const child = `${path}/${entry.name}`;
+      if (entry.isDirectory()) await collect(child);
+      else { await safePath(root, child); files.push(child); }
+    }
+  };
+  await collect("dist");
+  const expected = files.filter((path) => path !== "dist/index.html").sort();
+  if (!files.includes("dist/index.html") ||
+    !same(details.assets.map((asset) => asset.path).sort(), expected)) return false;
+  for (const asset of details.assets) {
+    if (!exactKeys(asset, ["path", "hash", "cacheControl"]) ||
+      !/^dist\/assets\/[A-Za-z0-9_.-]+-[A-Za-z0-9_-]{8,}\.[a-z0-9]+$/.test(asset.path) ||
+      asset.hash !== await hashFile(root, asset.path) ||
+      asset.cacheControl !== "public, max-age=31536000, immutable") return false;
+  }
+  const rollback = details.rollback;
+  return exactKeys(rollback, ["priorArtifact", "priorHeaders", "restoredArtifactHash", "restoredHeadersHash", "atomic", "observed"]) &&
+    rollback.atomic === true && rollback.observed === true &&
+    await attachment(root, rollback.priorArtifact) && await attachment(root, rollback.priorHeaders) &&
+    rollback.restoredArtifactHash === rollback.priorArtifact.hash &&
+    rollback.restoredHeadersHash === rollback.priorHeaders.hash;
+}
+
+export async function evaluateGate(root, {
+  scope = "release", inputPath = "evidence/release-evidence.json",
+  manifestPath = "evidence/manifest.json", now = Date.now(),
+} = {}) {
+  const diagnostics = [];
+  const fail = (code, cellId = null) => {
+    if (!diagnostics.some((item) => item.code === code && item.cellId === cellId)) diagnostics.push({ code, cellId });
+  };
+  let execution;
+  try { execution = await validateEvidence(root, manifestPath); }
+  catch { fail("EXECUTION_PROOF_INVALID"); }
+  if (scope === "mvp") return { scope, satisfied: !diagnostics.length, releaseEligible: false, diagnostics, execution };
+  let manifest, manifestDigest, schema, contract, cells;
+  try {
+    const manifestBytes = await readFile(await safePath(root, manifestPath));
+    manifest = JSON.parse(manifestBytes);
+    manifestDigest = digestBytes(manifestBytes);
+    schema = await readJson(root, "evidence/schema.json");
+    contract = await readJson(root, "evidence/release-contract.json");
+    cells = releaseCells(contract);
+  } catch {
+    fail("GATE_INPUT_INVALID");
+    return { scope: "invalid", satisfied: false, releaseEligible: false, diagnostics, authorization: null };
+  }
+  if (scope !== "release" && !contract.stories.includes(scope)) {
+    fail("UNSUPPORTED_SCOPE");
+    return { scope: "invalid", satisfied: false, releaseEligible: false, diagnostics, authorization: null };
+  }
+  const selected = cells.filter((cell) => scope === "release" || cell.stories.includes(scope));
+  const byId = new Map(cells.map((cell) => [cell.id, cell]));
+  const ajv = new Ajv2020({ allErrors: true });
+  addFormats(ajv);
+  const compile = (name) => ajv.compile({ $ref: `#/$defs/${name}`, $defs: schema.$defs });
+  const validateInput = compile("releaseEvidence");
+  const validateRecord = compile("releaseRecord");
+  const validateSignOff = compile("signOff");
+  const validateAuthorization = compile("promotionAuthorization");
+  let input, inputDigest;
+  try {
+    const bytes = await readFile(await safePath(root, inputPath));
+    input = JSON.parse(bytes);
+    inputDigest = digestBytes(bytes);
+    if (!validateInput(input)) { fail("RELEASE_INPUT_MALFORMED"); input = null; }
+  } catch { fail("RELEASE_INPUT_MISSING_OR_INVALID"); }
+  if (input && (input.matrixVersion !== contract.matrixVersion || input.evaluatorVersion !== contract.evaluatorVersion)) fail("UNSUPPORTED_VERSION");
+  if (input && (input.artifactDigest !== manifest.artifact.digest ||
+    input.sourceDigest !== manifest.sourceDigest || input.runId !== manifest.runId)) fail("RELEASE_BINDING_MISMATCH");
+  const records = new Map();
+  for (const reference of input?.records ?? []) {
+    const cell = byId.get(reference.cellId);
+    if (!cell) { fail("UNSUPPORTED_CELL"); continue; }
+    if (records.has(cell.id)) { fail("DUPLICATE_RECORD", cell.id); continue; }
+    records.set(cell.id, null);
+    let record;
+    try {
+      const bytes = await readFile(await safePath(root, reference.path));
+      if (reference.path.split("/").at(-1) !== `${reference.hash}.json` ||
+        reference.hash !== digestBytes(bytes)) { fail("RECORD_INTEGRITY", cell.id); continue; }
+      record = JSON.parse(bytes);
+    } catch { fail("RECORD_INTEGRITY", cell.id); continue; }
+    if (!validateRecord(record)) { fail("RECORD_MALFORMED", cell.id); continue; }
+    if (record.cellId !== cell.id || record.kind !== cell.kind ||
+      !same(record.requirements, cell.requirements) || !same(record.stories, cell.stories) ||
+      record.fixture !== cell.fixture || record.ownerRole !== cell.ownerRole ||
+      record.channel !== channelFor[cell.kind]) { fail("RECORD_MAPPING_MISMATCH", cell.id); continue; }
+    if (record.matrixVersion !== contract.matrixVersion || record.evaluatorVersion !== contract.evaluatorVersion) fail("UNSUPPORTED_VERSION", cell.id);
+    if (record.provenance !== input.provenance) fail("PROVENANCE_MISMATCH", cell.id);
+    if (record.artifactDigest !== manifest.artifact.digest || record.sourceDigest !== manifest.sourceDigest ||
+      record.runId !== manifest.runId) fail("RECORD_BINDING_MISMATCH", cell.id);
+    if (!fresh(record.recordedAt, manifest.recordedAt, now, contract.maxAgeDays) ||
+      !fresh(record.signOff.date, record.recordedAt, now, contract.maxAgeDays)) fail("STALE_RECORD", cell.id);
+    if (record.signOff.attestor !== record.owner) fail("OWNER_SIGNOFF_MISMATCH", cell.id);
+    if (selected.some((item) => item.id === cell.id) && record.result !== "pass") fail("RECORD_NOT_PASS", cell.id);
+    if (contract.criticalKinds.some((kind) => record.criticalFailures[kind] !== 0)) fail("CRITICAL_FAILURE", cell.id);
+    records.set(cell.id, record);
+  }
+  for (const cell of selected) if (!records.get(cell.id)) fail("REQUIRED_RECORD_MISSING", cell.id);
+  const baseline = records.get("release-version-baseline");
+  const baselineValid = baseline && validBaseline(baseline.details, contract) &&
+    fresh(baseline.details.checkedAt, manifest.recordedAt, now, contract.baselineMaxAgeDays);
+  if (baseline && !baselineValid) fail("BROWSER_BASELINE_INVALID", "release-version-baseline");
+  for (const [id, record] of records) {
+    if (!record) continue;
+    const cell = byId.get(id);
+    if (!baselineValid || record.testedVersions.some((version) => !supportedVersion(version, baseline))) {
+      fail("TESTED_VERSION_UNSUPPORTED", id);
+    }
+    if (!selected.some((item) => item.id === id)) continue;
+    const details = record.details;
+    let valid = true, code = "RECORD_DETAILS_INVALID";
+    try {
+      switch (cell.kind) {
+        case "requirement":
+          valid = exactKeys(details, ["verified", "observation"]) && details.verified === true &&
+            typeof details.observation === "string" && details.observation.length > 0;
+          break;
+        case "baseline": valid = baselineValid; code = "BROWSER_BASELINE_INVALID"; break;
+        case "browser":
+          valid = exactTarget(record, cell, baseline) && allChecks(details, ["releasedBrowser", "wholeJourney"]);
+          code = "BROWSER_OBSERVATION_INVALID"; break;
+        case "manual":
+          valid = exactTarget(record, cell, baseline) && allChecks(details, contract.manualChecks);
+          code = "MANUAL_OBSERVATION_INVALID"; break;
+        case "keyboard":
+          valid = record.testedVersions.every((version) => version.os === cell.os && version.at === "none") &&
+            allChecks(details, ["keyboard-only", ...contract.manualChecks]);
+          code = "KEYBOARD_OBSERVATION_INVALID"; break;
+        case "performance": valid = validPerformance(details, contract); code = "PERFORMANCE_INVALID"; break;
+        case "study":
+          valid = validStudy(details, contract, validateSignOff, manifest.recordedAt, now);
+          code = "STUDY_INVALID"; break;
+        case "critical": {
+          const others = [...records.values()].filter((item) => item && item !== record);
+          valid = exactKeys(details, ["totals", "channels"]) && exactKeys(details.totals, contract.criticalKinds) &&
+            same(details.channels, [...new Set(others.map((item) => item.channel))].sort()) &&
+            contract.criticalKinds.every((kind) =>
+              details.totals[kind] === others.reduce((sum, item) => sum + item.criticalFailures[kind], 0) &&
+              details.totals[kind] === record.criticalFailures[kind]);
+          code = "CRITICAL_SUMMARY_CONTRADICTION"; break;
+        }
+        case "privacy":
+          valid = exactKeys(details, ["checks", "clipboardSources"]) &&
+            allChecks(details.checks, contract.privacyChecks) && same(details.clipboardSources, contract.clipboardSources);
+          code = "PRIVACY_LIFECYCLE_INVALID"; break;
+        case "delivery": valid = await validDelivery(root, details, manifest); code = "DELIVERY_PROOF_INVALID"; break;
+      }
+    } catch { valid = false; }
+    if (!valid) fail(code, id);
+  }
+  if (!diagnostics.length && scope === "release" && input.provenance === "observed") {
+    try {
+      await validateEvidence(root, manifestPath);
+      if (await hashFile(root, manifestPath) !== manifestDigest ||
+        await hashFile(root, inputPath) !== inputDigest) fail("PROOF_CHANGED_DURING_EVALUATION");
+      for (const reference of input.records) {
+        if (await hashFile(root, reference.path) !== reference.hash) fail("RECORD_INTEGRITY", reference.cellId);
+      }
+      if (!await validDelivery(root, records.get("release-delivery-promotion").details, manifest)) {
+        fail("DELIVERY_PROOF_INVALID", "release-delivery-promotion");
+      }
+    } catch { fail("PROOF_CHANGED_DURING_EVALUATION"); }
+  }
+  const satisfied = diagnostics.length === 0;
+  const releaseEligible = satisfied && scope === "release" && input.provenance === "observed";
+  let authorization = null;
+  if (releaseEligible) {
+    const policy = await readJson(root, manifest.artifact.delivery);
+    const body = {
+      schemaVersion: 1, matrixVersion: contract.matrixVersion, evaluatorVersion: contract.evaluatorVersion,
+      action: "promote-identical-tested-artifact-and-headers", rebuild: false,
+      artifactDigest: manifest.artifact.digest, sourceDigest: manifest.sourceDigest, runId: manifest.runId,
+      bundleDigest: await calculateTreeDigest(root, ["dist"]),
+      headersDigest: digestBytes(JSON.stringify(policy.headers)),
+      deliveryDigest: await hashFile(root, manifest.artifact.delivery),
+      manifestDigest,
+      contractDigest: await hashFile(root, "evidence/release-contract.json"),
+      evidenceDigest: inputDigest,
+      records: [...input.records].sort((a, b) => a.cellId.localeCompare(b.cellId)),
+      transport: "https", htmlCacheControl: "no-cache", assetsCacheControl: "public, max-age=31536000, immutable",
+      rollback: records.get("release-delivery-promotion").details.rollback,
+      expiresAt: new Date(Math.min(...[...records.values()].flatMap((record) => [
+        Date.parse(record.recordedAt) + contract.maxAgeDays * 86400000,
+        Date.parse(record.signOff.date) + contract.maxAgeDays * 86400000,
+      ]), ...records.get("release-uj-1-study").details.participants.map((participant) =>
+        Date.parse(participant.signOff.date) + contract.maxAgeDays * 86400000),
+      Date.parse(baseline.details.checkedAt) + contract.baselineMaxAgeDays * 86400000)).toISOString(),
+    };
+    if (!validateAuthorization(body)) {
+      fail("AUTHORIZATION_CONTRACT_INVALID");
+      return { scope, satisfied: false, releaseEligible: false, diagnostics, execution, authorization: null };
+    }
+    const bytes = `${JSON.stringify(body, null, 2)}\n`;
+    const digest = digestBytes(bytes);
+    authorization = { digest, path: `evidence/authorizations/${digest}.json`, bytes };
+  }
+  return {
+    scope, satisfied, releaseEligible, diagnostics, execution,
+    matrixVersion: contract.matrixVersion, evaluatorVersion: contract.evaluatorVersion,
+    requiredCellCount: selected.length, provenance: input?.provenance ?? null, authorization,
+  };
+}

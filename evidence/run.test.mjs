@@ -207,6 +207,29 @@ test("source changes during an executing command reject its claimed snapshot", a
   await assert.rejects(access(resolve(root, "evidence/manifest.json")));
 });
 
+test("release contract mutation before publication cannot weaken the owned execution gate", async (context) => {
+  const { root, manifest } = await createFixture(context);
+  await assert.rejects(executeRun(root, {
+    produce: producer(root, manifest),
+    beforePublish: async () => { await writeFile(resolve(root, "evidence/release-contract.json"), "{}"); },
+  }), (error) => error.code === "STALE_SOURCE");
+  await assert.rejects(access(resolve(root, "evidence/manifest.json")));
+  await assert.rejects(access(resolve(root, "evidence/.owner.json")));
+});
+
+test("owned failure diagnostics persist only stable codes without private exception content", async (context) => {
+  const { root } = await createFixture(context);
+  const secret = "PRIVATE_SUBMITTED_CONTENT";
+  await assert.rejects(executeRun(root, { produce: async () => {
+    throw Object.assign(new Error(secret), { code: secret });
+  } }), new RegExp(secret));
+  const { readdir } = await import("node:fs/promises");
+  const runs = await readdir(resolve(root, "evidence/runs"));
+  const id = runs.find((item) => item !== "11111111-1111-1111-1111-111111111111");
+  assert.deepEqual(JSON.parse(await readFile(resolve(root, "evidence/runs", id, "failure.json"), "utf8")),
+    { code: "VALIDATION_FAILED" });
+});
+
 test("failed Vitest without JSON retains its command outcome and typed diagnostics", async (context) => {
   const { root } = await createFixture(context);
   const bin = resolve(root, "fake-bin");

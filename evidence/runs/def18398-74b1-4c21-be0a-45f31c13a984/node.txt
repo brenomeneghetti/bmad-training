@@ -1,0 +1,4 @@
+argv: ["node","--test","--test-reporter=./evidence/node-reporter.mjs","evidence/validate.test.mjs","evidence/run.test.mjs","evidence/release.test.mjs"]
+exitCode: 0
+signal: null
+Native Node results captured in node.json.

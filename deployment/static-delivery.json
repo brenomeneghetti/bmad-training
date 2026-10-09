@@ -3,6 +3,14 @@
   "artifact": "dist",
   "promotion": "copy-tested-artifact",
   "rollback": "restore-prior-artifact-and-headers",
+  "authorization": {
+    "schemaVersion": 1,
+    "contract": "evidence/release-contract.json",
+    "objects": "evidence/authorizations/<sha256>.json",
+    "adapter": null,
+    "rebuild": false,
+    "atomicArtifactAndHeaders": true
+  },
   "headers": {
     "Content-Security-Policy": "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
     "Referrer-Policy": "no-referrer"

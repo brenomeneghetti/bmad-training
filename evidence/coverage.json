@@ -196,6 +196,18 @@
     "story": "1.1",
     "tests": [
       {
+        "runner": "node",
+        "file": "evidence/release.test.mjs",
+        "title": "release separates intact Chromium MVP proof from missing external cells",
+        "project": "node"
+      },
+      {
+        "runner": "node",
+        "file": "evidence/release.test.mjs",
+        "title": "release observed fixture authorization binds content addresses without deploying or rebuilding",
+        "project": "node"
+      },
+      {
         "runner": "playwright",
         "file": "tests/workbench.spec.ts",
         "title": "initial and populated workbench pass automated accessibility checks",
