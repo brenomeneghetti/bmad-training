@@ -1,4 +1,17 @@
 [
+  { "runner": "node", "file": "evidence/validate.test.mjs", "title": "rejects missing Story 4.1 dark-foundation evidence after rehashing", "project": "node", "multiplicity": 1 },
+  { "runner": "node", "file": "evidence/validate.test.mjs", "title": "rejects unexecuted Story 4.1 dark-foundation identity despite other passing tests", "project": "node", "multiplicity": 1 },
+  { "runner": "node", "file": "evidence/validate.test.mjs", "title": "rejects missing Story 4.1 contextual-actions evidence after rehashing", "project": "node", "multiplicity": 1 },
+  { "runner": "node", "file": "evidence/validate.test.mjs", "title": "rejects unexecuted Story 4.1 contextual-actions identity despite other passing tests", "project": "node", "multiplicity": 1 },
+  { "runner": "node", "file": "evidence/validate.test.mjs", "title": "rejects missing Story 4.1 accessible-reflow evidence after rehashing", "project": "node", "multiplicity": 1 },
+  { "runner": "node", "file": "evidence/validate.test.mjs", "title": "rejects unexecuted Story 4.1 accessible-reflow identity despite other passing tests", "project": "node", "multiplicity": 1 },
+  { "runner": "node", "file": "evidence/validate.test.mjs", "title": "rejects missing Story 4.1 private-capacity evidence after rehashing", "project": "node", "multiplicity": 1 },
+  { "runner": "node", "file": "evidence/validate.test.mjs", "title": "rejects unexecuted Story 4.1 private-capacity identity despite other passing tests", "project": "node", "multiplicity": 1 },
+  { "runner": "vitest", "file": "src/app/workbench/Workbench.test.tsx", "title": "URL Workbench Story 4.1 keeps contextual Copy then Undo inside Full URL without later-story controls", "project": "vitest", "multiplicity": 1 },
+  { "runner": "playwright", "file": "tests/workbench.spec.ts", "title": "Story 4.1 Chromium renders exact dark tokens typography targets and contrast", "project": "chromium", "multiplicity": 1 },
+  { "runner": "playwright", "file": "tests/workbench.spec.ts", "title": "Story 4.1 Chromium preserves contextual order recovery Undo and completed gestures", "project": "chromium", "multiplicity": 1 },
+  { "runner": "playwright", "file": "tests/workbench.spec.ts", "title": "Story 4.1 Chromium reflows at 320 700 and 701 with spacing and forced colors", "project": "chromium", "multiplicity": 1 },
+  { "runner": "playwright", "file": "tests/workbench.spec.ts", "title": "Story 4.1 Chromium retains private exact capacity operations and response budgets", "project": "chromium", "multiplicity": 1 },
   { "runner": "node", "file": "evidence/release.test.mjs", "title": "release separates intact Chromium MVP proof from missing external cells", "project": "node", "multiplicity": 1 },
   { "runner": "node", "file": "evidence/release.test.mjs", "title": "release complete synthetic fixtures satisfy the oracle but never authorize promotion", "project": "node", "multiplicity": 1 },
   { "runner": "node", "file": "evidence/release.test.mjs", "title": "release observed fixture authorization binds content addresses without deploying or rebuilding", "project": "node", "multiplicity": 1 },
@@ -2136,7 +2149,7 @@
   {
     "runner": "node",
     "file": "evidence/validate.test.mjs",
-    "title": "accepts complete clean-checkout proof with exact inventory and all 56 cells",
+    "title": "accepts complete clean-checkout proof with exact inventory and all mandatory cells",
     "project": "node",
     "multiplicity": 1
   },

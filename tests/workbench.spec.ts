@@ -55,6 +55,412 @@ declare global {
   }
 }
 
+test("Story 4.1 Chromium renders exact dark tokens typography targets and contrast", async ({ page }) => {
+  await installCopyProbe(page);
+  await page.goto("/");
+  await page.getByLabel("Complete HTTP or HTTPS Absolute URL").fill("https://example.com/a?x=1&x=2");
+  const expected = {
+    "surface-base": "#0B1220", "surface-panel": "#121D2E", "surface-input": "#0D1726",
+    "surface-raised": "#1A2940", "text-primary": "#EFF4FC", "text-secondary": "#B5C3D8",
+    "border-default": "#63758F", "body-accent": "#8CB9FF", "path-accent": "#C5ADFF",
+    "query-accent": "#76DECA", action: "#A4C8FF", "action-text": "#0B1220",
+    "selected-surface": "#20374A", focus: "#FFD58A",
+  };
+  const tokens = await page.evaluate((names) => {
+    const style = getComputedStyle(document.documentElement);
+    return Object.fromEntries(names.map((name) => [name, style.getPropertyValue(`--${name}`).trim().toUpperCase()]));
+  }, Object.keys(expected));
+  expect(tokens).toEqual(expected);
+  const uiFont = 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+  const urlFont = 'ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace';
+  const componentTokens = {
+    "full-url-editor": { background: expected["surface-input"], foreground: expected["text-primary"], border: expected["border-default"], radius: "10px", typography: `400 14px/1.5 ${urlFont}`, "min-height": "100px" },
+    "action-bar": { background: expected["surface-panel"], gap: "12px" },
+    "search-field": { background: expected["surface-input"], foreground: expected["text-primary"], border: expected["border-default"], radius: "10px", "min-height": "44px" },
+    "detail-group": { background: expected["surface-panel"], radius: "16px", "body-accent": expected["body-accent"], "path-accent": expected["path-accent"], "query-accent": expected["query-accent"] },
+    "disclosure-control": { typography: `650 15px/1.5 ${uiFont}`, "min-height": "52px" },
+    "passive-url-context": { foreground: expected["text-secondary"], typography: `400 13px/1.5 ${uiFont}` },
+    "managed-piece-list": { gap: "10px" },
+    "managed-piece-row": { background: expected["surface-input"], foreground: expected["text-primary"], border: expected["border-default"], radius: "10px", "selected-background": expected["selected-surface"] },
+    "piece-type-label": { foreground: expected["text-primary"], typography: `400 13px/1.5 ${uiFont}` },
+    "query-drag-handle": { foreground: expected["query-accent"], "min-height": "44px", "min-width": "44px" },
+    "query-move-controls": { background: expected["surface-raised"], foreground: expected["text-primary"], radius: "10px", "min-height": "44px" },
+    "drop-indicator": { foreground: expected["query-accent"] },
+    "remove-control": { background: expected["surface-raised"], foreground: expected["text-primary"], radius: "10px", "min-height": "44px" },
+    "add-query-parameter-control": { background: expected.action, foreground: expected["action-text"], radius: "10px", "min-height": "44px" },
+    "add-query-jump-link": { foreground: expected.action, "min-height": "24px" },
+    "undo-control": { background: expected["surface-raised"], foreground: expected["text-primary"], border: expected["border-default"], radius: "10px", "min-height": "44px" },
+    "copy-control": { background: expected.action, foreground: expected["action-text"], radius: "10px", "min-height": "44px" },
+    "safe-copy-readonly": { background: expected["surface-input"], foreground: expected["text-primary"], border: expected["border-default"], radius: "10px", typography: `400 14px/1.5 ${urlFont}`, "min-height": "44px" },
+    "status-message": { foreground: expected["text-secondary"], typography: `400 13px/1.5 ${uiFont}` },
+    "committed-state-banner": { foreground: expected["text-primary"], background: expected["surface-panel"] },
+    "validation-message": { background: expected["surface-input"], foreground: expected.focus, border: expected.focus, radius: "10px", typography: `400 13px/1.5 ${uiFont}` },
+    "no-results-state": { foreground: expected["text-secondary"], typography: `400 16px/1.5 ${uiFont}` },
+  };
+  const foundation = Object.fromEntries([
+    ...Object.entries(componentTokens).flatMap(([component, properties]) =>
+      Object.entries(properties).map(([property, value]) => [`${component}-${property}`, value])),
+    ...Object.entries({
+      "spacing-1": "4px", "spacing-2": "8px", "spacing-3": "12px",
+      "spacing-4": "16px", "spacing-5": "24px", "spacing-6": "32px",
+      "field-label-gap": "6px", "row-gap": "10px", "panel-padding": "20px",
+      "pointer-min": "24px", "control-target": "44px", "disclosure-target": "52px",
+      "content-max": "1440px",
+    }),
+  ]);
+  expect(await page.evaluate((names) => {
+    const style = getComputedStyle(document.documentElement);
+    return Object.fromEntries(names.map((name) => {
+      const value = style.getPropertyValue(`--${name}`).trim()
+        .replace(/([\d.]+)rem\b/g, (_match, size: string) => `${Number(size) * parseFloat(style.fontSize)}px`);
+      return [name, /^#[\da-f]{6}$/i.test(value) ? value.toUpperCase() : value];
+    }));
+  }, Object.keys(foundation))).toEqual(foundation);
+  const reading = await page.locator("h1, h2, label, input, textarea, button, #piece-summary, #full-url-help")
+    .evaluateAll((elements) => elements.map((element) => {
+      const style = getComputedStyle(element);
+      let parent: Element | null = element;
+      let background = style.backgroundColor;
+      while (background === "rgba(0, 0, 0, 0)" && parent?.parentElement) {
+        parent = parent.parentElement;
+        background = getComputedStyle(parent).backgroundColor;
+      }
+      let adjacent = element.parentElement;
+      while (adjacent?.parentElement && getComputedStyle(adjacent).backgroundColor === "rgba(0, 0, 0, 0)") {
+        adjacent = adjacent.parentElement;
+      }
+      return { foreground: style.color, background, border: style.borderTopColor,
+        adjacent: getComputedStyle(adjacent!).backgroundColor,
+        shadow: style.boxShadow, image: style.backgroundImage, radius: style.borderRadius,
+        size: style.fontSize, weight: style.fontWeight, line: style.lineHeight, family: style.fontFamily,
+        disabled: element.matches(':disabled, [aria-disabled="true"]'), text: element.textContent?.trim(),
+        tag: element.tagName, id: element.id, height: element.getBoundingClientRect().height };
+    }));
+  const luminance = (color: string) => {
+    const channels = color.match(/\d+/g)!.slice(0, 3).map((value) => {
+      const channel = Number(value) / 255;
+      return channel <= .04045 ? channel / 12.92 : ((channel + .055) / 1.055) ** 2.4;
+    });
+    return .2126 * channels[0]! + .7152 * channels[1]! + .0722 * channels[2]!;
+  };
+  const contrast = (one: string, two: string) => {
+    const a = luminance(one), b = luminance(two);
+    return (Math.max(a, b) + .05) / (Math.min(a, b) + .05);
+  };
+  const rgb = (hex: string) => `rgb(${[1, 3, 5].map((start) => parseInt(hex.slice(start, start + 2), 16)).join(", ")})`;
+  for (const style of reading) {
+    expect(contrast(style.foreground, style.background)).toBeGreaterThanOrEqual(4.5);
+    expect(style.shadow).toBe("none");
+    expect(style.image).toBe("none");
+    if (["INPUT", "TEXTAREA", "BUTTON"].includes(style.tag)) {
+      expect(style.height).toBeGreaterThanOrEqual(44);
+      expect(style.radius).toBe("10px");
+      expect(contrast(style.border, style.adjacent)).toBeGreaterThanOrEqual(3);
+    }
+    const urlText = style.tag === "TEXTAREA" || (style.tag === "INPUT" && style.id !== "managed-piece-search");
+    expect(style.family).toBe(urlText ? urlFont : uiFont);
+    if (["INPUT", "TEXTAREA"].includes(style.tag)) {
+      expect(style.background).toBe(rgb(expected["surface-input"]));
+      expect(style.foreground).toBe(rgb(expected["text-primary"]));
+      expect(style.border).toBe(rgb(expected["border-default"]));
+    }
+    if (style.tag === "BUTTON") {
+      const primary = !style.disabled && ["Copy", "Add Query Parameter"].includes(style.text ?? "");
+      expect(style.background).toBe(rgb(primary ? expected.action : expected["surface-raised"]));
+      expect(style.foreground).toBe(rgb(style.disabled ? expected["text-secondary"] :
+        primary ? expected["action-text"] : expected["text-primary"]));
+    }
+    if (["INPUT", "TEXTAREA", "LABEL", "H1", "H2"].includes(style.tag)) {
+      expect(contrast(style.foreground, style.background)).toBeGreaterThanOrEqual(7);
+    }
+  }
+  expect(reading.find((item) => item.tag === "H1")).toMatchObject({ size: "32px", weight: "650", line: "40px" });
+  expect(reading.find((item) => item.tag === "H2")).toMatchObject({ size: "21px", weight: "650", line: "31.5px" });
+  expect(reading.find((item) => item.tag === "LABEL")).toMatchObject({ size: "13px", weight: "600", line: "19.5px" });
+  expect(reading.find((item) => item.tag === "BUTTON")).toMatchObject({ size: "14px", weight: "600", line: "21px" });
+  expect(reading.find((item) => item.id === "piece-summary")).toMatchObject({ size: "13px", weight: "400", line: "19.5px" });
+  expect(reading.find((item) => item.id === "full-url-editor")).toMatchObject({ size: "14px", weight: "400", line: "21px" });
+  expect(await page.locator("body").evaluate((element) => getComputedStyle(element).fontSize)).toBe("16px");
+  expect(await page.getByRole("region", { name: "Full URL" }).evaluate((element) =>
+    getComputedStyle(element).borderRadius)).toBe("16px");
+  expect(await page.getByRole("region", { name: "Full URL" }).evaluate((element) =>
+    getComputedStyle(element).backgroundColor)).toBe(rgb(expected["surface-panel"]));
+  expect(await page.locator("#managed-pieces").evaluate((element) => getComputedStyle(element).gap)).toBe("10px");
+  expect(await page.locator("#managed-pieces > li").evaluateAll((elements) => elements.map((element) => {
+    const style = getComputedStyle(element);
+    return [style.backgroundColor, style.color, style.borderTopColor, style.borderRadius];
+  }))).toEqual(Array(4).fill([
+    rgb(expected["surface-input"]), rgb(expected["text-primary"]), rgb(expected["border-default"]), "10px",
+  ]));
+  const editor = page.locator("#full-url-editor");
+  expect((await editor.boundingBox())!.height).toBeGreaterThanOrEqual(100);
+  await page.keyboard.press("Tab");
+  const copy = page.getByRole("button", { name: "Copy", exact: true });
+  await expect(copy).toBeFocused();
+  const focus = await copy.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return { color: style.outlineColor, width: style.outlineWidth, offset: style.outlineOffset,
+      adjacent: getComputedStyle(element.parentElement!.parentElement!).backgroundColor };
+  });
+  expect(focus).toMatchObject({ width: "3px", offset: "3px", color: "rgb(255, 213, 138)" });
+  expect(contrast(focus.color, focus.adjacent)).toBeGreaterThanOrEqual(3);
+  for (let i = 0; i < 6; i++) await copy.dispatchEvent("click");
+  const groupTitle = page.getByRole("heading", { name: "Feedback history" });
+  await expect(groupTitle).toBeVisible();
+  expect(await groupTitle.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return [style.fontSize, style.fontWeight, style.lineHeight, style.fontFamily];
+  })).toEqual(["15px", "650", "22.5px", uiFont]);
+  await editor.fill("https://");
+  const validation = await page.locator("#error-full-url").evaluate((element) => {
+    const style = getComputedStyle(element);
+    return [style.color, style.backgroundColor, style.borderTopColor];
+  });
+  expect(contrast(validation[0]!, validation[1]!)).toBeGreaterThanOrEqual(4.5);
+  expect(contrast(validation[2]!, validation[1]!)).toBeGreaterThanOrEqual(3);
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+});
+
+test("Story 4.1 Chromium preserves contextual order recovery Undo and completed gestures", async ({ page }) => {
+  await installCopyProbe(page);
+  await page.goto("/");
+  const panel = page.getByRole("region", { name: "Full URL" });
+  const editor = panel.getByLabel("Complete HTTP or HTTPS Absolute URL");
+  const copy = panel.getByRole("button", { name: "Copy", exact: true });
+  const undo = panel.getByRole("button", { name: "Undo", exact: true });
+  await expect(page.getByRole("region")).toHaveCount(2);
+  await expect(page.getByRole("region", { name: "Actions" })).toHaveCount(0);
+  await expect(copy).toHaveAttribute("aria-disabled", "true");
+  await expect(undo).toHaveAttribute("aria-disabled", "true");
+  const initial = "https://example.com/a?x=1&x=&flag#Keep%2f";
+  await editor.fill(initial);
+  await page.keyboard.press("Tab");
+  await expect(copy).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(undo).toBeFocused();
+  const search = page.getByLabel("Search Managed Pieces");
+  const clear = page.getByRole("button", { name: "Clear Search", exact: true });
+  const topAdd = page.getByRole("button", { name: "Add Query Parameter before the list", exact: true });
+  await search.fill("example");
+  await search.focus();
+  for (const destination of [clear, topAdd, page.getByLabel("Unicode Domain", { exact: true })]) {
+    await page.keyboard.press("Tab");
+    await expect(destination).toBeFocused();
+  }
+  for (const destination of [topAdd, clear, search, undo, copy, editor]) {
+    await page.keyboard.press("Shift+Tab");
+    await expect(destination).toBeFocused();
+  }
+  await clear.click();
+  const box = (await copy.boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(0, 0);
+  await page.mouse.up();
+  expect(await page.evaluate(() => window.__copyProbe.writes)).toEqual([]);
+  await copy.click();
+  expect(await page.evaluate(() => window.__copyProbe.writes)).toEqual([initial]);
+  await page.getByLabel("Value, Query Parameter 1 of 3, occurrence 1 of 2", { exact: true }).fill("two");
+  const committed = initial.replace("x=1", "x=two");
+  await editor.fill("https://");
+  await page.evaluate(() => { window.__copyProbe.mode = "reject"; });
+  await copy.click();
+  const recovery = panel.getByLabel("Last Valid URL — copy recovery");
+  await expect(recovery).toHaveValue(committed);
+  await expect(recovery).toBeFocused();
+  expect(await recovery.evaluate((element: HTMLTextAreaElement) =>
+    [element.selectionStart, element.selectionEnd])).toEqual([0, committed.length]);
+  await expect(editor).toHaveValue("https://");
+  await expect(panel.locator("#actionable-failure")).toContainText("Couldn’t copy the Last Valid URL.");
+  await undo.click();
+  await expect(editor).toHaveValue("https://");
+  await expect(page.getByLabel("Value, Query Parameter 1 of 3, occurrence 1 of 2", { exact: true })).toHaveValue("1");
+  await expect(undo).toHaveAttribute("aria-disabled", "true");
+  await page.evaluate(() => { window.__copyProbe.mode = "success"; });
+  await copy.click();
+  expect(await page.evaluate(() => window.__copyProbe.writes)).toEqual([initial, committed, initial]);
+  await expect(page.locator("#copy-recovery")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /Add Query Parameter/ })).toHaveCount(2);
+  await expect(page.getByRole("button", { name: /Move Query Parameter/ })).toHaveCount(6);
+});
+
+test("Story 4.1 Chromium reflows at 320 700 and 701 with spacing and forced colors", async ({ page }) => {
+  await installCopyProbe(page);
+  await page.goto("/");
+  const editor = page.locator("#full-url-editor");
+  await editor.fill("https://example.com/" + "a".repeat(400) + "?x=" + "b".repeat(400));
+  const copy = page.getByRole("button", { name: "Copy", exact: true });
+  for (const width of [320, 700, 701, 1280]) {
+    await page.setViewportSize({ width, height: 800 });
+    const editorBox = (await editor.boundingBox())!, copyBox = (await copy.boundingBox())!;
+    if (width > 700) {
+      expect(copyBox.x).toBeGreaterThan(editorBox.x + editorBox.width);
+      expect(copyBox.y).toBe(editorBox.y);
+    } else {
+      expect(copyBox.y).toBeGreaterThanOrEqual(editorBox.y + editorBox.height);
+    }
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+  }
+  await page.setViewportSize({ width: 320, height: 800 });
+  await editor.fill("https://");
+  await page.evaluate(() => { window.__copyProbe.mode = "reject"; });
+  await copy.click();
+  const recovery = page.locator("#copy-recovery");
+  await expect(recovery).toBeFocused();
+  await page.evaluate(() => {
+    const sheet = document.styleSheets[0]!;
+    sheet.insertRule("* { line-height: 1.5 !important; letter-spacing: .12em !important; word-spacing: .16em !important; }", sheet.cssRules.length);
+    sheet.insertRule("p { margin-block: 2em !important; }", sheet.cssRules.length);
+  });
+  for (const width of [320, 700, 701]) {
+    await page.setViewportSize({ width, height: 800 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+    expect(await page.locator("label, p, button, h1, h2, #managed-pieces > li")
+      .evaluateAll((elements) => elements.filter((element) =>
+        element.scrollWidth > element.clientWidth || element.scrollHeight > element.clientHeight)
+        .map((element) => element.id || element.tagName))).toEqual([]);
+    for (const action of [copy, page.getByRole("button", { name: "Undo", exact: true })]) {
+      await action.scrollIntoViewIfNeeded();
+      await action.focus();
+      await expect(action).toBeInViewport();
+      const size = (await action.boundingBox())!;
+      expect(size.width).toBeGreaterThanOrEqual(44);
+      expect(size.height).toBeGreaterThanOrEqual(44);
+      const outline = await action.evaluate((element) => {
+        const rect = element.getBoundingClientRect(), style = getComputedStyle(element);
+        const extent = parseFloat(style.outlineWidth) + parseFloat(style.outlineOffset);
+        return { extent, left: rect.left - extent, top: rect.top - extent, right: rect.right + extent,
+          bottom: rect.bottom + extent, width: innerWidth, height: innerHeight,
+          clipping: Array.from((function* () {
+            for (let parent = element.parentElement; parent; parent = parent.parentElement) yield parent;
+          })()).some((parent) => {
+            const ancestor = getComputedStyle(parent);
+            return ["hidden", "clip", "scroll", "auto"].includes(ancestor.overflowX) ||
+              ["hidden", "clip", "scroll", "auto"].includes(ancestor.overflowY);
+          }) };
+      });
+      expect(outline.extent).toBe(6);
+      expect(outline.left).toBeGreaterThanOrEqual(0);
+      expect(outline.top).toBeGreaterThanOrEqual(0);
+      expect(outline.right).toBeLessThanOrEqual(outline.width);
+      expect(outline.bottom).toBeLessThanOrEqual(outline.height);
+      expect(outline.clipping).toBe(false);
+    }
+  }
+  await page.evaluate(() => {
+    const sheet = document.styleSheets[0]!;
+    sheet.insertRule(":root { font-size: 150% !important; }", sheet.cssRules.length);
+  });
+  expect(await page.locator("body").evaluate((element) => getComputedStyle(element).fontSize)).toBe("24px");
+  expect(await editor.evaluate((element) => getComputedStyle(element).fontSize)).toBe("21px");
+  expect(await page.getByLabel("Search Managed Pieces").evaluate((element) => getComputedStyle(element).fontSize)).toBe("24px");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(701);
+  await page.emulateMedia({ forcedColors: "active", reducedMotion: "reduce" });
+  await recovery.focus();
+  const forced = await recovery.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return [style.outlineStyle, style.outlineWidth, style.outlineOffset, style.outlineColor,
+      style.borderTopColor, style.backgroundColor];
+  });
+  expect(forced.slice(0, 3)).toEqual(["solid", "3px", "3px"]);
+  expect(forced[3]).not.toBe(forced[5]);
+  expect(forced[4]).not.toBe(forced[5]);
+  const systemColors = await page.evaluate(() => {
+    const probe = document.createElement("span");
+    document.body.append(probe);
+    const values = Object.fromEntries(["CanvasText", "Canvas", "ButtonText", "ButtonFace", "GrayText", "Field", "FieldText"].map((name) => {
+      probe.style.color = name;
+      return [name, getComputedStyle(probe).color];
+    }));
+    probe.remove();
+    return values;
+  });
+  const colors = async (selector: string) => page.locator(selector).evaluate((element) => {
+    const style = getComputedStyle(element);
+    return [style.color, style.backgroundColor, style.borderTopColor];
+  });
+  expect(await colors("#error-full-url")).toEqual([
+    systemColors.CanvasText, systemColors.Canvas, systemColors.CanvasText,
+  ]);
+  expect(await colors("#clear-managed-piece-search")).toEqual([
+    systemColors.GrayText, systemColors.ButtonFace, systemColors.CanvasText,
+  ]);
+  expect(await copy.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return [style.color, style.backgroundColor, style.borderTopColor];
+  })).toEqual([systemColors.ButtonText, systemColors.ButtonFace, systemColors.CanvasText]);
+  expect(await colors("#managed-pieces > li:first-child")).toEqual([
+    systemColors.CanvasText, systemColors.Canvas, systemColors.CanvasText,
+  ]);
+  expect([forced[4], forced[5]]).toEqual([systemColors.CanvasText, systemColors.Field]);
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+});
+
+test("Story 4.1 Chromium retains private exact capacity operations and response budgets", async ({ page }) => {
+  await installCopyProbe(page);
+  await page.goto("/");
+  const requests: string[] = [], diagnostics: string[] = [];
+  page.on("request", (request) => requests.push(request.url()));
+  page.on("console", (message) => diagnostics.push(message.text()));
+  page.on("pageerror", (error) => diagnostics.push(error.message));
+  const initial = createCapacityFixture();
+  expect(initial.length).toBe(20_000);
+  const parsed = await page.locator("#full-url-editor").evaluate(async (element, value) => {
+    const start = performance.now();
+    const setter = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value")!.set!;
+    setter.call(element, value);
+    element.dispatchEvent(new Event("input", { bubbles: true }));
+    await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+    return { duration: performance.now() - start, value: (element as HTMLTextAreaElement).value,
+      rows: document.querySelectorAll("#managed-pieces > li").length };
+  }, initial);
+  expect(parsed.duration).toBeLessThan(1_000);
+  expect(parsed.value).toBe(initial);
+  expect(parsed.rows).toBe(263);
+  await expect(page.locator("#managed-pieces > li")).toHaveCount(263);
+  const sourceIds = await page.locator("#managed-pieces > li").evaluateAll((rows) =>
+    rows.map((row) => (row as HTMLElement).dataset.pieceId));
+  const queryStart = initial.indexOf("?") + 1;
+  const fragmentStart = initial.indexOf("#", queryStart);
+  const queryEnd = fragmentStart < 0 ? initial.length : fragmentStart;
+  const entries = initial.slice(queryStart, queryEnd).split("&");
+  [entries[100], entries[101]] = [entries[101]!, entries[100]!];
+  const changed = initial.slice(0, queryStart) + entries.join("&") + initial.slice(queryEnd);
+  const reorderedIds = [...sourceIds];
+  [reorderedIds[103], reorderedIds[104]] = [reorderedIds[104], reorderedIds[103]];
+  const move = page.getByRole("button", { name: /Move Query Parameter at position 101 of 260 down/ });
+  const moved = await move.evaluate(async (element) => {
+    const start = performance.now();
+    (element as HTMLButtonElement).click();
+    await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+    return { duration: performance.now() - start,
+      value: (document.getElementById("full-url-editor") as HTMLTextAreaElement).value,
+      ids: Array.from(document.querySelectorAll<HTMLElement>("#managed-pieces > li"), (row) => row.dataset.pieceId),
+      activeId: document.activeElement?.id, targetId: element.id };
+  });
+  expect(moved.duration).toBeLessThan(100);
+  expect(moved.value).toBe(changed);
+  expect(moved.ids).toEqual(reorderedIds);
+  expect(moved.activeId).toBe(moved.targetId);
+  const copy = page.getByRole("button", { name: "Copy", exact: true });
+  await copy.click();
+  await expect(page.locator("#full-url-editor")).toHaveValue(changed);
+  expect(changed).not.toBe(initial);
+  expect(await page.evaluate(() => window.__copyProbe.writes)).toEqual([changed]);
+  await page.getByRole("button", { name: "Undo", exact: true }).click();
+  await expect(page.locator("#full-url-editor")).toHaveValue(initial);
+  expect(await page.locator("#managed-pieces > li").evaluateAll((rows) =>
+    rows.map((row) => (row as HTMLElement).dataset.pieceId))).toEqual(sourceIds);
+  await page.setViewportSize({ width: 320, height: 800 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
+  expect(requests).toEqual([]);
+  expect(diagnostics).toEqual([]);
+  expect(await page.evaluate(() => [localStorage.length, sessionStorage.length, document.cookie, location.search])).toEqual([0, 0, "", ""]);
+  await page.reload();
+  await expect(page.locator("#full-url-editor")).toHaveValue("");
+  await expect(copy).toHaveAttribute("aria-disabled", "true");
+});
+
 test("Story 3.5 Chromium schedules two-second repeated children and strict six-second exact overflow summaries", async ({ page }) => {
   await installCopyProbe(page);
   await page.clock.install({ time: new Date("2026-10-08T12:00:00Z") });
@@ -322,7 +728,7 @@ test("Story 3.3 Copy exact Current and Last Valid preserves pointer editing and 
   await expect(page.getByLabel("Search Managed Pieces")).toHaveValue("dup");
   await page.getByLabel("Search Managed Pieces").fill("");
   expect(await page.locator("#managed-pieces > li").evaluateAll((rows) => rows.map((row) => row.getAttribute("data-piece-id")))).toEqual(ids);
-  await page.getByRole("button", { name: "Undo", exact: true }).focus();
+  await editor.focus();
   await page.keyboard.press("Tab");
   await expect(copy).toBeFocused();
   await page.keyboard.press("Space");
@@ -2159,14 +2565,12 @@ test("initial and populated workbench pass automated accessibility checks", asyn
 
   await fullUrl.focus();
   await page.keyboard.press("Tab");
+  await expect(page.getByRole("button", { name: "Copy", exact: true })).toBeFocused();
+  await page.keyboard.press("Tab");
   await expect(page.getByRole("button", { name: "Undo", exact: true })).toBeFocused();
   await expect(page.getByRole("button", { name: "Undo", exact: true })).toHaveAttribute("aria-disabled", "true");
   await page.keyboard.press("Tab");
-  await expect(page.getByRole("button", { name: "Copy", exact: true })).toBeFocused();
-  await page.keyboard.press("Tab");
-  await expect(
-    page.getByRole("button", { name: "Add Query Parameter before the list" }),
-  ).toBeFocused();
+  await expect(page.getByLabel("Search Managed Pieces")).toBeFocused();
 
   await page.emulateMedia({ forcedColors: "active", reducedMotion: "reduce" });
   await page.evaluate(() => {

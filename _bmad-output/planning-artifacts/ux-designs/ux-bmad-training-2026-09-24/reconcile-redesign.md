@@ -59,4 +59,22 @@ Current rubric/accessibility findings are addressed in the final contracts: ordi
 
 The approved static mock remains byte-for-byte unchanged; final contract deltas such as return links and explicit markerless-list roles govern implementation even when absent from the audit mock. These states are spine-only by user choice. Review snapshots are not independent re-reviews of the corrected contracts or evidence of application execution.
 
-Before implementation, synchronize architecture orchestration/list/focus ownership and requirements/evidence mappings deliberately. Preserve full DOM, exact URL/Copy/Undo semantics, browser-local privacy and the existing browser-evidence boundaries. The historical PRD Decision Summary's invalid-Draft choice is already resolved by its journey and final UX contract; do not reopen or silently reverse it.
+Story 4.1 synchronizes architecture orchestration/list/focus ownership and the
+canonical SPEC's dark exclusion: the workbench has two named sections, ordinary
+blur retains an accepted edit, grouped complete DOM lists are permitted, and
+later presentation/gesture focus contracts are explicit. Fixed dark appearance
+does not introduce theme switching. Cancellation means no reorder was saved;
+it does not erase an ordinary preceding accepted Full URL blur-close entry.
+This qualifies the experience spine's generic “History is unchanged” cancellation
+copy for the later drag implementation. The conflict table and review snapshots
+above remain historical; they do not prove current execution.
+
+Story 4.1 implements dark styling and contextual Copy/Undo only. It retains the
+single list, duplicate Add buttons and permanent Move controls. Disclosures,
+sole-bottom Add/navigation, query shape descriptions, Move reveal, primary drag
+and feedback redesign remain Stories 4.2–4.6. Reviewed Story 4.1 mappings and fresh
+Chromium execution are required separately from this handoff reconciliation.
+Preserve exact URL/Copy/Undo semantics, browser-local privacy and existing
+browser-evidence boundaries. The historical PRD Decision Summary's invalid-Draft
+choice is already resolved by its journey and final UX contract; do not reopen
+or silently reverse it.

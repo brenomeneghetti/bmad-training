@@ -923,7 +923,26 @@ describe("URL Workbench", () => {
     expect(within(main).getByRole("heading", { level: 1 })).toHaveTextContent(
       "URL Workbench",
     );
-    expect(screen.getAllByRole("region")).toHaveLength(3);
+    expect(screen.getAllByRole("region")).toHaveLength(2);
+  });
+
+  it("Story 4.1 keeps contextual Copy then Undo inside Full URL without later-story controls", () => {
+    render(<Workbench />);
+    const fullUrl = screen.getByRole("region", { name: "Full URL" });
+    const editor = within(fullUrl).getByLabelText("Complete HTTP or HTTPS Absolute URL");
+    const copy = within(fullUrl).getByRole("button", { name: "Copy" });
+    const undo = within(fullUrl).getByRole("button", { name: "Undo" });
+    expect(editor.compareDocumentPosition(copy) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(copy.compareDocumentPosition(undo) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(copy).toHaveAttribute("aria-disabled", "true");
+    expect(undo).toHaveAttribute("aria-disabled", "true");
+    expect(screen.queryByRole("region", { name: "Actions" })).not.toBeInTheDocument();
+    fireEvent.change(editor, { target: { value: "https://example.com/a?x=1&x=2" } });
+    expect(copy).toHaveAttribute("aria-disabled", "false");
+    expect(screen.getAllByRole("listitem")).toHaveLength(4);
+    expect(screen.getAllByRole("button", { name: /Add Query Parameter/ })).toHaveLength(2);
+    expect(screen.getAllByRole("button", { name: /Move Query Parameter/ })).toHaveLength(4);
+    expect(screen.queryByRole("button", { expanded: true })).not.toBeInTheDocument();
   });
 
   it("searches every supported field with full Unicode folding", async () => {

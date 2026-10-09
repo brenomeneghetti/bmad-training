@@ -29,8 +29,9 @@ does not infer narrower requirement/story mappings from test counts. Narrowing
 the reviewed mapping requires a deliberate matrix-version change.
 
 `releaseCells()` expands only the reviewed contract, not executed reports.
-Each cell's fixture identity is `<cell-id>-v<matrix-version>`. The 56 existing
-MVP cells and their prior test identities are preserved; foundation coverage
+Each cell's fixture identity is `<cell-id>-v<matrix-version>`. The 56 preceding
+MVP cells and their prior application test identities are preserved; Story 4.1
+adds four mandatory MVP cells (60 total). Foundation coverage
 also explicitly maps evaluator regression identities. These regressions prove
 gate behavior, **not** external release observations.
 
@@ -203,8 +204,8 @@ the available native JSON reports and separate command diagnostics under
   expectation; the producer never learns expected coverage from its own run.
   Authoring order is immaterial: exact identity/multiplicity comparison uses
   the same canonical ordering on both inventories.
-- `coverage.json` retains the preceding 52 cells and adds four Story 3.5 cells
-  (56 total), mapping exact executed identities,
+- `coverage.json` retains the preceding 56 cells and adds four Story 4.1 cells
+  (60 total), mapping exact executed identities,
   including the approved Chromium browser project. File existence and matching aggregate counts
   cannot substitute for these identities.
 - Story 3.1 adds exact-history restoration, guarded Draft preservation,
@@ -271,6 +272,19 @@ the available native JSON reports and separate command diagnostics under
   checks. These are DOM/browser observations, not actual AT speech or native
   clipboard/IME, OS/mobile or additional-browser certification. Release
   certification remains Story 3.6.
+- Story 4.1 adds `dark-foundation`, `contextual-actions`, `accessible-reflow`
+  and `private-capacity` cells. Exact Chromium identities measure all 14 colors,
+  eight typography roles, 10px/16px radii, rendered contrast, 3px focus/offset,
+  44px controls, 100px Full URL, the 700px adjacency breakpoint, text spacing
+  and system-color fallback. Two-section/Copy-then-Undo order, completed pointer
+  cancellation, exact Current/Last Valid recovery and private 20,000-character/
+  260-query Copy/reorder/Undo are exercised; existing timeout/race and broader
+  baseline operation identities remain mandatory. Missing cells or unexecuted
+  identities fail closed. Single-list, duplicate Add and permanent Move remain
+  until later Epic 4 stories; unused later-behavior tokens prove no capability.
+  Chromium timings do not replace recorded reference-hardware release evidence,
+  and injected clipboard, emulated forced colors and narrow viewports do not
+  prove native OS clipboard/IME, manual AT, real zoom, mobile or other browsers.
 - Native reports, diagnostics and observed version command outcomes are hashed.
   Every command is bound to the same source/build/delivery identities. Paths
   reject traversal, absolute paths, symlinks and special files before reading.

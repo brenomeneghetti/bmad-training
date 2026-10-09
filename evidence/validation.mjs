@@ -7,6 +7,10 @@ import { commands, engines, sourcePaths } from "./contracts.mjs";
 import { identity, inventoryOf, normalizeReport } from "./adapters.mjs";
 
 export const requiredCells = new Map([
+  ["story-4-1-dark-foundation", "4.1"],
+  ["story-4-1-contextual-actions", "4.1"],
+  ["story-4-1-accessible-reflow", "4.1"],
+  ["story-4-1-private-capacity", "4.1"],
   ["story-3-5-scheduling-overflow", "3.5"],
   ["story-3-5-validation-repeat", "3.5"],
   ["story-3-5-independent-channels", "3.5"],

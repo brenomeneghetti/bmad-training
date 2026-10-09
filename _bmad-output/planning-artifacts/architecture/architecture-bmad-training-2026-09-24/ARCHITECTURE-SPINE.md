@@ -141,15 +141,21 @@ flowchart LR
   blur, Enter, and every non-Full-URL command that can commit a URL mutation
   first dispatch `closeFullUrlEdit` in the same reducer transaction, so DOM
   event ordering cannot change History. Search, focus, selection, scrolling,
-  and non-mutating validation neither close the edit nor create History.
+  and non-mutating validation create no History of their own. An ordinary
+  focus change that blurs Full URL still closes its accepted edit; presentation
+  navigation or a cancelled gesture cannot erase that legitimate entry.
 
 ### AD-7 — Full DOM is the V1 accessibility representation [ADOPTED]
 
 - **Binds:** FR-2, FR-4..FR-9, NFR-8..NFR-17, AG-3
 - **Prevents:** Visual windowing from omitting rows in screen-reader browse mode
   or breaking identity and focus.
-- **Rule:** Render every Managed Piece in one semantic list at the supported
-  250+ entry limit. V1 may not ship virtualization. Reopen this decision only
+- **Rule:** Render every expanded Managed Piece exactly once in complete native
+  semantic lists at the supported 250+ entry limit, retaining source order,
+  immutable IDs and explicit markerless-list semantics. Story 4.1 retains the
+  existing single list; Story 4.2 introduces independently disclosed body,
+  Paths and Query Parameters lists. Intentional collapse is not virtualization.
+  V1 may not ship virtualization. Reopen this decision only
   after capacity evidence misses its targets and a proposed implementation
   passes the UX virtualization-on/off equivalence matrix.
 
@@ -220,6 +226,11 @@ flowchart LR
   dispatches product Undo. Enter/Shift+Enter cannot close or mutate Full URL
   during composition. Product actions dispatch only from click/up activation,
   never pointer-down.
+  Future disclosure/handle toggles follow the same completed-gesture rule.
+  Story 4.6's handle-only drag captures ID/revision after ordinary focus/blur,
+  previews without mutation, and commits one reorder only on a changed valid
+  matching-revision drop with Search empty. Cancelled, stale, outside and no-op
+  drops add no reorder entry; any preceding ordinary blur-close is retained.
 
 ### AD-13 — Effects are revisioned commands with acknowledgements [ADOPTED]
 
@@ -236,6 +247,15 @@ flowchart LR
   transition; a mismatched revision or typed target precondition acknowledges
   the intent without invoking the adapter or touching the DOM. No
   operation-specific focus intent survives a revision change.
+
+  Presentation state is separate from snapshots and History. Later disclosure,
+  pinned-selection and drag ownership cannot mutate the URL themselves. Before
+  resolving a permitted focus target, expand/render its group and reveal any
+  required Move controls; relocate descendant focus before collapse. Search-
+  filtered Undo retains its existing nearest-visible/Full URL fallback rather
+  than clearing Search. External validation, status, failures and safe-copy
+  remain outside disclosures. These are handoff contracts for Stories 4.2–4.6,
+  not claims that Story 4.1 implements them.
 
   A Copy intent captures `attemptedSerialized`. Before invoking the Clipboard
   API, the executor cancels it if that value is no longer the current Copy
@@ -358,7 +378,7 @@ src/
     session/      # commands, reducer, snapshots, history, focus intents
     contracts/    # Result, problem codes, branded IDs, effect intents
   app/
-    workbench/    # Full URL, Actions, Structured View orchestration
+    workbench/    # two sections: Full URL with contextual Copy/Undo, Structured View
                    # and the sole keyboard/composition input arbiter
     pieces/       # Domain, path, and query row components
     feedback/     # renderers for reducer-owned validation/status/alert queues

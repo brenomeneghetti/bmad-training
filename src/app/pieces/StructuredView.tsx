@@ -771,6 +771,17 @@ export function StructuredView({
       <p id="piece-summary" className={styles.position}>
         {summary}
       </p>
+      <button
+        id="add-query-before"
+        type="button"
+        className={styles.primaryButton}
+        aria-label="Add Query Parameter before the list"
+        disabled={editorsDisabled}
+        onPointerDown={(event) => event.preventDefault()}
+        onClick={onAddQueryPiece}
+      >
+        Add Query Parameter
+      </button>
       <div aria-busy={busy} aria-describedby="piece-summary">
         {!snapshot ? (
           <p>No session. Enter a supported URL to inspect its pieces.</p>
@@ -783,7 +794,7 @@ export function StructuredView({
                 </p>
               </div>
             ) : null}
-            <ol id="managed-pieces" className={styles.pieceList}>
+            <ol id="managed-pieces" className={styles.pieceList} role="list">
               {pieces.map((managedPiece, index) => {
               const filteredPosition = `Filtered position ${index + 1} of ${visibleCount}`;
               if (managedPiece.kind === "domain") {
@@ -791,6 +802,7 @@ export function StructuredView({
                   <li
                     className={styles.pieceRow}
                     data-piece-id={managedPiece.id}
+                    data-piece-kind="domain"
                     key={managedPiece.id}
                     aria-posinset={index + 1}
                     aria-setsize={visibleCount}
@@ -863,6 +875,7 @@ export function StructuredView({
                   <li
                     className={styles.pieceRow}
                     data-piece-id={managedPiece.id}
+                    data-piece-kind="path"
                     key={managedPiece.id}
                     aria-posinset={index + 1}
                     aria-setsize={visibleCount}
@@ -908,6 +921,7 @@ export function StructuredView({
                 <li
                   className={styles.pieceRow}
                   data-piece-id={managedPiece.id}
+                  data-piece-kind="query"
                   key={managedPiece.id}
                   aria-posinset={index + 1}
                   aria-setsize={visibleCount}
@@ -1007,7 +1021,7 @@ export function StructuredView({
               id="add-query-after"
               type="button"
               aria-label="Add Query Parameter after the list"
-              className={styles.addAfterButton}
+              className={`${styles.addAfterButton} ${styles.primaryButton}`}
               disabled={editorsDisabled}
               onPointerDown={(event) => event.preventDefault()}
               onClick={onAddQueryPiece}

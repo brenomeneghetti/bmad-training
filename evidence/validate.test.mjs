@@ -5,14 +5,14 @@ import test from "node:test";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { createFixture, writeManifest } from "./fixture.mjs";
-import { calculateArtifactDigest, calculateSourceDigest, hashFile, parseCsp, safePath, validateEvidence } from "./validation.mjs";
+import { calculateArtifactDigest, calculateSourceDigest, hashFile, parseCsp, requiredCells, safePath, validateEvidence } from "./validation.mjs";
 import { inventoryOf, normalizeReport } from "./adapters.mjs";
 import reporter from "./node-reporter.mjs";
 
-test("accepts complete clean-checkout proof with exact inventory and all 56 cells", async (context) => {
+test("accepts complete clean-checkout proof with exact inventory and all mandatory cells", async (context) => {
   const { root } = await createFixture(context);
   assert.deepEqual(await validateEvidence(root), {
-    cellCount: 56, testCount: 3,
+    cellCount: requiredCells.size, testCount: 3,
     artifactDigest: await calculateArtifactDigest(root, { path: "dist", delivery: "deployment/static-delivery.json" }),
   });
 });
@@ -22,7 +22,7 @@ test("same bytes remain valid after checkout relocation", async (context) => {
   const relocated = `${root}-moved`;
   context.after(() => rm(relocated, { recursive: true, force: true }));
   await rename(root, relocated);
-  assert.equal((await validateEvidence(relocated)).cellCount, 56);
+  assert.equal((await validateEvidence(relocated)).cellCount, requiredCells.size);
 });
 
 test("accepts reordered reviewed identities but still rejects missing multiplicity", async (context) => {
@@ -61,29 +61,33 @@ for (const cell of ["exact-history", "guard-draft", "accessible-action", "privac
   });
 }
 
-for (const cell of ["scheduling-overflow", "validation-repeat", "independent-channels", "private-capacity"]) {
-  test(`rejects missing Story 3.5 ${cell} evidence after rehashing`, async (context) => {
+for (const [story, cells] of [
+  ["3.5", ["scheduling-overflow", "validation-repeat", "independent-channels", "private-capacity"]],
+  ["4.1", ["dark-foundation", "contextual-actions", "accessible-reflow", "private-capacity"]],
+]) for (const cell of cells) {
+  const cellId = `story-${story.replace(".", "-")}-${cell}`;
+  test(`rejects missing Story ${story} ${cell} evidence after rehashing`, async (context) => {
     const { root, manifest } = await createFixture(context);
     const path = resolve(root, "evidence/coverage.json");
     const coverage = JSON.parse(await readFile(path, "utf8"));
-    await writeFile(path, JSON.stringify(coverage.filter((item) => item.id !== `story-3-5-${cell}`)));
+    await writeFile(path, JSON.stringify(coverage.filter((item) => item.id !== cellId)));
     manifest.sourceDigest = await calculateSourceDigest(root);
     for (const execution of manifest.executions) execution.sourceDigest = manifest.sourceDigest;
     await writeManifest(root, manifest);
-    await assert.rejects(validateEvidence(root), new RegExp(`Missing mandatory evidence cells: story-3-5-${cell}`));
+    await assert.rejects(validateEvidence(root), new RegExp(`Missing mandatory evidence cells: ${cellId}`));
   });
-  test(`rejects unexecuted Story 3.5 ${cell} identity despite other passing tests`, async (context) => {
+  test(`rejects unexecuted Story ${story} ${cell} identity despite other passing tests`, async (context) => {
     const { root, manifest } = await createFixture(context);
     const path = resolve(root, "evidence/coverage.json");
     const coverage = JSON.parse(await readFile(path, "utf8"));
     const actual = JSON.parse(await readFile(resolve(process.cwd(), "evidence/coverage.json"), "utf8"));
-    const mapping = actual.find((item) => item.id === `story-3-5-${cell}`).tests.find((item) => item.runner === "playwright");
-    coverage.find((item) => item.id === `story-3-5-${cell}`).tests.push(mapping);
+    const mapping = actual.find((item) => item.id === cellId).tests.find((item) => item.runner === "playwright");
+    coverage.find((item) => item.id === cellId).tests.push(mapping);
     await writeFile(path, JSON.stringify(coverage));
     manifest.sourceDigest = await calculateSourceDigest(root);
     for (const execution of manifest.executions) execution.sourceDigest = manifest.sourceDigest;
     await writeManifest(root, manifest);
-    await assert.rejects(validateEvidence(root), /Unmapped test identity in story-3-5-/);
+    await assert.rejects(validateEvidence(root), new RegExp(`Unmapped test identity in ${cellId}`));
   });
 }
 

@@ -1,5 +1,34 @@
 [
   {
+    "id": "story-4-1-dark-foundation", "story": "4.1",
+    "tests": [
+      { "runner": "playwright", "file": "tests/workbench.spec.ts", "title": "Story 4.1 Chromium renders exact dark tokens typography targets and contrast", "project": "chromium" }
+    ]
+  },
+  {
+    "id": "story-4-1-contextual-actions", "story": "4.1",
+    "tests": [
+      { "runner": "vitest", "file": "src/app/workbench/Workbench.test.tsx", "title": "URL Workbench Story 4.1 keeps contextual Copy then Undo inside Full URL without later-story controls", "project": "vitest" },
+      { "runner": "playwright", "file": "tests/workbench.spec.ts", "title": "Story 4.1 Chromium preserves contextual order recovery Undo and completed gestures", "project": "chromium" },
+      { "runner": "playwright", "file": "tests/workbench.spec.ts", "title": "Story 3.4 failure matrix selects exact Last Valid recovery and retry preserves native focus", "project": "chromium" },
+      { "runner": "playwright", "file": "tests/workbench.spec.ts", "title": "Story 3.4 interrupted failures retain manual recovery without stealing focus and obsolete writes stay silent", "project": "chromium" }
+    ]
+  },
+  {
+    "id": "story-4-1-accessible-reflow", "story": "4.1",
+    "tests": [
+      { "runner": "playwright", "file": "tests/workbench.spec.ts", "title": "Story 4.1 Chromium reflows at 320 700 and 701 with spacing and forced colors", "project": "chromium" },
+      { "runner": "playwright", "file": "tests/workbench.spec.ts", "title": "initial and populated workbench pass automated accessibility checks", "project": "chromium" }
+    ]
+  },
+  {
+    "id": "story-4-1-private-capacity", "story": "4.1",
+    "tests": [
+      { "runner": "playwright", "file": "tests/workbench.spec.ts", "title": "Story 4.1 Chromium retains private exact capacity operations and response budgets", "project": "chromium" },
+      { "runner": "playwright", "file": "tests/workbench.spec.ts", "title": "Story 3.5 Chromium dense feedback publishes below 100 ms privately with complete accessible 320px reflow", "project": "chromium" }
+    ]
+  },
+  {
     "id": "story-3-5-scheduling-overflow", "story": "3.5",
     "tests": [
       { "runner": "vitest", "file": "src/core/session/session.test.ts", "title": "Story 3.5 feedback authority publishes all accepted outcomes without changing mutation Undo Copy or stale parse authority", "project": "vitest" },

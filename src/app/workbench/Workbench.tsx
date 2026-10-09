@@ -577,6 +577,7 @@ export function Workbench() {
           immediately to the Structured View. Enter or leaving this field
           commits one edit; Shift+Enter does not insert a line break.
         </p>
+        <div className={styles.fullUrlControls}>
         <textarea
           id="full-url-editor"
           ref={fullUrlEditorRef}
@@ -595,6 +596,15 @@ export function Workbench() {
           maxLength={20_000}
           dir="ltr"
         />
+        <button type="button" className={styles.primaryButton} aria-disabled={!state.snapshot}
+          aria-describedby="copy-help"
+          onPointerDown={(event) => {
+            if (document.activeElement !== copyRecoveryRef.current) event.preventDefault();
+          }}
+          onClick={() => flushSync(() => dispatch({ type: "copy" }))}>
+          Copy
+        </button>
+        </div>
         <div id="full-url-validation">
           {state.problem ? (
             <ValidationMessage id="error-full-url">
@@ -604,13 +614,7 @@ export function Workbench() {
             </ValidationMessage>
           ) : null}
         </div>
-      </section>
-
-      <section
-        aria-labelledby="actions-heading"
-        className={`${styles.panel} ${styles.actionBar}`}
-      >
-        <h2 id="actions-heading">Actions</h2>
+        <div className={styles.actionBar}>
         <button
           type="button"
           aria-disabled={workbenchComposing || !canUndo(state)}
@@ -619,24 +623,6 @@ export function Workbench() {
           onClick={undo}
         >
           Undo
-        </button>
-        <button type="button" aria-disabled={!state.snapshot}
-          aria-describedby="copy-help"
-          onPointerDown={(event) => {
-            if (document.activeElement !== copyRecoveryRef.current) event.preventDefault();
-          }}
-          onClick={() => flushSync(() => dispatch({ type: "copy" }))}>
-          Copy
-        </button>
-        <button
-          id="add-query-before"
-          type="button"
-          aria-label="Add Query Parameter before the list"
-          disabled={editorsDisabled}
-          onPointerDown={(event) => event.preventDefault()}
-          onClick={addQueryPiece}
-        >
-          Add Query Parameter
         </button>
         <p id="undo-help">
           {workbenchComposing
@@ -684,6 +670,7 @@ export function Workbench() {
             {state.feedback.history.map((outcome) => <li key={outcome.id}>{outcome.message}</li>)}
           </ol>
         </div> : null}
+        </div>
       </section>
 
       <StructuredView

@@ -54,7 +54,8 @@ Web developers need to inspect and modify long, state-bearing URLs without damag
 - Accounts, authentication, saved or shared sessions, collaboration, or cloud persistence.
 - API-client behavior, network requests, URL shortening, batch processing, bulk comparison, or Postman and Insomnia integration.
 - Relative URLs or managed editing of Scheme and Fragment.
-- Mobile-optimized workflows, Redo, dark mode, or a separate icon language.
+- Mobile-optimized workflows, Redo, theme switching, or a separate icon language.
+  Story 4.1 applies the approved fixed dark identity, not a selectable theme.
 
 ## Success signal
 
